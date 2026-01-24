@@ -8,7 +8,7 @@ import numpy as np
 
 from src.agents.base_agent import BaseAgent
 
-# Try to import pymdp
+# Import pymdp
 try:
     from pymdp import utils
     from pymdp.agent import Agent as PyMDPAgent
@@ -24,14 +24,19 @@ class ActiveInferenceAgent(BaseAgent):
 
     Implements a discrete state-space active inference agent that:
     - Discretizes the continuous state space for pymdp compatibility
-    - Uses a C matrix to encode preferences (high preference for consuming, low-energy aversion)
+    - Uses a C matrix to encode preferences (high preference for resources, low-energy aversion)
     - Plans using expected free energy minimization
     - Exposes belief state as internal state for interpretability
 
-    The agent discretizes:
-    - Position: Grid cells
-    - Energy: Binned into discrete levels
-    - Resource visibility: Binary per direction
+    State factors:
+    - Factor 0: Position (discretized into bins)
+    - Factor 1: Energy level (discretized into bins)
+    - Factor 2: Resource visibility (binary)
+
+    Observation modalities:
+    - Modality 0: Position observation
+    - Modality 1: Energy observation
+    - Modality 2: Resource visibility observation
     """
 
     # Discretization parameters
@@ -69,7 +74,7 @@ class ActiveInferenceAgent(BaseAgent):
         if not HAS_PYMDP:
             raise ImportError(
                 "pymdp is required for ActiveInferenceAgent. "
-                "Install with: pip install pymdp"
+                "Install with: pip install inferactively-pymdp"
             )
 
         self.planning_horizon = planning_horizon
@@ -84,35 +89,29 @@ class ActiveInferenceAgent(BaseAgent):
         self.num_energy_states = self.NUM_ENERGY_BINS
         self.num_resource_states = 2  # visible or not
 
-        # Total hidden state factors
-        # Factor 0: Position (discretized)
-        # Factor 1: Energy level (discretized)
-        # Factor 2: Resource visible
+        # State factors and observation modalities
         self.num_states = [
             self.num_position_states,
             self.num_energy_states,
             self.num_resource_states,
         ]
-        self.num_factors = len(self.num_states)
-
-        # Observation modalities
-        # Modality 0: Position observation
-        # Modality 1: Energy observation
-        # Modality 2: Resource observation
         self.num_obs = [
             self.num_position_states,
             self.num_energy_states,
             self.num_resource_states,
         ]
+        self.num_factors = len(self.num_states)
         self.num_modalities = len(self.num_obs)
+
+        # Control factors: only position is controlled
+        self.num_controls = [self.num_actions, 1, 1]
+        self.control_fac_idx = [0]
 
         # Build generative model
         self._build_model()
 
         # Current belief state
-        self.beliefs: List[np.ndarray] = [
-            np.ones(ns) / ns for ns in self.num_states
-        ]
+        self.beliefs = None
 
         # Internal state for tracking
         self._internal_state: Optional[np.ndarray] = None
@@ -120,7 +119,6 @@ class ActiveInferenceAgent(BaseAgent):
     def _build_model(self) -> None:
         """Build the active inference generative model."""
         # A matrices: observation likelihoods P(o|s)
-        # Each modality has its own A matrix
         self.A = self._build_A_matrices()
 
         # B matrices: transition probabilities P(s'|s,a)
@@ -130,7 +128,7 @@ class ActiveInferenceAgent(BaseAgent):
         self.C = self._build_C_vectors()
 
         # D vectors: prior over initial states
-        self.D = [np.ones(ns) / ns for ns in self.num_states]
+        self.D = self._build_D_vectors()
 
         # Create pymdp agent
         self.pymdp_agent = PyMDPAgent(
@@ -138,83 +136,112 @@ class ActiveInferenceAgent(BaseAgent):
             B=self.B,
             C=self.C,
             D=self.D,
-            control_fac_idx=[0],  # Only position is controllable
+            control_fac_idx=self.control_fac_idx,
             policy_len=self.planning_horizon,
-            inference_horizon=1,
             gamma=self.policy_precision,
         )
 
-    def _build_A_matrices(self) -> List[np.ndarray]:
-        """Build observation likelihood matrices."""
-        A = []
+    def _build_A_matrices(self):
+        """
+        Build observation likelihood matrices.
 
-        # Position observation (identity - we observe position directly)
-        A_pos = np.eye(self.num_position_states)
-        A.append(A_pos)
+        Each observation modality depends on its corresponding state factor.
+        A[m] has shape (num_obs[m], num_states[0], num_states[1], ...)
+        """
+        A = utils.obj_array(self.num_modalities)
 
-        # Energy observation (identity - we observe energy directly)
-        A_energy = np.eye(self.num_energy_states)
-        A.append(A_energy)
+        for m in range(self.num_modalities):
+            # Start with identity mapping from factor m to modality m
+            # Shape starts as (num_obs[m], num_states[m])
+            A_m = np.eye(self.num_obs[m], self.num_states[m])
 
-        # Resource observation (identity - we observe resource directly)
-        A_resource = np.eye(self.num_resource_states)
-        A.append(A_resource)
+            # Expand dimensions for other factors
+            # pymdp expects A[m] to have shape (num_obs[m], *num_states)
+            for f in range(self.num_factors):
+                if f != m:
+                    # Add a new axis and broadcast
+                    A_m = np.expand_dims(A_m, axis=-1)
+                    A_m = np.repeat(A_m, self.num_states[f], axis=-1)
+
+            # Reorder axes to match (num_obs[m], num_states[0], num_states[1], num_states[2])
+            # Current order depends on which factor m is
+            if m == 0:
+                # Already (obs, s0, s1, s2)
+                pass
+            elif m == 1:
+                # Currently (obs, s1, s0, s2) -> need (obs, s0, s1, s2)
+                A_m = np.moveaxis(A_m, [1, 2], [2, 1])
+            elif m == 2:
+                # Currently (obs, s2, s0, s1) -> need (obs, s0, s1, s2)
+                A_m = np.moveaxis(A_m, [1, 2, 3], [3, 1, 2])
+
+            A[m] = A_m
 
         return A
 
-    def _build_B_matrices(self) -> List[np.ndarray]:
-        """Build state transition matrices."""
-        B = []
+    def _build_B_matrices(self):
+        """
+        Build state transition matrices.
 
-        # Position transitions (depends on action)
-        # Shape: (num_positions, num_positions, num_actions)
-        B_pos = np.zeros((self.num_position_states, self.num_position_states, self.num_actions))
+        B[f] has shape (num_states[f], num_states[f], num_controls[f])
+        """
+        B = utils.obj_array(self.num_factors)
 
-        # For each action, define how position changes
+        # Factor 0: Position transitions (controlled by 6 actions)
+        B_pos = np.zeros((
+            self.num_position_states,
+            self.num_position_states,
+            self.num_actions
+        ))
+
         for action in range(self.num_actions):
             for state in range(self.num_position_states):
                 next_state = self._get_next_position_state(state, action)
                 B_pos[next_state, state, action] = 1.0
 
-        B.append(B_pos)
+        B[0] = B_pos
 
-        # Energy transitions (depends on action, but controlled separately)
-        # Simplified: energy tends to decrease unless consuming
-        B_energy = np.zeros((self.num_energy_states, self.num_energy_states, self.num_actions))
+        # Factor 1: Energy transitions (uncontrolled, single action dimension)
+        # Energy tends to decrease over time
+        B_energy = np.zeros((
+            self.num_energy_states,
+            self.num_energy_states,
+            1
+        ))
+        for state in range(self.num_energy_states):
+            if state == 0:
+                # Already at lowest, stay there
+                B_energy[0, state, 0] = 1.0
+            else:
+                # Energy decays with high probability
+                next_state = state - 1
+                B_energy[next_state, state, 0] = 0.7
+                B_energy[state, state, 0] = 0.3
 
-        for action in range(self.num_actions):
-            for state in range(self.num_energy_states):
-                if action == 5:  # CONSUME
-                    # Energy increases
-                    next_state = min(state + 1, self.num_energy_states - 1)
-                else:
-                    # Energy decreases
-                    next_state = max(state - 1, 0)
-                B_energy[next_state, state, action] = 0.8  # Stochastic
-                B_energy[state, state, action] = 0.2
+        B[1] = B_energy
 
-        B.append(B_energy)
+        # Factor 2: Resource visibility (uncontrolled)
+        # Resources stay visible/invisible with some persistence
+        B_resource = np.zeros((
+            self.num_resource_states,
+            self.num_resource_states,
+            1
+        ))
+        # Columns must sum to 1
+        B_resource[:, :, 0] = np.array([
+            [0.7, 0.3],  # P(next=not visible | prev=not visible), P(next=not visible | prev=visible)
+            [0.3, 0.7],  # P(next=visible | prev=not visible), P(next=visible | prev=visible)
+        ])
 
-        # Resource visibility transitions (semi-random, depends on position)
-        B_resource = np.zeros((self.num_resource_states, self.num_resource_states, self.num_actions))
-        for action in range(self.num_actions):
-            # Resources become visible/invisible stochastically
-            B_resource[:, :, action] = np.array([
-                [0.6, 0.4],  # not visible -> stays not visible or becomes visible
-                [0.3, 0.7],  # visible -> stays visible or becomes not visible
-            ])
-
-        B.append(B_resource)
+        B[2] = B_resource
 
         return B
 
     def _get_next_position_state(self, state: int, action: int) -> int:
         """Get next position state given action."""
-        # Convert state to (x, y) grid coordinates
         x = state // self.NUM_POSITION_BINS
         y = state % self.NUM_POSITION_BINS
 
-        # Apply action
         if action == 0:  # UP
             x = max(0, x - 1)
         elif action == 1:  # DOWN
@@ -223,33 +250,35 @@ class ActiveInferenceAgent(BaseAgent):
             y = max(0, y - 1)
         elif action == 3:  # RIGHT
             y = min(self.NUM_POSITION_BINS - 1, y + 1)
-        # STAY and CONSUME don't change position
+        # Actions 4 (STAY) and 5 (CONSUME) don't change position
 
         return x * self.NUM_POSITION_BINS + y
 
-    def _build_C_vectors(self) -> List[np.ndarray]:
+    def _build_C_vectors(self):
         """Build preference vectors over observations."""
-        C = []
+        C = utils.obj_array(self.num_modalities)
 
-        # Position preferences (neutral)
-        C_pos = np.zeros(self.num_position_states)
-        C.append(C_pos)
+        # Modality 0: Position preferences (neutral)
+        C[0] = np.zeros(self.num_obs[0])
 
-        # Energy preferences (prefer high energy)
-        C_energy = np.zeros(self.num_energy_states)
-        for i in range(self.num_energy_states):
-            # Low energy is aversive
-            if i == 0:
-                C_energy[i] = -self.low_energy_aversion
-            elif i == self.num_energy_states - 1:
-                C_energy[i] = self.preference_strength
-        C.append(C_energy)
+        # Modality 1: Energy preferences (prefer high energy)
+        C[1] = np.zeros(self.num_obs[1])
+        C[1][0] = -self.low_energy_aversion  # Low energy is aversive
+        C[1][-1] = self.preference_strength   # High energy is preferred
 
-        # Resource preferences (prefer seeing resources)
-        C_resource = np.array([0.0, self.preference_strength])
-        C.append(C_resource)
+        # Modality 2: Resource preferences (prefer seeing resources)
+        C[2] = np.array([0.0, self.preference_strength])
 
         return C
+
+    def _build_D_vectors(self):
+        """Build prior over initial states."""
+        D = utils.obj_array(self.num_factors)
+
+        for f in range(self.num_factors):
+            D[f] = np.ones(self.num_states[f]) / self.num_states[f]
+
+        return D
 
     def _discretize_observation(self, observation: Dict[str, np.ndarray]) -> List[int]:
         """Convert continuous observation to discrete state indices."""
@@ -259,12 +288,12 @@ class ActiveInferenceAgent(BaseAgent):
         pos_y = int(pos[1] * (self.NUM_POSITION_BINS - 1))
         pos_x = np.clip(pos_x, 0, self.NUM_POSITION_BINS - 1)
         pos_y = np.clip(pos_y, 0, self.NUM_POSITION_BINS - 1)
-        pos_state = pos_x * self.NUM_POSITION_BINS + pos_y
+        pos_state = int(pos_x * self.NUM_POSITION_BINS + pos_y)
 
         # Energy: convert normalized to bin
         energy = observation["energy"][0]
         energy_state = int(energy * (self.NUM_ENERGY_BINS - 1))
-        energy_state = np.clip(energy_state, 0, self.NUM_ENERGY_BINS - 1)
+        energy_state = int(np.clip(energy_state, 0, self.NUM_ENERGY_BINS - 1))
 
         # Resource visible: check local view for resources
         local_view = observation["local_view"]
@@ -277,15 +306,8 @@ class ActiveInferenceAgent(BaseAgent):
         # Discretize observation
         obs_indices = self._discretize_observation(observation)
 
-        # Convert to one-hot observations for pymdp
-        obs_list = []
-        for i, idx in enumerate(obs_indices):
-            obs_vec = np.zeros(self.num_obs[i])
-            obs_vec[idx] = 1.0
-            obs_list.append(obs_vec)
-
         # Update beliefs (state estimation)
-        self.beliefs = self.pymdp_agent.infer_states(obs_list)
+        self.beliefs = self.pymdp_agent.infer_states(obs_indices)
 
         # Update internal state representation
         self._update_internal_state()
@@ -296,17 +318,27 @@ class ActiveInferenceAgent(BaseAgent):
         # Sample action from policy
         action = self.pymdp_agent.sample_action()
 
-        # pymdp returns action per control factor, we only have one
+        # pymdp returns action per control factor, we only have one controlled factor
         if isinstance(action, np.ndarray):
+            action = int(action[0])
+        elif isinstance(action, (list, tuple)):
             action = int(action[0])
 
         return action
 
     def _update_internal_state(self) -> None:
         """Update internal state representation from beliefs."""
+        if self.beliefs is None:
+            return
+
         # Concatenate all belief distributions
-        belief_concat = np.concatenate([b.flatten() for b in self.beliefs])
-        self._internal_state = belief_concat
+        belief_list = []
+        for b in self.beliefs:
+            if isinstance(b, np.ndarray):
+                belief_list.append(b.flatten())
+
+        if belief_list:
+            self._internal_state = np.concatenate(belief_list)
 
     def get_internal_state(self) -> np.ndarray:
         """Get the belief state distribution."""
@@ -335,71 +367,21 @@ class ActiveInferenceAgent(BaseAgent):
 
     def reset(self) -> None:
         """Reset agent beliefs for new episode."""
-        # Reset to uniform beliefs
-        self.beliefs = [np.ones(ns) / ns for ns in self.num_states]
+        self.beliefs = None
         self._internal_state = None
         self.step_count = 0
         self.current_energy = 100.0
 
-        # Reset pymdp agent
+        # Reset pymdp agent's internal state
         if hasattr(self.pymdp_agent, 'reset'):
             self.pymdp_agent.reset()
+        else:
+            # Manually reset relevant attributes
+            self.pymdp_agent.qs = None
+            if hasattr(self.pymdp_agent, 'action'):
+                self.pymdp_agent.action = None
 
     @property
     def internal_state_dim(self) -> int:
         """Dimension of the belief state vector."""
         return sum(self.num_states)
-
-
-class DummyActiveInferenceAgent(BaseAgent):
-    """
-    Dummy Active Inference agent for when pymdp is not available.
-
-    Acts semi-randomly with slight preference for resources.
-    """
-
-    def __init__(
-        self,
-        observation_space,
-        action_space,
-        internal_state_dim: int = 32,
-        name: str = "dummy_active_inference",
-        seed: Optional[int] = None,
-        **kwargs,
-    ):
-        super().__init__(observation_space, action_space, name, seed)
-        self._internal_state_dim = internal_state_dim
-        self._internal_state = np.zeros(internal_state_dim, dtype=np.float32)
-
-    def act(self, observation: Dict[str, np.ndarray]) -> int:
-        """Act with slight preference toward resources."""
-        local_view = observation["local_view"]
-        center = local_view.shape[0] // 2
-
-        # Check for resources in each direction
-        if local_view[center, center, 1] > 0.5:  # On resource
-            if observation["energy"][0] < 0.8:
-                return 5  # CONSUME
-
-        # Look for resources in view
-        for dx, dy, action in [(-1, 0, 0), (1, 0, 1), (0, -1, 2), (0, 1, 3)]:
-            if local_view[center + dx, center + dy, 1] > 0.5:
-                if self._rng.random() < 0.7:
-                    return action
-
-        # Random action
-        return self._rng.integers(0, self.action_space.n)
-
-    def get_internal_state(self) -> np.ndarray:
-        return self._internal_state.copy()
-
-    def get_internal_response(self, observation: Dict[str, np.ndarray]) -> np.ndarray:
-        return self._internal_state.copy()
-
-    def reset(self) -> None:
-        self._internal_state = np.zeros(self._internal_state_dim, dtype=np.float32)
-        self.step_count = 0
-
-    @property
-    def internal_state_dim(self) -> int:
-        return self._internal_state_dim

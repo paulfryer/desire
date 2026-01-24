@@ -188,24 +188,6 @@ class TestRLAgent:
         except ImportError:
             pytest.skip("stable-baselines3 not available")
 
-    def test_dummy_rl_agent(self, env):
-        """Test dummy RL agent when SB3 not available."""
-        from src.agents.rl_agent import DummyRLAgent
-
-        agent = DummyRLAgent(
-            observation_space=env.observation_space,
-            action_space=env.action_space,
-            seed=42,
-        )
-
-        obs, _ = env.reset()
-        action = agent.act(obs)
-
-        assert 0 <= action < env.action_space.n
-
-        state = agent.get_internal_state()
-        assert len(state) == agent.features_dim
-
 
 class TestActiveInferenceAgent:
     """Tests for Active Inference agent (if available)."""
@@ -273,22 +255,6 @@ class TestActiveInferenceAgent:
                 assert len(state) == sum(agent.num_states)
         except ImportError:
             pytest.skip("pymdp not available")
-
-    def test_dummy_active_inference_agent(self, env):
-        """Test dummy Active Inference agent."""
-        from src.agents.active_inference import DummyActiveInferenceAgent
-
-        agent = DummyActiveInferenceAgent(
-            observation_space=env.observation_space,
-            action_space=env.action_space,
-            seed=42,
-        )
-
-        obs, _ = env.reset()
-        action = agent.act(obs)
-
-        assert 0 <= action < env.action_space.n
-
 
 class TestAgentEpisode:
     """Test agents running complete episodes."""

@@ -45,52 +45,42 @@ def load_agents(config: Config, model_dir: Optional[Path] = None) -> Dict[str, B
 
     # 2. RL agent
     try:
-        from src.agents.rl_agent import RLAgent, DummyRLAgent, HAS_SB3
-        if HAS_SB3:
-            agent = RLAgent(
-                observation_space=env.observation_space,
-                action_space=env.action_space,
-                device=config.training.device,
-                seed=config.training.seed,
-            )
-            # Try to load trained model
-            if model_dir:
-                model_path = model_dir / "models" / "rl_ppo.zip"
-                if model_path.exists():
-                    agent.load(str(model_path))
-                    print(f"Loaded RL model from {model_path}")
-                else:
-                    print(f"No trained RL model found at {model_path}")
-            agents["rl_ppo"] = agent
-        else:
-            agents["rl_ppo"] = DummyRLAgent(
-                observation_space=env.observation_space,
-                action_space=env.action_space,
-                seed=config.training.seed,
-            )
-    except ImportError:
-        print("Warning: Could not load RL agent")
+        from src.agents.rl_agent import RLAgent, HAS_SB3
+        if not HAS_SB3:
+            raise ImportError("stable-baselines3 is required. Install with: pip install stable-baselines3")
+        agent = RLAgent(
+            observation_space=env.observation_space,
+            action_space=env.action_space,
+            device=config.training.device,
+            seed=config.training.seed,
+        )
+        # Try to load trained model
+        if model_dir:
+            model_path = model_dir / "models" / "rl_ppo.zip"
+            if model_path.exists():
+                agent.load(str(model_path))
+                print(f"Loaded RL model from {model_path}")
+            else:
+                print(f"No trained RL model found at {model_path}")
+        agents["rl_ppo"] = agent
+    except ImportError as e:
+        raise ImportError(f"Could not create RL agent: {e}")
 
     # 3. Active Inference agent
     try:
-        from src.agents.active_inference import ActiveInferenceAgent, DummyActiveInferenceAgent, HAS_PYMDP
-        if HAS_PYMDP:
-            agents["active_inference"] = ActiveInferenceAgent(
-                observation_space=env.observation_space,
-                action_space=env.action_space,
-                planning_horizon=config.agent.planning_horizon,
-                policy_precision=config.agent.policy_precision,
-                grid_size=config.environment.grid_size,
-                seed=config.training.seed,
-            )
-        else:
-            agents["active_inference"] = DummyActiveInferenceAgent(
-                observation_space=env.observation_space,
-                action_space=env.action_space,
-                seed=config.training.seed,
-            )
-    except ImportError:
-        print("Warning: Could not load Active Inference agent")
+        from src.agents.active_inference import ActiveInferenceAgent, HAS_PYMDP
+        if not HAS_PYMDP:
+            raise ImportError("pymdp is required. Install with: pip install inferactively-pymdp")
+        agents["active_inference"] = ActiveInferenceAgent(
+            observation_space=env.observation_space,
+            action_space=env.action_space,
+            planning_horizon=config.agent.planning_horizon,
+            policy_precision=config.agent.policy_precision,
+            grid_size=config.environment.grid_size,
+            seed=config.training.seed,
+        )
+    except ImportError as e:
+        raise ImportError(f"Could not create Active Inference agent: {e}")
 
     env.close()
     return agents

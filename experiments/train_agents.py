@@ -37,53 +37,39 @@ def create_agents(config: Config, env: ForagingGridEnv) -> Dict[str, BaseAgent]:
     # 2. RL agent (PPO)
     try:
         from src.agents.rl_agent import RLAgent, HAS_SB3
-        if HAS_SB3:
-            agents["rl_ppo"] = RLAgent(
-                observation_space=env.observation_space,
-                action_space=env.action_space,
-                learning_rate=config.agent.learning_rate,
-                gamma=config.agent.gamma,
-                n_steps=config.agent.n_steps,
-                batch_size=config.agent.batch_size,
-                n_epochs=config.agent.n_epochs,
-                clip_range=config.agent.clip_range,
-                ent_coef=config.agent.ent_coef,
-                device=config.training.device,
-                seed=config.training.seed,
-            )
-        else:
-            print("Warning: stable-baselines3 not available, using dummy RL agent")
-            from src.agents.rl_agent import DummyRLAgent
-            agents["rl_ppo"] = DummyRLAgent(
-                observation_space=env.observation_space,
-                action_space=env.action_space,
-                seed=config.training.seed,
-            )
+        if not HAS_SB3:
+            raise ImportError("stable-baselines3 is required. Install with: pip install stable-baselines3")
+        agents["rl_ppo"] = RLAgent(
+            observation_space=env.observation_space,
+            action_space=env.action_space,
+            learning_rate=config.agent.learning_rate,
+            gamma=config.agent.gamma,
+            n_steps=config.agent.n_steps,
+            batch_size=config.agent.batch_size,
+            n_epochs=config.agent.n_epochs,
+            clip_range=config.agent.clip_range,
+            ent_coef=config.agent.ent_coef,
+            device=config.training.device,
+            seed=config.training.seed,
+        )
     except ImportError as e:
-        print(f"Warning: Could not create RL agent: {e}")
+        raise ImportError(f"Could not create RL agent: {e}")
 
     # 3. Active Inference agent
     try:
         from src.agents.active_inference import ActiveInferenceAgent, HAS_PYMDP
-        if HAS_PYMDP:
-            agents["active_inference"] = ActiveInferenceAgent(
-                observation_space=env.observation_space,
-                action_space=env.action_space,
-                planning_horizon=config.agent.planning_horizon,
-                policy_precision=config.agent.policy_precision,
-                grid_size=config.environment.grid_size,
-                seed=config.training.seed,
-            )
-        else:
-            print("Warning: pymdp not available, using dummy active inference agent")
-            from src.agents.active_inference import DummyActiveInferenceAgent
-            agents["active_inference"] = DummyActiveInferenceAgent(
-                observation_space=env.observation_space,
-                action_space=env.action_space,
-                seed=config.training.seed,
-            )
+        if not HAS_PYMDP:
+            raise ImportError("pymdp is required. Install with: pip install inferactively-pymdp")
+        agents["active_inference"] = ActiveInferenceAgent(
+            observation_space=env.observation_space,
+            action_space=env.action_space,
+            planning_horizon=config.agent.planning_horizon,
+            policy_precision=config.agent.policy_precision,
+            grid_size=config.environment.grid_size,
+            seed=config.training.seed,
+        )
     except ImportError as e:
-        print(f"Warning: Could not create Active Inference agent: {e}")
+        raise ImportError(f"Could not create Active Inference agent: {e}")
 
     return agents
 
