@@ -143,36 +143,70 @@ class ActiveInferenceAgent(BaseAgent):
 
     def _build_A_matrices(self):
         """
-        Build observation likelihood matrices.
+        Build observation likelihood matrices with observation noise.
 
         Each observation modality depends on its corresponding state factor.
         A[m] has shape (num_obs[m], num_states[0], num_states[1], ...)
+
+        We add observation noise (accuracy < 1.0) to prevent beliefs from
+        becoming point masses, which would cause deterministic stuck behavior.
         """
         A = utils.obj_array(self.num_modalities)
 
+        # Observation accuracy (0.9 = 90% accurate, 10% spread to neighbors)
+        obs_accuracy = 0.85
+
         for m in range(self.num_modalities):
-            # Start with identity mapping from factor m to modality m
-            # Shape starts as (num_obs[m], num_states[m])
-            A_m = np.eye(self.num_obs[m], self.num_states[m])
+            n_obs = self.num_obs[m]
+            n_states = self.num_states[m]
+
+            # Build likelihood with observation noise
+            A_m = np.zeros((n_obs, n_states))
+
+            for s in range(n_states):
+                # Primary observation
+                A_m[s % n_obs, s] = obs_accuracy
+
+                # Spread remaining probability to nearby observations
+                remaining = 1.0 - obs_accuracy
+                if n_obs > 1:
+                    # For position: spread to neighboring positions
+                    if m == 0:  # Position
+                        # Get grid coordinates
+                        sx = s // self.NUM_POSITION_BINS
+                        sy = s % self.NUM_POSITION_BINS
+                        neighbors = []
+                        for dx, dy in [(-1, 0), (1, 0), (0, -1), (0, 1)]:
+                            nx, ny = sx + dx, sy + dy
+                            if 0 <= nx < self.NUM_POSITION_BINS and 0 <= ny < self.NUM_POSITION_BINS:
+                                neighbors.append(nx * self.NUM_POSITION_BINS + ny)
+                        if neighbors:
+                            for n in neighbors:
+                                A_m[n, s] += remaining / len(neighbors)
+                        else:
+                            A_m[s, s] = 1.0  # Edge case: redistribute to self
+                    else:
+                        # For other factors: spread uniformly to all other obs
+                        for o in range(n_obs):
+                            if o != s % n_obs:
+                                A_m[o, s] += remaining / (n_obs - 1)
+
+            # Normalize columns to sum to 1
+            A_m = A_m / A_m.sum(axis=0, keepdims=True)
 
             # Expand dimensions for other factors
             # pymdp expects A[m] to have shape (num_obs[m], *num_states)
             for f in range(self.num_factors):
                 if f != m:
-                    # Add a new axis and broadcast
                     A_m = np.expand_dims(A_m, axis=-1)
                     A_m = np.repeat(A_m, self.num_states[f], axis=-1)
 
             # Reorder axes to match (num_obs[m], num_states[0], num_states[1], num_states[2])
-            # Current order depends on which factor m is
             if m == 0:
-                # Already (obs, s0, s1, s2)
-                pass
+                pass  # Already correct
             elif m == 1:
-                # Currently (obs, s1, s0, s2) -> need (obs, s0, s1, s2)
                 A_m = np.moveaxis(A_m, [1, 2], [2, 1])
             elif m == 2:
-                # Currently (obs, s2, s0, s1) -> need (obs, s0, s1, s2)
                 A_m = np.moveaxis(A_m, [1, 2, 3], [3, 1, 2])
 
             A[m] = A_m
@@ -181,11 +215,17 @@ class ActiveInferenceAgent(BaseAgent):
 
     def _build_B_matrices(self):
         """
-        Build state transition matrices.
+        Build state transition matrices with transition noise.
 
         B[f] has shape (num_states[f], num_states[f], num_controls[f])
+
+        We add transition noise to prevent overly deterministic planning
+        and encourage exploration.
         """
         B = utils.obj_array(self.num_factors)
+
+        # Transition accuracy (0.9 = 90% intended, 10% slip to adjacent)
+        trans_accuracy = 0.85
 
         # Factor 0: Position transitions (controlled by 6 actions)
         B_pos = np.zeros((
@@ -196,8 +236,35 @@ class ActiveInferenceAgent(BaseAgent):
 
         for action in range(self.num_actions):
             for state in range(self.num_position_states):
-                next_state = self._get_next_position_state(state, action)
-                B_pos[next_state, state, action] = 1.0
+                intended_next = self._get_next_position_state(state, action)
+
+                # Primary transition
+                B_pos[intended_next, state, action] = trans_accuracy
+
+                # Add slip probability to adjacent states
+                remaining = 1.0 - trans_accuracy
+                sx = state // self.NUM_POSITION_BINS
+                sy = state % self.NUM_POSITION_BINS
+                neighbors = []
+                for dx, dy in [(-1, 0), (1, 0), (0, -1), (0, 1)]:
+                    nx, ny = sx + dx, sy + dy
+                    if 0 <= nx < self.NUM_POSITION_BINS and 0 <= ny < self.NUM_POSITION_BINS:
+                        neighbor_state = nx * self.NUM_POSITION_BINS + ny
+                        if neighbor_state != intended_next:
+                            neighbors.append(neighbor_state)
+
+                if neighbors:
+                    for n in neighbors:
+                        B_pos[n, state, action] += remaining / len(neighbors)
+                else:
+                    # No neighbors to slip to, add to intended
+                    B_pos[intended_next, state, action] = 1.0
+
+        # Normalize columns
+        for a in range(self.num_actions):
+            col_sums = B_pos[:, :, a].sum(axis=0, keepdims=True)
+            col_sums[col_sums == 0] = 1  # Avoid division by zero
+            B_pos[:, :, a] = B_pos[:, :, a] / col_sums
 
         B[0] = B_pos
 
@@ -255,19 +322,30 @@ class ActiveInferenceAgent(BaseAgent):
         return x * self.NUM_POSITION_BINS + y
 
     def _build_C_vectors(self):
-        """Build preference vectors over observations."""
+        """Build preference vectors over observations with exploration bonus."""
         C = utils.obj_array(self.num_modalities)
 
-        # Modality 0: Position preferences (neutral)
+        # Modality 0: Position preferences - add exploration incentive
+        # Slight preference for center positions to encourage movement
         C[0] = np.zeros(self.num_obs[0])
+        center = self.NUM_POSITION_BINS // 2
+        for x in range(self.NUM_POSITION_BINS):
+            for y in range(self.NUM_POSITION_BINS):
+                state = x * self.NUM_POSITION_BINS + y
+                # Small preference for positions away from edges (exploration)
+                dist_from_edge = min(x, y, self.NUM_POSITION_BINS - 1 - x,
+                                    self.NUM_POSITION_BINS - 1 - y)
+                C[0][state] = 0.1 * dist_from_edge
 
-        # Modality 1: Energy preferences (prefer high energy)
+        # Modality 1: Energy preferences (prefer high energy, avoid low)
         C[1] = np.zeros(self.num_obs[1])
-        C[1][0] = -self.low_energy_aversion  # Low energy is aversive
-        C[1][-1] = self.preference_strength   # High energy is preferred
+        for e in range(self.num_energy_states):
+            # Linear preference from low (negative) to high (positive)
+            C[1][e] = self.preference_strength * (e - self.num_energy_states / 2) / (self.num_energy_states / 2)
+        C[1][0] = -self.low_energy_aversion  # Strong aversion to lowest energy
 
-        # Modality 2: Resource preferences (prefer seeing resources)
-        C[2] = np.array([0.0, self.preference_strength])
+        # Modality 2: Resource preferences (strongly prefer seeing resources)
+        C[2] = np.array([-0.5, self.preference_strength])
 
         return C
 
@@ -302,7 +380,7 @@ class ActiveInferenceAgent(BaseAgent):
         return [pos_state, energy_state, resource_visible]
 
     def act(self, observation: Dict[str, np.ndarray]) -> int:
-        """Select action using active inference."""
+        """Select action using active inference with resource-aware behavior."""
         # Discretize observation
         obs_indices = self._discretize_observation(observation)
 
@@ -311,6 +389,21 @@ class ActiveInferenceAgent(BaseAgent):
 
         # Update internal state representation
         self._update_internal_state()
+
+        # Check if standing on a resource (center of local view)
+        local_view = observation["local_view"]
+        center = local_view.shape[0] // 2
+        on_resource = local_view[center, center, 1] > 0.5  # Resource channel
+
+        # Check energy level
+        energy = observation["energy"][0]
+
+        # If on resource and energy < 90%, prefer to consume
+        # This heuristic helps since the generative model can't capture
+        # the energy-increase effect of consuming
+        if on_resource and energy < 0.9:
+            if self._rng.random() < 0.7:  # 70% chance to consume when on resource
+                return 5  # CONSUME action
 
         # Policy inference (action selection)
         q_pi, efe = self.pymdp_agent.infer_policies()
@@ -323,6 +416,10 @@ class ActiveInferenceAgent(BaseAgent):
             action = int(action[0])
         elif isinstance(action, (list, tuple)):
             action = int(action[0])
+
+        # Add exploration noise: small chance to take random action
+        if self._rng.random() < 0.1:  # 10% exploration
+            action = self._rng.integers(0, self.num_actions)
 
         return action
 
