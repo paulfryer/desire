@@ -1,0 +1,47 @@
+experiment_name: desire_medium_test
+output_dir: outputs
+
+environment:
+  grid_size: 20
+  max_steps: 500
+  initial_energy: 100.0
+  max_energy: 100.0
+  energy_decay_rate: 1.0
+  local_view_size: 5
+  mode: baseline
+  render_mode: null
+
+agent:
+  agent_type: all
+  learning_rate: 0.0003
+  gamma: 0.99
+  n_steps: 1024
+  batch_size: 64
+  n_epochs: 10
+  clip_range: 0.2
+  ent_coef: 0.01
+  planning_horizon: 1  # Single-step for speed (3 is too slow)
+  num_states: 100
+  policy_precision: 4.0
+  hidden_sizes:
+    - 64
+    - 64
+
+training:
+  total_timesteps: 50000
+  eval_freq: 10000
+  n_eval_episodes: 10
+  save_freq: 10000
+  log_freq: 1000
+  seed: 42
+  device: auto
+
+test:
+  n_trials: 5
+  baseline_episodes: 20
+  test_episodes: 20
+  warmup_steps: 50
+  blockage_step: 100
+  post_blockage_steps: 150
+  training_episodes: 50
+  transfer_episodes: 20
