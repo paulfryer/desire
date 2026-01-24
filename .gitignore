@@ -92,8 +92,13 @@ data/
 *.h5
 *.hdf5
 wandb/
-outputs/
 checkpoints/
+
+# Outputs - ignore intermediate results, keep final publication data
+outputs/*
+!outputs/publication_results.json
+!outputs/raw_data.csv
+!outputs/robustness_check.json
 
 # Experiment outputs
 experiments/outputs/
@@ -104,3 +109,16 @@ experiments/models/
 *.zip
 *.tar.gz
 *.rar
+
+# LaTeX build files
+*.aux
+*.log
+*.out
+*.toc
+*.lof
+*.lot
+*.fls
+*.fdb_latexmk
+*.synctex.gz
+*.bbl
+*.blg

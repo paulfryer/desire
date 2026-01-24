@@ -1,0 +1,65 @@
+{
+  "seeds": [
+    42,
+    123,
+    456
+  ],
+  "n_trials_per_seed": 10,
+  "results_by_seed": {
+    "42": {
+      "heuristic": 1.0,
+      "rl_ppo": 0.0,
+      "active_inference": 0.9807925616417481
+    },
+    "123": {
+      "heuristic": 1.0,
+      "rl_ppo": 0.0,
+      "active_inference": 0.9643962216084188
+    },
+    "456": {
+      "heuristic": 1.0,
+      "rl_ppo": 0.0,
+      "active_inference": 0.9774327864091864
+    }
+  },
+  "consistency": {
+    "heuristic": {
+      "scores_by_seed": {
+        "42": 1.0,
+        "123": 1.0,
+        "456": 1.0
+      },
+      "mean": 1.0,
+      "std": 0.0,
+      "min": 1.0,
+      "max": 1.0,
+      "range": 0.0
+    },
+    "rl_ppo": {
+      "scores_by_seed": {
+        "42": 0.0,
+        "123": 0.0,
+        "456": 0.0
+      },
+      "mean": 0.0,
+      "std": 0.0,
+      "min": 0.0,
+      "max": 0.0,
+      "range": 0.0
+    },
+    "active_inference": {
+      "scores_by_seed": {
+        "42": 0.9807925616417481,
+        "123": 0.9643962216084188,
+        "456": 0.9774327864091864
+      },
+      "mean": 0.9742071898864512,
+      "std": 0.007071696935330835,
+      "min": 0.9643962216084188,
+      "max": 0.9807925616417481,
+      "range": 0.01639634003332935
+    }
+  },
+  "aa_dissociation_holds": true,
+  "timestamp": "2026-01-24T13:27:19.601621"
+}

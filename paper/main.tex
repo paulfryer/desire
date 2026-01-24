@@ -19,17 +19,17 @@
 \title{Anticipatory Activation Distinguishes Active Inference from Reinforcement Learning Agents}
 
 \author{%
-  Anonymous Author(s) \\
-  Institution \\
-  \texttt{email@institution.edu}
+  Paul Fryer
 }
+
+\date{January 24, 2026}
 
 \begin{document}
 
 \maketitle
 
 \begin{abstract}
-We investigate whether Active Inference agents exhibit behavioral signatures that distinguish them from standard Reinforcement Learning (RL) agents in ways that might indicate ``desire-like'' prospective states. Using a grid-world foraging task, we compare three agent types---a heuristic baseline, a PPO-based RL agent, and an Active Inference agent---across six behavioral predicates. Our key finding is a striking dissociation in \textit{Anticipatory Activation} (AA): both the heuristic and Active Inference agents show elevated internal state activation when approaching goals (AA $\approx 1.0$), while RL agents show none (AA $= 0.0$). This pattern was perfectly consistent across three random seeds ($p < 0.002$). We interpret this as evidence that Active Inference agents develop prospective representations similar to explicitly goal-directed agents, whereas RL agents track rewards without anticipatory activation. While preliminary, these results suggest that the choice of learning framework may have implications for the emergence of goal-directed internal states.
+We investigate whether Active Inference agents exhibit behavioral signatures that distinguish them from standard Reinforcement Learning (RL) agents in ways that might indicate ``desire-like'' prospective states. Using a grid-world foraging task, we compare three agent types---a heuristic baseline, a PPO-based RL agent, and an Active Inference agent---across six behavioral predicates. Our key finding is a striking dissociation in \textit{Anticipatory Activation} (AA): both the heuristic and Active Inference agents show elevated internal state activation when approaching goals (AA $\approx 1.0$), while RL agents show none (AA $= 0.0$). This pattern was perfectly consistent across three random seeds ($p = 0.002$). We interpret this as evidence that Active Inference agents develop prospective representations similar to explicitly goal-directed agents, whereas RL agents track rewards without anticipatory activation. While preliminary, these results suggest that the choice of learning framework may have implications for the emergence of goal-directed internal states.
 \end{abstract}
 
 \section{Introduction}
@@ -132,18 +132,8 @@ The Kruskal-Wallis test confirms significant differences ($H = 12.67$, $p = 0.00
 
 \begin{figure}[t]
     \centering
-    \fbox{\parbox{0.9\linewidth}{
-    \centering
-    \textbf{Anticipatory Activation by Agent Type}\\[1em]
-    \begin{tabular}{ccc}
-    Heuristic & RL (PPO) & Active Inference \\
-    $\bullet$ 1.00 & $\bullet$ 0.00 & $\bullet$ 0.98 \\
-    $\bullet$ 1.00 & $\bullet$ 0.00 & $\bullet$ 0.96 \\
-    $\bullet$ 1.00 & $\bullet$ 0.00 & $\bullet$ 0.98 \\
-    \end{tabular}\\[0.5em]
-    \small{Box plots would show: Heuristic and Active Inference clustered at $\sim$1.0;\\RL clustered at exactly 0.0 with no overlap.}
-    }}
-    \caption{Anticipatory Activation scores. Active Inference agents show anticipatory patterns similar to explicitly goal-directed heuristic agents, while RL agents show none. Error bars represent SD across seeds.}
+    \includegraphics[width=0.8\linewidth]{figures/aa_boxplot.pdf}
+    \caption{Anticipatory Activation scores. Active Inference agents show anticipatory patterns similar to explicitly goal-directed heuristic agents, while RL agents show none. Horizontal bars indicate mean values across three random seeds.}
     \label{fig:aa_boxplot}
 \end{figure}
 
@@ -216,10 +206,6 @@ Future work should test robustness across environments, examine other RL algorit
 \section{Conclusion}
 
 We identified a behavioral predicate---Anticipatory Activation---that cleanly dissociates Active Inference agents from RL agents. Active Inference agents show anticipatory internal state activation similar to explicitly goal-directed agents, while RL agents show none. This pattern was perfectly consistent across random seeds. While our findings are preliminary and limited to a toy environment, they suggest that the choice of learning framework may matter for the emergence of goal-directed internal states.
-
-\section*{Acknowledgments}
-
-[Acknowledgments will be added in camera-ready version.]
 
 \bibliographystyle{plain}
 \begin{thebibliography}{10}
@@ -336,7 +322,7 @@ We use beam search (width 20) to evaluate policies, selecting actions with lowes
 
 \subsection{Raw Data Availability}
 
-Raw trial-level data is available at: \texttt{[repository URL to be added]}
+Raw trial-level data is available at: \url{https://github.com/paulfryer/desire}
 
 Format: CSV with columns \texttt{agent\_type, trial, predicate, score}
 
