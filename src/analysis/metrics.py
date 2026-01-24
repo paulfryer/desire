@@ -205,9 +205,6 @@ def compare_agents(
     agent_names = list(results.keys())
     n_agents = len(agent_names)
 
-    if n_agents < 2:
-        return {"error": "Need at least 2 agents for comparison"}
-
     # Extract trial scores for each agent
     agent_scores = {}
     for name, result in results.items():
@@ -215,6 +212,21 @@ def compare_agents(
             agent_scores[name] = result.raw_data["trial_scores"]
         else:
             agent_scores[name] = [result.score]
+
+    # Summary statistics per agent (always computed)
+    summary_stats = {}
+    for name, scores in agent_scores.items():
+        summary_stats[name] = {
+            "mean": float(np.mean(scores)),
+            "std": float(np.std(scores)),
+            "median": float(np.median(scores)),
+            "min": float(np.min(scores)),
+            "max": float(np.max(scores)),
+            "n": len(scores),
+        }
+
+    if n_agents < 2:
+        return {"error": "Need at least 2 agents for comparison", "summary_stats": summary_stats}
 
     # Kruskal-Wallis test (non-parametric ANOVA)
     score_groups = [agent_scores[name] for name in agent_names]
@@ -251,18 +263,6 @@ def compare_agents(
                 "effect_size": float(effect_size),
                 "mean_diff": float(np.mean(scores1) - np.mean(scores2)),
             }
-
-    # Summary statistics per agent
-    summary_stats = {}
-    for name, scores in agent_scores.items():
-        summary_stats[name] = {
-            "mean": float(np.mean(scores)),
-            "std": float(np.std(scores)),
-            "median": float(np.median(scores)),
-            "min": float(np.min(scores)),
-            "max": float(np.max(scores)),
-            "n": len(scores),
-        }
 
     return {
         "test_name": test_name,

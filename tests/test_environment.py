@@ -318,6 +318,7 @@ class TestEnvironmentModes:
         env = ForagingGridEnv(
             grid_size=20,
             mode=EnvironmentMode.PATH_BLOCKAGE,
+            energy_decay_rate=0.1,  # Slow decay to survive long enough
             seed=42,
         )
         env.reset()
@@ -327,7 +328,9 @@ class TestEnvironmentModes:
 
         # Step past blockage point
         for _ in range(env.mode_config.blockage_step + 5):
-            env.step(Action.STAY)
+            obs, reward, terminated, truncated, info = env.step(Action.STAY)
+            if terminated or truncated:
+                break
 
         assert env.path_blocked
 
