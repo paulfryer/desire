@@ -55,17 +55,18 @@ def create_agents(config: Config, env: ForagingGridEnv) -> Dict[str, BaseAgent]:
     except ImportError as e:
         raise ImportError(f"Could not create RL agent: {e}")
 
-    # 3. Active Inference agent
+    # 3. Active Inference agent (using fast implementation)
     try:
-        from src.agents.active_inference import ActiveInferenceAgent, HAS_PYMDP
+        from src.agents.active_inference_fast import ActiveInferenceFast, HAS_PYMDP
         if not HAS_PYMDP:
             raise ImportError("pymdp is required. Install with: pip install inferactively-pymdp")
-        agents["active_inference"] = ActiveInferenceAgent(
+        agents["active_inference"] = ActiveInferenceFast(
             observation_space=env.observation_space,
             action_space=env.action_space,
             planning_horizon=config.agent.planning_horizon,
             policy_precision=config.agent.policy_precision,
             grid_size=config.environment.grid_size,
+            beam_width=20,
             seed=config.training.seed,
         )
     except ImportError as e:

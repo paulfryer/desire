@@ -4,9 +4,9 @@ output_dir: outputs
 environment:
   grid_size: 20
   max_steps: 500
-  initial_energy: 100.0
-  max_energy: 100.0
-  energy_decay_rate: 1.0
+  initial_energy: 150.0
+  max_energy: 150.0
+  energy_decay_rate: 0.3
   local_view_size: 5
   mode: baseline
   render_mode: null
@@ -20,7 +20,7 @@ agent:
   n_epochs: 10
   clip_range: 0.2
   ent_coef: 0.01
-  planning_horizon: 1  # Single-step for speed (3 is too slow)
+  planning_horizon: 3  # Multi-step planning (fast implementation)
   num_states: 100
   policy_precision: 4.0
   hidden_sizes:

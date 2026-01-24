@@ -9,10 +9,12 @@ from src.agents.base_agent import BaseAgent
 from src.agents.heuristic import HeuristicAgent
 from src.agents.rl_agent import RLAgent
 from src.agents.active_inference import ActiveInferenceAgent
+from src.agents.active_inference_fast import ActiveInferenceFast
 
 __all__ = [
     "BaseAgent",
     "HeuristicAgent",
     "RLAgent",
     "ActiveInferenceAgent",
+    "ActiveInferenceFast",
 ]

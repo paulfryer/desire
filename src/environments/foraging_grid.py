@@ -59,9 +59,9 @@ class ForagingGridEnv(BaseEnvironment):
         self,
         grid_size: int = 20,
         max_steps: int = 1000,
-        initial_energy: float = 100.0,
-        max_energy: float = 100.0,
-        energy_decay_rate: float = 1.0,
+        initial_energy: float = 150.0,
+        max_energy: Optional[float] = None,
+        energy_decay_rate: float = 0.3,
         local_view_size: int = 5,
         mode: EnvironmentMode = EnvironmentMode.BASELINE,
         mode_config: Optional[ModeConfig] = None,
@@ -85,6 +85,10 @@ class ForagingGridEnv(BaseEnvironment):
         """
         self.local_view_size = local_view_size
         self.mode = mode
+
+        # Set max_energy to initial_energy if not specified
+        if max_energy is None:
+            max_energy = initial_energy
 
         # Get mode configuration
         if mode_config is not None:
@@ -307,6 +311,9 @@ class ForagingGridEnv(BaseEnvironment):
         reward = 0.0
         action = Action(action)
 
+        # Track distance to nearest resource before action for reward shaping
+        old_nearest_dist = self._get_nearest_resource_distance()
+
         if action == Action.CONSUME:
             # Try to consume a resource
             for resource in self.resources:
@@ -317,6 +324,7 @@ class ForagingGridEnv(BaseEnvironment):
 
                     if energy_gained > 0:
                         reward += energy_gained / 10.0  # Scale reward
+                        reward += 5.0  # Bonus for successfully eating
                     break
         elif action in DIRECTION_VECTORS:
             # Movement action
@@ -330,6 +338,12 @@ class ForagingGridEnv(BaseEnvironment):
 
                 self.agent_position = new_position
 
+                # Reward shaping: small reward for moving toward visible food
+                new_nearest_dist = self._get_nearest_resource_distance()
+                if old_nearest_dist is not None and new_nearest_dist is not None:
+                    if new_nearest_dist < old_nearest_dist:
+                        reward += 0.1  # Moving closer to food
+
         # Update resources
         for resource in self.resources:
             resource.update()
@@ -341,6 +355,21 @@ class ForagingGridEnv(BaseEnvironment):
         reward += 0.01
 
         return reward
+
+    def _get_nearest_resource_distance(self) -> Optional[float]:
+        """Get distance to nearest active visible resource."""
+        visible = self.get_visible_resources()
+        if not visible:
+            return None
+
+        min_dist = float('inf')
+        for resource in visible:
+            if resource.is_active:
+                dist = resource.distance_to(self.agent_position)
+                if dist < min_dist:
+                    min_dist = dist
+
+        return min_dist if min_dist < float('inf') else None
 
     def _update_mode_state(self) -> None:
         """Update mode-specific state."""

@@ -4,9 +4,9 @@ output_dir: outputs
 environment:
   grid_size: 20
   max_steps: 1000
-  initial_energy: 100.0
-  max_energy: 100.0
-  energy_decay_rate: 1.0
+  initial_energy: 150.0
+  max_energy: 150.0
+  energy_decay_rate: 0.3
   local_view_size: 5
   mode: baseline
   render_mode: null
@@ -28,7 +28,7 @@ agent:
     - 64
 
 training:
-  total_timesteps: 100000
+  total_timesteps: 500000
   eval_freq: 10000
   n_eval_episodes: 10
   save_freq: 10000

@@ -26,6 +26,10 @@ from src.agents.base_agent import BaseAgent
 from src.agents.heuristic import HeuristicAgent
 from src.tests.frustration import FrustrationIntensificationTest
 from src.tests.means_end import MeansEndDecouplingTest
+from src.tests.extinction import ExtinctionResistanceTest
+from src.tests.anticipation import AnticipatoryActivationTest
+from src.tests.opportunity_cost import OpportunityCostSensitivityTest
+from src.tests.state_dependent import StateDependentValuationTest
 from src.tests.base_test import TestResult
 from src.analysis.metrics import compare_agents
 from src.utils.config import Config, load_config
@@ -79,15 +83,16 @@ def load_single_agent(
                 if verbose:
                     print(f"    Loaded model from {model_path}")
     elif agent_name == "active_inference":
-        from src.agents.active_inference import ActiveInferenceAgent, HAS_PYMDP
+        from src.agents.active_inference_fast import ActiveInferenceFast, HAS_PYMDP
         if not HAS_PYMDP:
             raise ImportError("pymdp required")
-        agent = ActiveInferenceAgent(
+        agent = ActiveInferenceFast(
             observation_space=env.observation_space,
             action_space=env.action_space,
             planning_horizon=config.agent.planning_horizon,
             policy_precision=config.agent.policy_precision,
             grid_size=config.environment.grid_size,
+            beam_width=20,  # Fast beam search
             seed=config.training.seed,
         )
     else:
@@ -270,7 +275,8 @@ def run_all_tests(
     """Run predicate tests on agents."""
     all_results = {}
 
-    tests_to_run = test_filter if test_filter else ["frustration", "means_end"]
+    all_tests = ["frustration", "means_end", "extinction", "anticipation", "opportunity_cost", "state_dependent"]
+    tests_to_run = test_filter if test_filter else all_tests
 
     # Test 1: Frustration Intensification
     if "frustration" in tests_to_run:
@@ -331,6 +337,122 @@ def run_all_tests(
             print(f"    MED Score: {result.score:.3f} ({elapsed:.1f}s)")
 
         all_results["means_end_decoupling"] = med_results
+
+    # Test 3: Extinction Resistance
+    if "extinction" in tests_to_run:
+        print("\n" + "="*50)
+        print("Running Extinction Resistance Test")
+        print("="*50)
+
+        er_test = ExtinctionResistanceTest(
+            n_trials=config.test.n_trials,
+            baseline_episodes=config.test.baseline_episodes,
+            test_episodes=config.test.test_episodes,
+            grid_size=config.environment.grid_size,
+            seed=config.training.seed,
+            output_dir=str(output_dir / "extinction"),
+        )
+
+        er_results = {}
+        for agent_name, agent in agents.items():
+            print(f"\n  Testing {agent_name}...")
+            sys.stdout.flush()
+
+            start = time.time()
+            result = er_test.run(agent)
+            elapsed = time.time() - start
+
+            er_results[agent_name] = result
+            print(f"    ER Score: {result.score:.3f} ({elapsed:.1f}s)")
+
+        all_results["extinction_resistance"] = er_results
+
+    # Test 4: Anticipatory Activation
+    if "anticipation" in tests_to_run:
+        print("\n" + "="*50)
+        print("Running Anticipatory Activation Test")
+        print("="*50)
+
+        aa_test = AnticipatoryActivationTest(
+            n_trials=config.test.n_trials,
+            baseline_episodes=config.test.baseline_episodes,
+            test_episodes=config.test.test_episodes,
+            grid_size=config.environment.grid_size,
+            seed=config.training.seed,
+            output_dir=str(output_dir / "anticipation"),
+        )
+
+        aa_results = {}
+        for agent_name, agent in agents.items():
+            print(f"\n  Testing {agent_name}...")
+            sys.stdout.flush()
+
+            start = time.time()
+            result = aa_test.run(agent)
+            elapsed = time.time() - start
+
+            aa_results[agent_name] = result
+            print(f"    AA Score: {result.score:.3f} ({elapsed:.1f}s)")
+
+        all_results["anticipatory_activation"] = aa_results
+
+    # Test 5: Opportunity Cost Sensitivity
+    if "opportunity_cost" in tests_to_run:
+        print("\n" + "="*50)
+        print("Running Opportunity Cost Sensitivity Test")
+        print("="*50)
+
+        ocs_test = OpportunityCostSensitivityTest(
+            n_trials=config.test.n_trials,
+            baseline_episodes=config.test.baseline_episodes,
+            test_episodes=config.test.test_episodes,
+            grid_size=config.environment.grid_size,
+            seed=config.training.seed,
+            output_dir=str(output_dir / "opportunity_cost"),
+        )
+
+        ocs_results = {}
+        for agent_name, agent in agents.items():
+            print(f"\n  Testing {agent_name}...")
+            sys.stdout.flush()
+
+            start = time.time()
+            result = ocs_test.run(agent)
+            elapsed = time.time() - start
+
+            ocs_results[agent_name] = result
+            print(f"    OCS Score: {result.score:.3f} ({elapsed:.1f}s)")
+
+        all_results["opportunity_cost_sensitivity"] = ocs_results
+
+    # Test 6: State-Dependent Valuation
+    if "state_dependent" in tests_to_run:
+        print("\n" + "="*50)
+        print("Running State-Dependent Valuation Test")
+        print("="*50)
+
+        sdv_test = StateDependentValuationTest(
+            n_trials=config.test.n_trials,
+            baseline_episodes=config.test.baseline_episodes,
+            test_episodes=config.test.test_episodes,
+            grid_size=config.environment.grid_size,
+            seed=config.training.seed,
+            output_dir=str(output_dir / "state_dependent"),
+        )
+
+        sdv_results = {}
+        for agent_name, agent in agents.items():
+            print(f"\n  Testing {agent_name}...")
+            sys.stdout.flush()
+
+            start = time.time()
+            result = sdv_test.run(agent)
+            elapsed = time.time() - start
+
+            sdv_results[agent_name] = result
+            print(f"    SDV Score: {result.score:.3f} ({elapsed:.1f}s)")
+
+        all_results["state_dependent_valuation"] = sdv_results
 
     return all_results
 
