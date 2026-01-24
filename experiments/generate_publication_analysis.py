@@ -54,19 +54,38 @@ def compute_effect_size_eta_squared(groups: List[List[float]]) -> float:
     return max(0, eta_sq)
 
 
-def compute_cohens_d(group1: List[float], group2: List[float]) -> float:
-    """Compute Cohen's d effect size."""
+def compute_cohens_d(group1: List[float], group2: List[float]) -> tuple:
+    """
+    Compute Cohen's d effect size with edge case handling.
+
+    Returns:
+        Tuple of (value, description) where:
+        - value: float or None (None for undefined cases)
+        - description: string describing the result
+    """
     n1, n2 = len(group1), len(group2)
     if n1 < 2 or n2 < 2:
-        return 0.0
+        return (0.0, "insufficient data")
 
+    mean1, mean2 = np.mean(group1), np.mean(group2)
     var1, var2 = np.var(group1, ddof=1), np.var(group2, ddof=1)
-    pooled_std = np.sqrt(((n1 - 1) * var1 + (n2 - 1) * var2) / (n1 + n2 - 2))
 
-    if pooled_std == 0:
-        return 0.0
+    # Calculate pooled standard deviation
+    pooled_var = ((n1 - 1) * var1 + (n2 - 1) * var2) / (n1 + n2 - 2)
+    pooled_std = np.sqrt(pooled_var)
 
-    return (np.mean(group1) - np.mean(group2)) / pooled_std
+    # Handle zero or near-zero pooled SD
+    if pooled_std < 1e-10:
+        mean_diff = abs(mean1 - mean2)
+        if mean_diff < 1e-10:
+            # Both groups have same mean and zero variance
+            return (0.0, "no difference")
+        else:
+            # Different means but zero variance = perfect separation
+            return (None, "perfect separation")
+
+    d = (mean1 - mean2) / pooled_std
+    return (d, "normal")
 
 
 def pairwise_mann_whitney(groups: Dict[str, List[float]]) -> List[Dict]:
@@ -85,7 +104,7 @@ def pairwise_mann_whitney(groups: Dict[str, List[float]]) -> List[Dict]:
 
             stat, p = stats.mannwhitneyu(g1, g2, alternative='two-sided')
             p_corrected = min(1.0, p * n_comparisons)  # Bonferroni
-            d = compute_cohens_d(g1, g2)
+            d_value, d_type = compute_cohens_d(g1, g2)
 
             results.append({
                 'comparison': f'{a1} vs {a2}',
@@ -94,7 +113,8 @@ def pairwise_mann_whitney(groups: Dict[str, List[float]]) -> List[Dict]:
                 'U_statistic': float(stat),
                 'p_value': float(p),
                 'p_corrected': float(p_corrected),
-                'cohens_d': float(d),
+                'cohens_d': d_value,
+                'cohens_d_type': d_type,
                 'significant': p_corrected < 0.05,
             })
 
@@ -315,12 +335,26 @@ def generate_html_report(results: Dict, output_path: Path) -> None:
 '''
             for pw in test_stats['_pairwise']:
                 d = pw['cohens_d']
-                if abs(d) >= 0.8:
+                d_type = pw.get('cohens_d_type', 'normal')
+
+                # Handle Cohen's d display based on type
+                if d_type == 'perfect separation':
+                    d_display = '∞ (perfect separation)'
                     d_class = 'effect-large'
-                elif abs(d) >= 0.5:
-                    d_class = 'effect-medium'
-                else:
+                elif d_type == 'no difference':
+                    d_display = '0.00 (no difference)'
                     d_class = 'effect-small'
+                elif d is None:
+                    d_display = 'undefined'
+                    d_class = 'effect-small'
+                else:
+                    d_display = f'{d:.2f}'
+                    if abs(d) >= 0.8:
+                        d_class = 'effect-large'
+                    elif abs(d) >= 0.5:
+                        d_class = 'effect-medium'
+                    else:
+                        d_class = 'effect-small'
 
                 sig_class = 'significant' if pw['significant'] else ''
                 html += f'''        <tr class="{sig_class}">
@@ -328,7 +362,7 @@ def generate_html_report(results: Dict, output_path: Path) -> None:
             <td>{pw['U_statistic']:.1f}</td>
             <td>{pw['p_value']:.4f}</td>
             <td>{pw['p_corrected']:.4f}</td>
-            <td class="{d_class}">{d:.2f}</td>
+            <td class="{d_class}">{d_display}</td>
             <td>{'Yes' if pw['significant'] else 'No'}</td>
         </tr>
 '''
