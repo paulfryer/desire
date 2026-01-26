@@ -22,8 +22,9 @@ WORKDIR /app
 # Copy dependency files first for caching
 COPY pyproject.toml ./
 
-# Install Python dependencies
+# Install CPU-only PyTorch first to avoid huge CUDA packages
 RUN pip install --upgrade pip setuptools wheel && \
+    pip install torch --index-url https://download.pytorch.org/whl/cpu && \
     pip install -e ".[dev]"
 
 # Install optional dependencies for visualization
