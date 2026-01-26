@@ -195,8 +195,8 @@ jobs:
           import numpy as np
           import scipy
           import gymnasium
-          from src.agents import create_agent
-          from src.environments import ForagingGridEnv
+          from src.agents import HeuristicAgent, RLAgent, BaseAgent
+          from src.environments.foraging_grid import ForagingGridEnv
           print('All imports successful')
           "
 
