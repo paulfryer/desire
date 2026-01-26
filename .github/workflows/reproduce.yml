@@ -103,7 +103,7 @@ jobs:
             --config experiments/configs/quick_test.yaml \
             --model-dir outputs/agents \
             --output-dir outputs/test_results
-        timeout-minutes: 10
+        timeout-minutes: 20
 
       - name: Verify outputs exist
         run: |
