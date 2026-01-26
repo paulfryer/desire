@@ -312,6 +312,86 @@ class RLAgent(BaseAgent):
 
         return probs.flatten()
 
+    def get_value_function_estimate(self, observation: Dict[str, np.ndarray]) -> float:
+        """
+        Get value function estimate for an observation.
+
+        Args:
+            observation: The observation to evaluate
+
+        Returns:
+            Estimated value (expected return from this state)
+        """
+        if self.model is None:
+            return 0.0
+
+        obs = self._prepare_observation(observation)
+        obs_tensor = self.model.policy.obs_to_tensor(obs)[0]
+
+        with torch.no_grad():
+            # Get value from critic network
+            value = self.model.policy.predict_values(obs_tensor)
+            return float(value.cpu().numpy().flatten()[0])
+
+    def get_gradient_magnitude(self, observation: Dict[str, np.ndarray]) -> float:
+        """
+        Get magnitude of policy gradient for an observation.
+
+        Measures how much the policy would change in response to this observation.
+
+        Args:
+            observation: The observation to evaluate
+
+        Returns:
+            Gradient magnitude (L2 norm)
+        """
+        if self.model is None:
+            return 0.0
+
+        obs = self._prepare_observation(observation)
+        obs_tensor = self.model.policy.obs_to_tensor(obs)[0]
+
+        # Enable gradients temporarily
+        for param in self.model.policy.parameters():
+            param.requires_grad_(True)
+
+        # Forward pass
+        features = self._feature_extractor(
+            {k: torch.tensor(v, dtype=torch.float32, device=next(self._feature_extractor.parameters()).device)
+             for k, v in observation.items()}
+        )
+
+        # Compute gradient w.r.t. features
+        features.sum().backward()
+
+        # Compute gradient magnitude
+        grad_magnitude = 0.0
+        for param in self._feature_extractor.parameters():
+            if param.grad is not None:
+                grad_magnitude += param.grad.norm().item() ** 2
+
+        grad_magnitude = np.sqrt(grad_magnitude)
+
+        # Reset gradients
+        self.model.policy.zero_grad()
+
+        return float(grad_magnitude)
+
+    def get_policy_entropy(self, observation: Dict[str, np.ndarray]) -> float:
+        """
+        Get entropy of the policy distribution for an observation.
+
+        Args:
+            observation: The observation to evaluate
+
+        Returns:
+            Entropy value (higher = more uncertain)
+        """
+        probs = self.get_action_probabilities(observation)
+        probs = probs + 1e-10  # Avoid log(0)
+        entropy = -np.sum(probs * np.log(probs))
+        return float(entropy)
+
     def reset(self) -> None:
         """Reset agent state for new episode."""
         self._last_internal_state = np.zeros(self.features_dim, dtype=np.float32)

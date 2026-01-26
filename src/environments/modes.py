@@ -18,6 +18,15 @@ class EnvironmentMode(Enum):
     PHANTOM = auto()        # Some resources are phantom (no energy)
     TRADEOFF = auto()       # Resources with different risk/reward profiles
 
+    # Extended modes for Phase 4
+    SCALED_50 = auto()           # 50x50 scaled environment
+    SCALED_100 = auto()          # 100x100 scaled environment
+    MULTI_AGENT = auto()         # Multi-agent environment
+    FOG_OF_WAR = auto()          # Partial observability
+    STOCHASTIC_RESOURCES = auto()  # Random resource dynamics
+    OBSTACLE_MAZE = auto()       # Maze-like obstacles
+    SEASONAL = auto()            # Seasonal resource variation
+
     def __str__(self) -> str:
         return self.name.lower()
 

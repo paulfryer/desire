@@ -1,5 +1,7 @@
 """
 Metrics computation for behavioral analysis.
+
+Extended with power analysis, Bayesian statistics, and comprehensive effect sizes.
 """
 
 from typing import Any, Dict, List, Optional, Tuple
@@ -9,6 +11,15 @@ from scipy import stats
 
 from src.tests.base_test import TestResult
 from src.utils.logging import EpisodeLog
+from src.analysis.statistical_power import (
+    compute_power_analysis,
+    bootstrap_difference_ci,
+    compute_bayes_factor,
+    compute_cohens_d,
+    compute_hedges_g,
+    compute_probability_of_superiority,
+    compute_comprehensive_statistics,
+)
 
 
 def compute_frustration_score(
@@ -187,17 +198,26 @@ def compare_agents(
     results: Dict[str, TestResult],
     test_name: str = "frustration_intensification",
     alpha: float = 0.05,
+    include_power_analysis: bool = True,
+    include_bayes_factor: bool = True,
+    include_bootstrap_ci: bool = True,
+    n_bootstrap: int = 10000,
 ) -> Dict[str, Any]:
     """
     Statistical comparison of agent test results.
 
     Uses Kruskal-Wallis test for overall comparison and
     Mann-Whitney U for pairwise comparisons with Bonferroni correction.
+    Extended with power analysis, Bayes factors, and bootstrap CIs.
 
     Args:
         results: Dictionary of agent_name -> TestResult
         test_name: Name of test being compared
         alpha: Significance level
+        include_power_analysis: Whether to compute power analysis
+        include_bayes_factor: Whether to compute Bayes factors
+        include_bootstrap_ci: Whether to compute bootstrap CIs
+        n_bootstrap: Number of bootstrap samples
 
     Returns:
         Dictionary with statistical comparison results
@@ -209,9 +229,9 @@ def compare_agents(
     agent_scores = {}
     for name, result in results.items():
         if "trial_scores" in result.raw_data:
-            agent_scores[name] = result.raw_data["trial_scores"]
+            agent_scores[name] = np.array(result.raw_data["trial_scores"])
         else:
-            agent_scores[name] = [result.score]
+            agent_scores[name] = np.array([result.score])
 
     # Summary statistics per agent (always computed)
     summary_stats = {}
@@ -254,15 +274,41 @@ def compare_agents(
 
             # Effect size (rank-biserial correlation)
             n1, n2 = len(scores1), len(scores2)
-            effect_size = 1 - (2 * u_stat) / (n1 * n2) if n1 * n2 > 0 else 0.0
+            rank_biserial = 1 - (2 * u_stat) / (n1 * n2) if n1 * n2 > 0 else 0.0
 
-            pairwise_results[f"{name1}_vs_{name2}"] = {
+            pairwise_result = {
                 "u_statistic": float(u_stat),
                 "p_value": float(u_pvalue),
                 "significant": u_pvalue < corrected_alpha,
-                "effect_size": float(effect_size),
+                "rank_biserial": float(rank_biserial),
                 "mean_diff": float(np.mean(scores1) - np.mean(scores2)),
             }
+
+            # Extended effect sizes
+            pairwise_result["effect_sizes"] = {
+                "cohens_d": compute_cohens_d(scores1, scores2),
+                "hedges_g": compute_hedges_g(scores1, scores2),
+                "probability_of_superiority": compute_probability_of_superiority(scores1, scores2),
+            }
+
+            # Power analysis
+            if include_power_analysis:
+                power_result = compute_power_analysis(scores1, scores2, alpha=alpha)
+                pairwise_result["power_analysis"] = power_result.to_dict()
+
+            # Bootstrap CI for difference
+            if include_bootstrap_ci:
+                bootstrap_result = bootstrap_difference_ci(
+                    scores1, scores2, n_bootstrap=n_bootstrap
+                )
+                pairwise_result["bootstrap_ci"] = bootstrap_result.to_dict()
+
+            # Bayes factor
+            if include_bayes_factor:
+                bf_result = compute_bayes_factor(scores1, scores2)
+                pairwise_result["bayes_factor"] = bf_result.to_dict()
+
+            pairwise_results[f"{name1}_vs_{name2}"] = pairwise_result
 
     return {
         "test_name": test_name,
@@ -275,6 +321,7 @@ def compare_agents(
         "summary_stats": summary_stats,
         "alpha": alpha,
         "corrected_alpha": corrected_alpha,
+        "n_comparisons": n_comparisons,
     }
 
 
