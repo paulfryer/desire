@@ -6,14 +6,13 @@ performing the same tasks.
 """
 
 from pathlib import Path
-from typing import Any, Dict, List, Optional, Tuple
 
 import numpy as np
 
 # Optional video dependencies
 try:
     import matplotlib.pyplot as plt
-    from matplotlib.animation import FuncAnimation, FFMpegWriter
+    from matplotlib.animation import FFMpegWriter, FuncAnimation
     HAS_MATPLOTLIB = True
 except ImportError:
     HAS_MATPLOTLIB = False
@@ -35,7 +34,7 @@ def generate_episode_video(
     output_path: Path,
     fps: int = 10,
     cell_size: int = 20,
-    resource_positions: Optional[List[Tuple[int, int]]] = None,
+    resource_positions: list[tuple[int, int]] | None = None,
 ) -> None:
     """
     Generate video of a single episode.
@@ -122,7 +121,7 @@ def generate_episode_video(
 
 
 def generate_comparison_video(
-    episodes_dict: Dict[str, EpisodeLog],
+    episodes_dict: dict[str, EpisodeLog],
     grid_size: int,
     output_path: Path,
     fps: int = 10,
@@ -241,10 +240,10 @@ def generate_comparison_video(
 def create_matplotlib_animation(
     episode: EpisodeLog,
     grid_size: int,
-    output_path: Optional[Path] = None,
-    figsize: Tuple[int, int] = (10, 10),
+    output_path: Path | None = None,
+    figsize: tuple[int, int] = (10, 10),
     interval: int = 100,
-) -> Optional[FuncAnimation]:
+) -> FuncAnimation | None:
     """
     Create matplotlib animation of episode.
 
@@ -305,7 +304,7 @@ def create_matplotlib_animation(
 
     if output_path:
         try:
-            writer = FFMpegWriter(fps=10, metadata=dict(artist='DESIRE'))
+            writer = FFMpegWriter(fps=10, metadata={"artist": 'DESIRE'})
             anim.save(str(output_path), writer=writer)
         except Exception as e:
             print(f"Warning: Could not save video: {e}")
@@ -319,7 +318,7 @@ def record_agent_episode(
     output_path: Path,
     fps: int = 10,
     cell_size: int = 20,
-    seed: Optional[int] = None,
+    seed: int | None = None,
 ) -> EpisodeLog:
     """
     Record an episode and generate video.

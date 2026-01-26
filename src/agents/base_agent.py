@@ -3,7 +3,7 @@ Abstract base agent interface for the Desire research project.
 """
 
 from abc import ABC, abstractmethod
-from typing import Any, Dict, Optional
+from typing import Any
 
 import numpy as np
 
@@ -28,7 +28,7 @@ class BaseAgent(ABC):
         observation_space: Any,
         action_space: Any,
         name: str = "base_agent",
-        seed: Optional[int] = None,
+        seed: int | None = None,
     ):
         """
         Initialize the base agent.
@@ -54,7 +54,7 @@ class BaseAgent(ABC):
         self.step_count: int = 0
 
     @abstractmethod
-    def act(self, observation: Dict[str, np.ndarray]) -> int:
+    def act(self, observation: dict[str, np.ndarray]) -> int:
         """
         Select an action given the current observation.
 
@@ -87,7 +87,7 @@ class BaseAgent(ABC):
         pass
 
     @abstractmethod
-    def get_internal_response(self, observation: Dict[str, np.ndarray]) -> np.ndarray:
+    def get_internal_response(self, observation: dict[str, np.ndarray]) -> np.ndarray:
         """
         Get the agent's internal response to a hypothetical observation.
 
@@ -123,8 +123,8 @@ class BaseAgent(ABC):
         """
         self.current_energy = energy
 
-    def update(self, observation: Dict[str, np.ndarray], action: int, reward: float,
-               next_observation: Dict[str, np.ndarray], done: bool) -> None:
+    def update(self, observation: dict[str, np.ndarray], action: int, reward: float,
+               next_observation: dict[str, np.ndarray], done: bool) -> None:
         """
         Update the agent based on a transition (for learning agents).
 
@@ -139,7 +139,7 @@ class BaseAgent(ABC):
         """
         self.step_count += 1
 
-    def save(self, path: str) -> None:
+    def save(self, path: str) -> None:  # noqa: B027
         """
         Save the agent's state to disk.
 
@@ -149,9 +149,8 @@ class BaseAgent(ABC):
         Args:
             path: Path to save to
         """
-        pass
 
-    def load(self, path: str) -> None:
+    def load(self, path: str) -> None:  # noqa: B027
         """
         Load the agent's state from disk.
 
@@ -161,14 +160,13 @@ class BaseAgent(ABC):
         Args:
             path: Path to load from
         """
-        pass
 
     @property
     def internal_state_dim(self) -> int:
         """Dimension of the internal state vector."""
         return len(self.get_internal_state())
 
-    def get_action_probabilities(self, observation: Dict[str, np.ndarray]) -> np.ndarray:
+    def get_action_probabilities(self, observation: dict[str, np.ndarray]) -> np.ndarray:
         """
         Get probability distribution over actions.
 

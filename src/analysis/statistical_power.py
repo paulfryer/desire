@@ -6,7 +6,7 @@ for rigorous evaluation of predicate test results.
 """
 
 from dataclasses import dataclass
-from typing import Any, Dict, List, Optional, Tuple, Union
+from typing import Any
 
 import numpy as np
 from scipy import stats
@@ -25,7 +25,7 @@ class PowerAnalysisResult:
     current_n_per_group: int
     is_adequately_powered: bool
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         return {
             "observed_power": self.observed_power,
             "required_n_per_group": self.required_n_per_group,
@@ -48,9 +48,9 @@ class BootstrapCIResult:
     confidence: float
     n_bootstrap: int
     standard_error: float
-    bootstrap_distribution: Optional[np.ndarray] = None
+    bootstrap_distribution: np.ndarray | None = None
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         return {
             "estimate": self.estimate,
             "ci_lower": self.ci_lower,
@@ -72,7 +72,7 @@ class BayesFactorResult:
     effect_size: float
     prior_scale: float
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         return {
             "bf10": self.bf10,
             "bf01": self.bf01,
@@ -191,7 +191,7 @@ def bootstrap_confidence_interval(
     statistic_fn: callable = np.mean,
     n_bootstrap: int = 10000,
     confidence: float = 0.95,
-    seed: Optional[int] = None,
+    seed: int | None = None,
     return_distribution: bool = False,
 ) -> BootstrapCIResult:
     """
@@ -247,7 +247,7 @@ def bootstrap_difference_ci(
     group2: np.ndarray,
     n_bootstrap: int = 10000,
     confidence: float = 0.95,
-    seed: Optional[int] = None,
+    seed: int | None = None,
 ) -> BootstrapCIResult:
     """
     Compute bootstrap CI for the difference between two groups.
@@ -329,7 +329,7 @@ def compute_bayes_factor(
     # Approximate BF using t-statistic based approach
     # This is a simplified approximation of the JZS BF
     t_stat = d / se
-    df = n1 + n2 - 2
+    n1 + n2 - 2
 
     # Compute BF10 using BIC approximation
     # BF10 ≈ sqrt(n) * exp(-t^2/2) for large n (simplified)
@@ -512,8 +512,8 @@ def compute_comprehensive_statistics(
     group2: np.ndarray,
     alpha: float = 0.05,
     n_bootstrap: int = 10000,
-    seed: Optional[int] = None,
-) -> Dict[str, Any]:
+    seed: int | None = None,
+) -> dict[str, Any]:
     """
     Compute comprehensive statistical comparison between two groups.
 

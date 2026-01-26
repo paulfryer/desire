@@ -5,14 +5,14 @@ Tests whether agents engage in exploration without immediate reward,
 a hallmark of curiosity-driven behavior.
 """
 
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any
 
 import numpy as np
 
 from src.agents.base_agent import BaseAgent
 from src.environments.foraging_grid import ForagingGridEnv
 from src.environments.modes import EnvironmentMode, ModeConfig
-from src.tests.base_test import BasePredicateTest, BaselineData, TestResult
+from src.tests.base_test import BaselineData, BasePredicateTest, TestResult
 from src.utils.logging import EpisodeLog
 
 
@@ -40,8 +40,8 @@ class InformationSeekingTest(BasePredicateTest):
         test_episodes: int = 30,
         grid_size: int = 20,
         novel_region_size: int = 6,
-        seed: Optional[int] = None,
-        output_dir: Optional[str] = None,
+        seed: int | None = None,
+        output_dir: str | None = None,
     ):
         """
         Initialize Information Seeking test.
@@ -73,7 +73,7 @@ class InformationSeekingTest(BasePredicateTest):
             (novel_region_size, grid_size),       # (x_end, y_end)
         )
 
-    def create_baseline_env(self, seed: Optional[int] = None) -> ForagingGridEnv:
+    def create_baseline_env(self, seed: int | None = None) -> ForagingGridEnv:
         """Create baseline environment with resources in familiar area."""
         # Resources only in familiar (lower left) area
         config = ModeConfig(
@@ -102,7 +102,7 @@ class InformationSeekingTest(BasePredicateTest):
             seed=seed,
         )
 
-    def create_test_env(self, seed: Optional[int] = None) -> ForagingGridEnv:
+    def create_test_env(self, seed: int | None = None) -> ForagingGridEnv:
         """Create test environment with novel region containing resources."""
         # Resources in both familiar and novel regions
         config = ModeConfig(
@@ -138,8 +138,8 @@ class InformationSeekingTest(BasePredicateTest):
     def compute_score(
         self,
         baseline_data: BaselineData,
-        test_episodes: List[EpisodeLog],
-    ) -> Tuple[float, Dict[str, Any]]:
+        test_episodes: list[EpisodeLog],
+    ) -> tuple[float, dict[str, Any]]:
         """
         Compute Information Seeking score.
 
@@ -211,8 +211,8 @@ class PureExplorationTest(BasePredicateTest):
         baseline_episodes: int = 30,
         test_episodes: int = 30,
         grid_size: int = 20,
-        seed: Optional[int] = None,
-        output_dir: Optional[str] = None,
+        seed: int | None = None,
+        output_dir: str | None = None,
     ):
         super().__init__(
             name="pure_exploration",
@@ -225,7 +225,7 @@ class PureExplorationTest(BasePredicateTest):
 
         self.grid_size = grid_size
 
-    def create_baseline_env(self, seed: Optional[int] = None) -> ForagingGridEnv:
+    def create_baseline_env(self, seed: int | None = None) -> ForagingGridEnv:
         """Create baseline environment with resources."""
         return ForagingGridEnv(
             grid_size=self.grid_size,
@@ -237,7 +237,7 @@ class PureExplorationTest(BasePredicateTest):
             seed=seed,
         )
 
-    def create_test_env(self, seed: Optional[int] = None) -> ForagingGridEnv:
+    def create_test_env(self, seed: int | None = None) -> ForagingGridEnv:
         """Create environment with NO resources."""
         config = ModeConfig(
             mode=EnvironmentMode.BASELINE,
@@ -262,8 +262,8 @@ class PureExplorationTest(BasePredicateTest):
     def compute_score(
         self,
         baseline_data: BaselineData,
-        test_episodes: List[EpisodeLog],
-    ) -> Tuple[float, Dict[str, Any]]:
+        test_episodes: list[EpisodeLog],
+    ) -> tuple[float, dict[str, Any]]:
         """
         Compute exploration score based on area coverage.
 
@@ -304,11 +304,11 @@ class PureExplorationTest(BasePredicateTest):
 
 
 def run_information_seeking_test(
-    agents: List[BaseAgent],
+    agents: list[BaseAgent],
     n_trials: int = 10,
-    seed: Optional[int] = None,
-    output_dir: Optional[str] = None,
-) -> Dict[str, TestResult]:
+    seed: int | None = None,
+    output_dir: str | None = None,
+) -> dict[str, TestResult]:
     """Run Information Seeking test on multiple agents."""
     test = InformationSeekingTest(
         n_trials=n_trials,

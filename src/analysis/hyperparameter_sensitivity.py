@@ -5,16 +5,17 @@ Provides tools for systematic evaluation of how results change
 with different hyperparameter settings.
 """
 
+import json
+from collections.abc import Callable
 from dataclasses import dataclass
 from itertools import product
 from pathlib import Path
-from typing import Any, Callable, Dict, List, Optional, Tuple
+from typing import Any
 
-import json
 import numpy as np
 
 from src.agents.base_agent import BaseAgent
-from src.tests.base_test import BasePredicateTest, TestResult
+from src.tests.base_test import BasePredicateTest
 
 
 @dataclass
@@ -22,13 +23,13 @@ class SensitivityResult:
     """Result from sensitivity analysis."""
 
     parameter_name: str
-    parameter_values: List[Any]
-    scores: List[float]
+    parameter_values: list[Any]
+    scores: list[float]
     baseline_value: Any
     baseline_score: float
     sensitivity_coefficient: float  # d(score)/d(param)
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         return {
             "parameter_name": self.parameter_name,
             "parameter_values": self.parameter_values,
@@ -43,15 +44,15 @@ class SensitivityResult:
 class GridSearchResult:
     """Result from grid search sensitivity analysis."""
 
-    parameter_grid: Dict[str, List[Any]]
-    results: List[Dict[str, Any]]
-    best_params: Dict[str, Any]
+    parameter_grid: dict[str, list[Any]]
+    results: list[dict[str, Any]]
+    best_params: dict[str, Any]
     best_score: float
-    worst_params: Dict[str, Any]
+    worst_params: dict[str, Any]
     worst_score: float
     score_variance: float
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         return {
             "parameter_grid": self.parameter_grid,
             "n_combinations": len(self.results),
@@ -76,8 +77,8 @@ class HyperparameterSensitivityAnalysis:
 
     def __init__(
         self,
-        baseline_config: Dict[str, Any],
-        seed: Optional[int] = None,
+        baseline_config: dict[str, Any],
+        seed: int | None = None,
     ):
         """
         Initialize sensitivity analysis.
@@ -92,9 +93,9 @@ class HyperparameterSensitivityAnalysis:
 
     def analyze_single_parameter(
         self,
-        test_fn: Callable[[Dict[str, Any]], float],
+        test_fn: Callable[[dict[str, Any]], float],
         parameter_name: str,
-        parameter_values: List[Any],
+        parameter_values: list[Any],
     ) -> SensitivityResult:
         """
         Analyze sensitivity to a single parameter.
@@ -148,8 +149,8 @@ class HyperparameterSensitivityAnalysis:
 
     def grid_search_sensitivity(
         self,
-        test_fn: Callable[[Dict[str, Any]], float],
-        parameter_grid: Dict[str, List[Any]],
+        test_fn: Callable[[dict[str, Any]], float],
+        parameter_grid: dict[str, list[Any]],
         n_repeats: int = 1,
     ) -> GridSearchResult:
         """
@@ -172,7 +173,7 @@ class HyperparameterSensitivityAnalysis:
 
         for combo in combinations:
             config = self.baseline_config.copy()
-            for name, value in zip(param_names, combo):
+            for name, value in zip(param_names, combo, strict=False):
                 config[name] = value
 
             # Run with repeats
@@ -185,7 +186,7 @@ class HyperparameterSensitivityAnalysis:
             std_score = np.std(scores) if n_repeats > 1 else 0.0
 
             results.append({
-                "params": dict(zip(param_names, combo)),
+                "params": dict(zip(param_names, combo, strict=False)),
                 "mean_score": float(mean_score),
                 "std_score": float(std_score),
             })
@@ -210,9 +211,9 @@ class HyperparameterSensitivityAnalysis:
 
     def bootstrap_sensitivity(
         self,
-        test_fn: Callable[[Dict[str, Any]], float],
+        test_fn: Callable[[dict[str, Any]], float],
         n_bootstrap: int = 100,
-    ) -> Dict[str, float]:
+    ) -> dict[str, float]:
         """
         Bootstrap sensitivity to random seed.
 
@@ -244,9 +245,9 @@ class HyperparameterSensitivityAnalysis:
 def run_sensitivity_analysis(
     test: BasePredicateTest,
     agent: BaseAgent,
-    parameters_to_test: Dict[str, List[Any]],
-    output_dir: Optional[Path] = None,
-) -> Dict[str, Any]:
+    parameters_to_test: dict[str, list[Any]],
+    output_dir: Path | None = None,
+) -> dict[str, Any]:
     """
     Run comprehensive sensitivity analysis.
 
@@ -268,7 +269,7 @@ def run_sensitivity_analysis(
 
     analysis = HyperparameterSensitivityAnalysis(baseline_config)
 
-    def run_test(config: Dict[str, Any]) -> float:
+    def run_test(config: dict[str, Any]) -> float:
         test.n_trials = config.get("n_trials", test.n_trials)
         test.baseline_episodes = config.get("baseline_episodes", test.baseline_episodes)
         test.test_episodes = config.get("test_episodes", test.test_episodes)
@@ -310,10 +311,10 @@ def run_sensitivity_analysis(
 def analyze_sample_size_requirements(
     test: BasePredicateTest,
     agent: BaseAgent,
-    trial_sizes: List[int] = None,
-    episode_sizes: List[int] = None,
+    trial_sizes: list[int] = None,
+    episode_sizes: list[int] = None,
     n_repeats: int = 5,
-) -> Dict[str, Any]:
+) -> dict[str, Any]:
     """
     Analyze sample size requirements for stable results.
 

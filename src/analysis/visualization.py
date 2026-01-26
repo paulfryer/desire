@@ -3,16 +3,12 @@ Visualization utilities for behavioral analysis.
 """
 
 from pathlib import Path
-from typing import Any, Dict, List, Optional, Tuple
 
-import numpy as np
 import matplotlib.pyplot as plt
-import matplotlib.patches as patches
-from matplotlib.colors import LinearSegmentedColormap
+import numpy as np
 
-from src.utils.logging import EpisodeLog
 from src.tests.base_test import TestResult
-
+from src.utils.logging import EpisodeLog
 
 # Color scheme for agent types
 AGENT_COLORS = {
@@ -32,10 +28,10 @@ def get_agent_color(agent_name: str) -> str:
 
 
 def plot_trajectories(
-    episodes: List[EpisodeLog],
+    episodes: list[EpisodeLog],
     grid_size: int = 20,
     title: str = "Agent Trajectories",
-    ax: Optional[plt.Axes] = None,
+    ax: plt.Axes | None = None,
     show_start_end: bool = True,
     alpha: float = 0.5,
     max_episodes: int = 10,
@@ -107,9 +103,9 @@ def plot_trajectories(
 
 
 def plot_internal_states(
-    episodes: List[EpisodeLog],
+    episodes: list[EpisodeLog],
     title: str = "Internal State Evolution",
-    ax: Optional[plt.Axes] = None,
+    ax: plt.Axes | None = None,
     max_episodes: int = 5,
     dimensionality_reduction: str = "pca",
 ) -> plt.Figure:
@@ -175,11 +171,11 @@ def plot_internal_states(
 
 
 def plot_learning_curves(
-    training_data: Dict[str, List[float]],
+    training_data: dict[str, list[float]],
     title: str = "Learning Curves",
     xlabel: str = "Episode",
     ylabel: str = "Reward",
-    ax: Optional[plt.Axes] = None,
+    ax: plt.Axes | None = None,
     smoothing: int = 10,
 ) -> plt.Figure:
     """
@@ -231,9 +227,9 @@ def plot_learning_curves(
 
 
 def plot_predicate_scores(
-    results: Dict[str, TestResult],
+    results: dict[str, TestResult],
     title: str = "Predicate Test Scores",
-    ax: Optional[plt.Axes] = None,
+    ax: plt.Axes | None = None,
 ) -> plt.Figure:
     """
     Plot bar chart comparing predicate test scores across agents.
@@ -275,7 +271,7 @@ def plot_predicate_scores(
     ax.errorbar(x, scores, yerr=stds, fmt='none', color='black', capsize=5)
 
     # Add value labels
-    for bar, score in zip(bars, scores):
+    for bar, score in zip(bars, scores, strict=False):
         height = bar.get_height()
         ax.annotate(
             f'{score:.2f}',
@@ -302,7 +298,7 @@ def plot_frustration_response(
     post_blockage_intensity: np.ndarray,
     blockage_step: int,
     agent_name: str,
-    ax: Optional[plt.Axes] = None,
+    ax: plt.Axes | None = None,
 ) -> plt.Figure:
     """
     Plot frustration intensification response.
@@ -359,11 +355,11 @@ def plot_frustration_response(
 
 
 def plot_comparison_grid(
-    results: Dict[str, Dict[str, TestResult]],
-    test_names: List[str],
-    agent_names: List[str],
+    results: dict[str, dict[str, TestResult]],
+    test_names: list[str],
+    agent_names: list[str],
     title: str = "Agent Comparison Across Tests",
-    figsize: Tuple[int, int] = (12, 8),
+    figsize: tuple[int, int] = (12, 8),
 ) -> plt.Figure:
     """
     Create a grid showing all agents across all tests.
@@ -411,7 +407,7 @@ def save_figure(
     fig: plt.Figure,
     path: Path,
     dpi: int = 150,
-    formats: List[str] = ["png", "pdf"],
+    formats: list[str] = None,
 ) -> None:
     """
     Save figure in multiple formats.
@@ -422,6 +418,8 @@ def save_figure(
         dpi: Resolution for raster formats
         formats: List of formats to save
     """
+    if formats is None:
+        formats = ["png", "pdf"]
     path = Path(path)
     path.parent.mkdir(parents=True, exist_ok=True)
 
@@ -436,9 +434,9 @@ def save_figure(
 
 
 def create_summary_report(
-    results: Dict[str, TestResult],
+    results: dict[str, TestResult],
     output_path: Path,
-    training_data: Optional[Dict[str, List[float]]] = None,
+    training_data: dict[str, list[float]] | None = None,
 ) -> None:
     """
     Create a comprehensive visual summary report.

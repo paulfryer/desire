@@ -3,12 +3,11 @@ Unit tests for environment components.
 """
 
 import numpy as np
-import pytest
 
-from src.environments.foraging_grid import ForagingGridEnv, Action
+from src.environments.foraging_grid import Action, ForagingGridEnv
+from src.environments.modes import EnvironmentMode, get_mode_config
 from src.environments.resources import Resource, ResourceType, create_resource_cluster
 from src.environments.terrain import TerrainGrid, TerrainType
-from src.environments.modes import EnvironmentMode, get_mode_config
 
 
 class TestResource:
@@ -267,7 +266,7 @@ class TestForagingGridEnv:
         )
         env.reset()
 
-        for i in range(15):
+        for _i in range(15):
             obs, reward, terminated, truncated, info = env.step(Action.STAY)
             if truncated:
                 break

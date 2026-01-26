@@ -3,11 +3,10 @@ Abstract base environment interface for the Desire research project.
 """
 
 from abc import ABC, abstractmethod
-from typing import Any, Tuple, Dict, Optional
+from typing import Any
 
-import numpy as np
 import gymnasium as gym
-from gymnasium import spaces
+import numpy as np
 
 
 class BaseEnvironment(gym.Env, ABC):
@@ -30,8 +29,8 @@ class BaseEnvironment(gym.Env, ABC):
         initial_energy: float = 100.0,
         max_energy: float = 100.0,
         energy_decay_rate: float = 1.0,
-        render_mode: Optional[str] = None,
-        seed: Optional[int] = None,
+        render_mode: str | None = None,
+        seed: int | None = None,
     ):
         """
         Initialize the base environment.
@@ -55,7 +54,7 @@ class BaseEnvironment(gym.Env, ABC):
         self.render_mode = render_mode
 
         # Set random seed
-        self._np_random: Optional[np.random.Generator] = None
+        self._np_random: np.random.Generator | None = None
         if seed is not None:
             self._np_random = np.random.default_rng(seed)
 
@@ -79,7 +78,7 @@ class BaseEnvironment(gym.Env, ABC):
         pass
 
     @abstractmethod
-    def _get_info(self) -> Dict[str, Any]:
+    def _get_info(self) -> dict[str, Any]:
         """Get additional info dict. Must be implemented by subclasses."""
         pass
 
@@ -99,9 +98,9 @@ class BaseEnvironment(gym.Env, ABC):
 
     def reset(
         self,
-        seed: Optional[int] = None,
-        options: Optional[Dict[str, Any]] = None,
-    ) -> Tuple[np.ndarray, Dict[str, Any]]:
+        seed: int | None = None,
+        options: dict[str, Any] | None = None,
+    ) -> tuple[np.ndarray, dict[str, Any]]:
         """
         Reset the environment to initial state.
 
@@ -130,11 +129,11 @@ class BaseEnvironment(gym.Env, ABC):
         return self._get_observation(), self._get_info()
 
     @abstractmethod
-    def _reset_state(self, options: Optional[Dict[str, Any]] = None) -> None:
+    def _reset_state(self, options: dict[str, Any] | None = None) -> None:
         """Reset environment-specific state. Must be implemented by subclasses."""
         pass
 
-    def step(self, action: int) -> Tuple[np.ndarray, float, bool, bool, Dict[str, Any]]:
+    def step(self, action: int) -> tuple[np.ndarray, float, bool, bool, dict[str, Any]]:
         """
         Execute one step in the environment.
 
@@ -173,7 +172,7 @@ class BaseEnvironment(gym.Env, ABC):
             self._get_info(),
         )
 
-    def render(self) -> Optional[np.ndarray]:
+    def render(self) -> np.ndarray | None:
         """Render the environment."""
         if self.render_mode == "ansi":
             return self._render_ansi()

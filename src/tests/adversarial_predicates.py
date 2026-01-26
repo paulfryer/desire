@@ -5,14 +5,14 @@ These tests create scenarios where pure RL approaches should excel,
 serving as control conditions to ensure fair comparison.
 """
 
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any
 
 import numpy as np
 
 from src.agents.base_agent import BaseAgent
 from src.environments.foraging_grid import ForagingGridEnv
 from src.environments.modes import EnvironmentMode, ModeConfig
-from src.tests.base_test import BasePredicateTest, BaselineData, TestResult
+from src.tests.base_test import BaselineData, BasePredicateTest, TestResult
 from src.utils.logging import EpisodeLog
 
 
@@ -35,8 +35,8 @@ class TemporalCreditAssignmentTest(BasePredicateTest):
         test_episodes: int = 30,
         grid_size: int = 20,
         delay_steps: int = 100,
-        seed: Optional[int] = None,
-        output_dir: Optional[str] = None,
+        seed: int | None = None,
+        output_dir: str | None = None,
     ):
         """
         Initialize Temporal Credit Assignment test.
@@ -62,7 +62,7 @@ class TemporalCreditAssignmentTest(BasePredicateTest):
         self.grid_size = grid_size
         self.delay_steps = delay_steps
 
-    def create_baseline_env(self, seed: Optional[int] = None) -> ForagingGridEnv:
+    def create_baseline_env(self, seed: int | None = None) -> ForagingGridEnv:
         """Create baseline with immediate rewards."""
         return ForagingGridEnv(
             grid_size=self.grid_size,
@@ -74,7 +74,7 @@ class TemporalCreditAssignmentTest(BasePredicateTest):
             seed=seed,
         )
 
-    def create_test_env(self, seed: Optional[int] = None) -> ForagingGridEnv:
+    def create_test_env(self, seed: int | None = None) -> ForagingGridEnv:
         """Create test environment with delayed reward (far resource)."""
         # Place resource in far corner
         config = ModeConfig(
@@ -100,8 +100,8 @@ class TemporalCreditAssignmentTest(BasePredicateTest):
     def compute_score(
         self,
         baseline_data: BaselineData,
-        test_episodes: List[EpisodeLog],
-    ) -> Tuple[float, Dict[str, Any]]:
+        test_episodes: list[EpisodeLog],
+    ) -> tuple[float, dict[str, Any]]:
         """
         Compute credit assignment score.
 
@@ -158,8 +158,8 @@ class StochasticRewardTest(BasePredicateTest):
         test_episodes: int = 30,
         grid_size: int = 20,
         reward_variance: float = 0.5,
-        seed: Optional[int] = None,
-        output_dir: Optional[str] = None,
+        seed: int | None = None,
+        output_dir: str | None = None,
     ):
         """
         Initialize Stochastic Reward test.
@@ -185,7 +185,7 @@ class StochasticRewardTest(BasePredicateTest):
         self.grid_size = grid_size
         self.reward_variance = reward_variance
 
-    def create_baseline_env(self, seed: Optional[int] = None) -> ForagingGridEnv:
+    def create_baseline_env(self, seed: int | None = None) -> ForagingGridEnv:
         """Create baseline with deterministic rewards."""
         return ForagingGridEnv(
             grid_size=self.grid_size,
@@ -197,7 +197,7 @@ class StochasticRewardTest(BasePredicateTest):
             seed=seed,
         )
 
-    def create_test_env(self, seed: Optional[int] = None) -> ForagingGridEnv:
+    def create_test_env(self, seed: int | None = None) -> ForagingGridEnv:
         """Create test environment (same, rewards modified during episode)."""
         return self.create_baseline_env(seed)
 
@@ -205,8 +205,8 @@ class StochasticRewardTest(BasePredicateTest):
         self,
         env: ForagingGridEnv,
         agent: BaseAgent,
-        seed: Optional[int] = None,
-        max_steps: Optional[int] = None,
+        seed: int | None = None,
+        max_steps: int | None = None,
     ) -> EpisodeLog:
         """Run episode with stochastic rewards."""
         obs, info = env.reset(seed=seed)
@@ -265,8 +265,8 @@ class StochasticRewardTest(BasePredicateTest):
     def compute_score(
         self,
         baseline_data: BaselineData,
-        test_episodes: List[EpisodeLog],
-    ) -> Tuple[float, Dict[str, Any]]:
+        test_episodes: list[EpisodeLog],
+    ) -> tuple[float, dict[str, Any]]:
         """Compute stochastic reward handling score."""
         # Compare test performance to baseline
         baseline_rewards = [e.total_reward for e in baseline_data.episodes]
@@ -313,8 +313,8 @@ class RewardShapingRobustnessTest(BasePredicateTest):
         test_episodes: int = 30,
         grid_size: int = 20,
         perturbation_strength: float = 0.3,
-        seed: Optional[int] = None,
-        output_dir: Optional[str] = None,
+        seed: int | None = None,
+        output_dir: str | None = None,
     ):
         """
         Initialize Reward Shaping Robustness test.
@@ -340,7 +340,7 @@ class RewardShapingRobustnessTest(BasePredicateTest):
         self.grid_size = grid_size
         self.perturbation_strength = perturbation_strength
 
-    def create_baseline_env(self, seed: Optional[int] = None) -> ForagingGridEnv:
+    def create_baseline_env(self, seed: int | None = None) -> ForagingGridEnv:
         """Create baseline environment."""
         return ForagingGridEnv(
             grid_size=self.grid_size,
@@ -352,7 +352,7 @@ class RewardShapingRobustnessTest(BasePredicateTest):
             seed=seed,
         )
 
-    def create_test_env(self, seed: Optional[int] = None) -> ForagingGridEnv:
+    def create_test_env(self, seed: int | None = None) -> ForagingGridEnv:
         """Create test environment."""
         return self.create_baseline_env(seed)
 
@@ -360,14 +360,14 @@ class RewardShapingRobustnessTest(BasePredicateTest):
         self,
         env: ForagingGridEnv,
         agent: BaseAgent,
-        seed: Optional[int] = None,
-        max_steps: Optional[int] = None,
+        seed: int | None = None,
+        max_steps: int | None = None,
     ) -> EpisodeLog:
         """Run episode with perturbed rewards."""
         obs, info = env.reset(seed=seed)
         agent.reset()
 
-        rng = np.random.default_rng(seed)
+        np.random.default_rng(seed)
 
         steps = []
         total_reward = 0.0
@@ -428,8 +428,8 @@ class RewardShapingRobustnessTest(BasePredicateTest):
     def compute_score(
         self,
         baseline_data: BaselineData,
-        test_episodes: List[EpisodeLog],
-    ) -> Tuple[float, Dict[str, Any]]:
+        test_episodes: list[EpisodeLog],
+    ) -> tuple[float, dict[str, Any]]:
         """Compute robustness to reward perturbation."""
         # Measure survival and energy maintenance despite misleading rewards
         survival_rate = np.mean([e.survived for e in test_episodes])
@@ -464,8 +464,8 @@ class RLAdversarialTest(BasePredicateTest):
         baseline_episodes: int = 30,
         test_episodes: int = 30,
         grid_size: int = 20,
-        seed: Optional[int] = None,
-        output_dir: Optional[str] = None,
+        seed: int | None = None,
+        output_dir: str | None = None,
     ):
         super().__init__(
             name="rl_adversarial_composite",
@@ -489,7 +489,7 @@ class RLAdversarialTest(BasePredicateTest):
             n_trials=n_trials, seed=seed
         )
 
-    def create_baseline_env(self, seed: Optional[int] = None) -> ForagingGridEnv:
+    def create_baseline_env(self, seed: int | None = None) -> ForagingGridEnv:
         return ForagingGridEnv(
             grid_size=self.grid_size,
             max_steps=500,
@@ -498,14 +498,14 @@ class RLAdversarialTest(BasePredicateTest):
             seed=seed,
         )
 
-    def create_test_env(self, seed: Optional[int] = None) -> ForagingGridEnv:
+    def create_test_env(self, seed: int | None = None) -> ForagingGridEnv:
         return self.create_baseline_env(seed)
 
     def compute_score(
         self,
         baseline_data: BaselineData,
-        test_episodes: List[EpisodeLog],
-    ) -> Tuple[float, Dict[str, Any]]:
+        test_episodes: list[EpisodeLog],
+    ) -> tuple[float, dict[str, Any]]:
         """Compute composite adversarial score."""
         # Simple average for this baseline implementation
         score = np.mean([e.total_reward for e in test_episodes])
@@ -546,11 +546,11 @@ class RLAdversarialTest(BasePredicateTest):
 
 
 def run_adversarial_tests(
-    agents: List[BaseAgent],
+    agents: list[BaseAgent],
     n_trials: int = 10,
-    seed: Optional[int] = None,
-    output_dir: Optional[str] = None,
-) -> Dict[str, TestResult]:
+    seed: int | None = None,
+    output_dir: str | None = None,
+) -> dict[str, TestResult]:
     """Run adversarial predicate tests on multiple agents."""
     test = RLAdversarialTest(
         n_trials=n_trials,

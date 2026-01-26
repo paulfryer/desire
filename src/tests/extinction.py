@@ -2,14 +2,14 @@
 Extinction Resistance (ER) test implementation.
 """
 
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any
 
 import numpy as np
 
 from src.agents.base_agent import BaseAgent
 from src.environments.foraging_grid import ForagingGridEnv
 from src.environments.modes import EnvironmentMode, get_mode_config
-from src.tests.base_test import BasePredicateTest, BaselineData, TestResult
+from src.tests.base_test import BaselineData, BasePredicateTest, TestResult
 from src.utils.logging import EpisodeLog
 
 
@@ -42,8 +42,8 @@ class ExtinctionResistanceTest(BasePredicateTest):
         extinction_start: int = 100,
         extinction_duration: int = 300,
         grid_size: int = 20,
-        seed: Optional[int] = None,
-        output_dir: Optional[str] = None,
+        seed: int | None = None,
+        output_dir: str | None = None,
     ):
         """
         Initialize the Extinction Resistance test.
@@ -71,7 +71,7 @@ class ExtinctionResistanceTest(BasePredicateTest):
         self.extinction_duration = extinction_duration
         self.grid_size = grid_size
 
-    def create_baseline_env(self, seed: Optional[int] = None) -> ForagingGridEnv:
+    def create_baseline_env(self, seed: int | None = None) -> ForagingGridEnv:
         """Create baseline environment with normal resources."""
         return ForagingGridEnv(
             grid_size=self.grid_size,
@@ -83,7 +83,7 @@ class ExtinctionResistanceTest(BasePredicateTest):
             seed=seed,
         )
 
-    def create_test_env(self, seed: Optional[int] = None) -> ForagingGridEnv:
+    def create_test_env(self, seed: int | None = None) -> ForagingGridEnv:
         """Create extinction environment with phantom resources."""
         # Use phantom mode where resources look real but give no energy
         mode_config = get_mode_config(EnvironmentMode.PHANTOM, self.grid_size)
@@ -102,8 +102,8 @@ class ExtinctionResistanceTest(BasePredicateTest):
     def compute_score(
         self,
         baseline_data: BaselineData,
-        test_episodes: List[EpisodeLog],
-    ) -> Tuple[float, Dict[str, Any]]:
+        test_episodes: list[EpisodeLog],
+    ) -> tuple[float, dict[str, Any]]:
         """
         Compute the Extinction Resistance score.
 
@@ -159,7 +159,7 @@ class ExtinctionResistanceTest(BasePredicateTest):
 
     def _compute_resource_seeking_rate(
         self,
-        episodes: List[EpisodeLog],
+        episodes: list[EpisodeLog],
     ) -> float:
         """Compute the rate of resource-seeking behavior."""
         total_seeking = 0
@@ -178,7 +178,7 @@ class ExtinctionResistanceTest(BasePredicateTest):
 
     def _compute_seeking_curve(
         self,
-        steps: List,
+        steps: list,
         window_size: int = 20,
     ) -> np.ndarray:
         """Compute resource-seeking behavior over time windows."""
@@ -217,11 +217,11 @@ class ExtinctionResistanceTest(BasePredicateTest):
 
 
 def run_extinction_test(
-    agents: List[BaseAgent],
+    agents: list[BaseAgent],
     n_trials: int = 10,
-    seed: Optional[int] = None,
-    output_dir: Optional[str] = None,
-) -> Dict[str, TestResult]:
+    seed: int | None = None,
+    output_dir: str | None = None,
+) -> dict[str, TestResult]:
     """Run the Extinction Resistance test on multiple agents."""
     test = ExtinctionResistanceTest(
         n_trials=n_trials,

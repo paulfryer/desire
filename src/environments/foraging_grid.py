@@ -3,15 +3,15 @@ Main foraging grid environment implementation.
 """
 
 from enum import IntEnum
-from typing import Optional, Dict, Any, Tuple, List
+from typing import Any
 
 import numpy as np
 from gymnasium import spaces
 
 from src.environments.base_env import BaseEnvironment
-from src.environments.resources import Resource, ResourceType, create_resource_cluster
-from src.environments.terrain import TerrainGrid, TerrainType
 from src.environments.modes import EnvironmentMode, ModeConfig, get_mode_config
+from src.environments.resources import Resource, ResourceType
+from src.environments.terrain import TerrainGrid, TerrainType
 
 
 class Action(IntEnum):
@@ -60,13 +60,13 @@ class ForagingGridEnv(BaseEnvironment):
         grid_size: int = 20,
         max_steps: int = 1000,
         initial_energy: float = 150.0,
-        max_energy: Optional[float] = None,
+        max_energy: float | None = None,
         energy_decay_rate: float = 0.3,
         local_view_size: int = 5,
         mode: EnvironmentMode = EnvironmentMode.BASELINE,
-        mode_config: Optional[ModeConfig] = None,
-        render_mode: Optional[str] = None,
-        seed: Optional[int] = None,
+        mode_config: ModeConfig | None = None,
+        render_mode: str | None = None,
+        seed: int | None = None,
     ):
         """
         Initialize the foraging grid environment.
@@ -109,7 +109,7 @@ class ForagingGridEnv(BaseEnvironment):
 
         # Initialize terrain and resources
         self.terrain = TerrainGrid(grid_size, rng=self.np_random)
-        self.resources: List[Resource] = []
+        self.resources: list[Resource] = []
 
         # Tracking for mode-specific behavior
         self.path_blocked = False
@@ -134,7 +134,7 @@ class ForagingGridEnv(BaseEnvironment):
             "step": spaces.Box(low=0, high=1, shape=(1,), dtype=np.float32),
         })
 
-    def _reset_state(self, options: Optional[Dict[str, Any]] = None) -> None:
+    def _reset_state(self, options: dict[str, Any] | None = None) -> None:
         """Reset environment-specific state."""
         Resource.reset_id_counter()
 
@@ -226,7 +226,7 @@ class ForagingGridEnv(BaseEnvironment):
                     resource_type=resource_type,
                 ))
 
-    def _get_observation(self) -> Dict[str, np.ndarray]:
+    def _get_observation(self) -> dict[str, np.ndarray]:
         """Get the current observation."""
         # Build local view
         local_view = self._get_local_view()
@@ -276,7 +276,7 @@ class ForagingGridEnv(BaseEnvironment):
 
         return local_view
 
-    def _get_info(self) -> Dict[str, Any]:
+    def _get_info(self) -> dict[str, Any]:
         """Get additional info dictionary."""
         # Find nearest active resource
         nearest_resource = None
@@ -356,7 +356,7 @@ class ForagingGridEnv(BaseEnvironment):
 
         return reward
 
-    def _get_nearest_resource_distance(self) -> Optional[float]:
+    def _get_nearest_resource_distance(self) -> float | None:
         """Get distance to nearest active visible resource."""
         visible = self.get_visible_resources()
         if not visible:
@@ -451,7 +451,7 @@ class ForagingGridEnv(BaseEnvironment):
 
         return img
 
-    def get_full_state(self) -> Dict[str, Any]:
+    def get_full_state(self) -> dict[str, Any]:
         """
         Get the complete environment state for analysis.
 
@@ -482,14 +482,14 @@ class ForagingGridEnv(BaseEnvironment):
             for pos in self.mode_config.dynamic_obstacle_positions:
                 self.terrain.set_dynamic_obstacle(pos[0], pos[1], blocked=blocked)
 
-    def get_resource_at(self, position: Tuple[int, int]) -> Optional[Resource]:
+    def get_resource_at(self, position: tuple[int, int]) -> Resource | None:
         """Get resource at a position if any."""
         for resource in self.resources:
             if tuple(resource.position) == position:
                 return resource
         return None
 
-    def get_visible_resources(self) -> List[Resource]:
+    def get_visible_resources(self) -> list[Resource]:
         """Get all resources visible in the local view."""
         visible = []
         ax, ay = self.agent_position

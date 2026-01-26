@@ -5,14 +5,14 @@ Tests whether agents can flexibly switch goals when better
 opportunities arise, even mid-pursuit of original goal.
 """
 
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any
 
 import numpy as np
 
 from src.agents.base_agent import BaseAgent
 from src.environments.foraging_grid import ForagingGridEnv
 from src.environments.modes import EnvironmentMode, ModeConfig
-from src.tests.base_test import BasePredicateTest, BaselineData, TestResult
+from src.tests.base_test import BaselineData, BasePredicateTest, TestResult
 from src.utils.logging import EpisodeLog
 
 
@@ -40,8 +40,8 @@ class SpontaneousSwitchingTest(BasePredicateTest):
         test_episodes: int = 30,
         grid_size: int = 20,
         switch_step: int = 50,
-        seed: Optional[int] = None,
-        output_dir: Optional[str] = None,
+        seed: int | None = None,
+        output_dir: str | None = None,
     ):
         """
         Initialize Spontaneous Switching test.
@@ -73,7 +73,7 @@ class SpontaneousSwitchingTest(BasePredicateTest):
         # Better opportunity (appears mid-pursuit, closer to start)
         self.opportunity_target = (grid_size // 2 - 2, grid_size // 2 + 2)
 
-    def create_baseline_env(self, seed: Optional[int] = None) -> ForagingGridEnv:
+    def create_baseline_env(self, seed: int | None = None) -> ForagingGridEnv:
         """Create baseline environment with only original target."""
         config = ModeConfig(
             mode=EnvironmentMode.BASELINE,
@@ -95,7 +95,7 @@ class SpontaneousSwitchingTest(BasePredicateTest):
             seed=seed,
         )
 
-    def create_test_env(self, seed: Optional[int] = None) -> ForagingGridEnv:
+    def create_test_env(self, seed: int | None = None) -> ForagingGridEnv:
         """Create test environment with opportunity that appears."""
         # Initially same as baseline
         config = ModeConfig(
@@ -128,8 +128,8 @@ class SpontaneousSwitchingTest(BasePredicateTest):
         self,
         env: ForagingGridEnv,
         agent: BaseAgent,
-        seed: Optional[int] = None,
-        max_steps: Optional[int] = None,
+        seed: int | None = None,
+        max_steps: int | None = None,
     ) -> EpisodeLog:
         """Run episode with opportunity appearing mid-episode."""
         obs, info = env.reset(seed=seed)
@@ -188,8 +188,8 @@ class SpontaneousSwitchingTest(BasePredicateTest):
     def compute_score(
         self,
         baseline_data: BaselineData,
-        test_episodes: List[EpisodeLog],
-    ) -> Tuple[float, Dict[str, Any]]:
+        test_episodes: list[EpisodeLog],
+    ) -> tuple[float, dict[str, Any]]:
         """
         Compute Spontaneous Switching score.
 
@@ -273,8 +273,8 @@ class GoalFlexibilityTest(BasePredicateTest):
         test_episodes: int = 30,
         grid_size: int = 20,
         goal_change_step: int = 100,
-        seed: Optional[int] = None,
-        output_dir: Optional[str] = None,
+        seed: int | None = None,
+        output_dir: str | None = None,
     ):
         super().__init__(
             name="goal_flexibility",
@@ -288,7 +288,7 @@ class GoalFlexibilityTest(BasePredicateTest):
         self.grid_size = grid_size
         self.goal_change_step = goal_change_step
 
-    def create_baseline_env(self, seed: Optional[int] = None) -> ForagingGridEnv:
+    def create_baseline_env(self, seed: int | None = None) -> ForagingGridEnv:
         """Create baseline environment."""
         return ForagingGridEnv(
             grid_size=self.grid_size,
@@ -300,15 +300,15 @@ class GoalFlexibilityTest(BasePredicateTest):
             seed=seed,
         )
 
-    def create_test_env(self, seed: Optional[int] = None) -> ForagingGridEnv:
+    def create_test_env(self, seed: int | None = None) -> ForagingGridEnv:
         """Create test environment (goal positions will be manipulated)."""
         return self.create_baseline_env(seed)
 
     def compute_score(
         self,
         baseline_data: BaselineData,
-        test_episodes: List[EpisodeLog],
-    ) -> Tuple[float, Dict[str, Any]]:
+        test_episodes: list[EpisodeLog],
+    ) -> tuple[float, dict[str, Any]]:
         """Compute goal flexibility score."""
         # Compare performance before and after goal change
         pre_change_rewards = []
@@ -357,11 +357,11 @@ class GoalFlexibilityTest(BasePredicateTest):
 
 
 def run_switching_test(
-    agents: List[BaseAgent],
+    agents: list[BaseAgent],
     n_trials: int = 10,
-    seed: Optional[int] = None,
-    output_dir: Optional[str] = None,
-) -> Dict[str, TestResult]:
+    seed: int | None = None,
+    output_dir: str | None = None,
+) -> dict[str, TestResult]:
     """Run Spontaneous Switching test on multiple agents."""
     test = SpontaneousSwitchingTest(
         n_trials=n_trials,

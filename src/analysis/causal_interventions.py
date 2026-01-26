@@ -5,14 +5,14 @@ Provides tools for ablation studies, state interventions, and
 counterfactual analysis to understand causal mechanisms.
 """
 
+from collections.abc import Callable
 from dataclasses import dataclass
-from typing import Any, Callable, Dict, List, Optional, Tuple
+from typing import Any
 
 import numpy as np
 
 from src.agents.base_agent import BaseAgent
 from src.environments.foraging_grid import ForagingGridEnv
-from src.utils.logging import EpisodeLog, StepLog
 
 
 @dataclass
@@ -23,10 +23,10 @@ class InterventionResult:
     baseline_score: float
     intervened_score: float
     effect_size: float
-    significance: Optional[float] = None
-    details: Dict[str, Any] = None
+    significance: float | None = None
+    details: dict[str, Any] = None
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         return {
             "intervention_type": self.intervention_type,
             "baseline_score": self.baseline_score,
@@ -52,7 +52,7 @@ class CausalInterventionAnalysis:
         self,
         env: ForagingGridEnv,
         n_episodes: int = 20,
-        seed: Optional[int] = None,
+        seed: int | None = None,
     ):
         """
         Initialize causal intervention analysis.
@@ -113,7 +113,7 @@ class CausalInterventionAnalysis:
         self,
         agent: BaseAgent,
         intervene: bool = False,
-    ) -> List[float]:
+    ) -> list[float]:
         """Run episodes and collect rewards."""
         rewards = []
 
@@ -142,7 +142,7 @@ class CausalInterventionAnalysis:
         self,
         agent: BaseAgent,
         intervention_fn: Callable[[np.ndarray], np.ndarray],
-    ) -> List[float]:
+    ) -> list[float]:
         """Run episodes with intervention on internal state."""
         rewards = []
 
@@ -184,8 +184,8 @@ class CausalInterventionAnalysis:
     def ablation_analysis(
         self,
         agent: BaseAgent,
-        component_indices: Optional[List[int]] = None,
-    ) -> List[InterventionResult]:
+        component_indices: list[int] | None = None,
+    ) -> list[InterventionResult]:
         """
         Perform ablation analysis by zeroing components.
 
@@ -221,8 +221,8 @@ class CausalInterventionAnalysis:
     def noise_injection_analysis(
         self,
         agent: BaseAgent,
-        noise_levels: List[float] = None,
-    ) -> List[InterventionResult]:
+        noise_levels: list[float] = None,
+    ) -> list[InterventionResult]:
         """
         Analyze robustness to noise in internal state.
 
@@ -253,8 +253,8 @@ class CausalInterventionAnalysis:
     def amplification_analysis(
         self,
         agent: BaseAgent,
-        scales: List[float] = None,
-    ) -> List[InterventionResult]:
+        scales: list[float] = None,
+    ) -> list[InterventionResult]:
         """
         Analyze effect of amplifying internal state.
 
@@ -285,7 +285,7 @@ class CausalInterventionAnalysis:
         self,
         agent: BaseAgent,
         n_components: int = 10,
-    ) -> List[Tuple[int, float]]:
+    ) -> list[tuple[int, float]]:
         """
         Identify most critical components through systematic ablation.
 
@@ -313,9 +313,9 @@ class CausalInterventionAnalysis:
     def test_counterfactual_activation(
         self,
         agent: BaseAgent,
-        observation: Dict[str, np.ndarray],
-        goal_distances: List[float],
-    ) -> Dict[str, List[float]]:
+        observation: dict[str, np.ndarray],
+        goal_distances: list[float],
+    ) -> dict[str, list[float]]:
         """
         Test counterfactual: what if agent were at different distances?
 
@@ -347,9 +347,9 @@ class CausalInterventionAnalysis:
 
     def _simulate_distance(
         self,
-        observation: Dict[str, np.ndarray],
+        observation: dict[str, np.ndarray],
         target_distance: float,
-    ) -> Dict[str, np.ndarray]:
+    ) -> dict[str, np.ndarray]:
         """Modify observation to simulate target distance (simplified)."""
         # This is a simplified simulation - in practice would need
         # more sophisticated observation manipulation
@@ -362,8 +362,8 @@ def run_causal_analysis(
     agent: BaseAgent,
     env: ForagingGridEnv,
     n_episodes: int = 20,
-    seed: Optional[int] = None,
-) -> Dict[str, Any]:
+    seed: int | None = None,
+) -> dict[str, Any]:
     """
     Run comprehensive causal analysis on an agent.
 

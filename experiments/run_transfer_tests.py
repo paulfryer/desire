@@ -10,29 +10,25 @@ import argparse
 import json
 from datetime import datetime
 from pathlib import Path
-from typing import Any, Dict, List, Optional
-
-import numpy as np
+from typing import Any
 
 from src.agents import (
+    ActiveInferenceFast,
     BaseAgent,
     HeuristicAgent,
     RLAgent,
-    ActiveInferenceFast,
 )
 from src.environments.foraging_grid import ForagingGridEnv
 from src.environments.modes import EnvironmentMode
 from src.tests.transfer_tests import (
     TransferConfig,
-    TransferTest,
-    create_standard_transfer_suite,
     run_transfer_test,
 )
 
 
 def load_trained_agent(
     agent_type: str,
-    model_path: Optional[Path],
+    model_path: Path | None,
     env: ForagingGridEnv,
     seed: int = 42,
 ) -> BaseAgent:
@@ -120,13 +116,13 @@ def create_custom_transfer_suite(
 
 
 def run_comprehensive_transfer(
-    agent_types: List[str],
-    model_dir: Optional[Path] = None,
-    output_dir: Optional[Path] = None,
+    agent_types: list[str],
+    model_dir: Path | None = None,
+    output_dir: Path | None = None,
     n_trials: int = 5,
     n_episodes: int = 20,
     seed: int = 42,
-) -> Dict[str, Any]:
+) -> dict[str, Any]:
     """
     Run comprehensive transfer tests.
 

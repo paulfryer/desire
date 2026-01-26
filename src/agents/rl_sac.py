@@ -7,7 +7,7 @@ entropy regularization for discrete environments.
 """
 
 from pathlib import Path
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any
 
 import numpy as np
 import torch
@@ -82,9 +82,9 @@ class DiscreteSACNetwork(nn.Module):
             nn.Linear(hidden_dim, action_dim),
         )
 
-        self._last_features: Optional[torch.Tensor] = None
+        self._last_features: torch.Tensor | None = None
 
-    def get_features(self, observations: Dict[str, torch.Tensor]) -> torch.Tensor:
+    def get_features(self, observations: dict[str, torch.Tensor]) -> torch.Tensor:
         """Extract features from observation."""
         local_view = observations["local_view"]
         if local_view.dim() == 3:
@@ -113,8 +113,8 @@ class DiscreteSACNetwork(nn.Module):
 
     def forward(
         self,
-        observations: Dict[str, torch.Tensor],
-    ) -> Tuple[torch.Tensor, torch.Tensor, torch.Tensor]:
+        observations: dict[str, torch.Tensor],
+    ) -> tuple[torch.Tensor, torch.Tensor, torch.Tensor]:
         """Forward pass returning Q-values and policy logits."""
         features = self.get_features(observations)
 
@@ -124,7 +124,7 @@ class DiscreteSACNetwork(nn.Module):
 
         return q1_values, q2_values, policy_logits
 
-    def get_action_probs(self, observations: Dict[str, torch.Tensor]) -> torch.Tensor:
+    def get_action_probs(self, observations: dict[str, torch.Tensor]) -> torch.Tensor:
         """Get action probabilities."""
         features = self.get_features(observations)
         policy_logits = self.policy(features)
@@ -157,7 +157,7 @@ class SACAgent(BaseAgent):
         hidden_dim: int = 128,
         device: str = "auto",
         name: str = "rl_sac",
-        seed: Optional[int] = None,
+        seed: int | None = None,
     ):
         """
         Initialize SAC agent.
@@ -239,13 +239,13 @@ class SACAgent(BaseAgent):
             self.log_alpha = torch.tensor([np.log(alpha)], device=self.device)
 
         # Experience buffer
-        self.replay_buffer: List[Dict[str, Any]] = []
+        self.replay_buffer: list[dict[str, Any]] = []
 
         # Internal state
         self._last_internal_state = np.zeros(features_dim, dtype=np.float32)
         self.training_mode = False
 
-    def act(self, observation: Dict[str, np.ndarray]) -> int:
+    def act(self, observation: dict[str, np.ndarray]) -> int:
         """Select action using current policy."""
         obs_tensors = {
             k: torch.tensor(v, dtype=torch.float32, device=self.device)
@@ -270,7 +270,7 @@ class SACAgent(BaseAgent):
         """Get feature extractor activations."""
         return self._last_internal_state.copy()
 
-    def get_internal_response(self, observation: Dict[str, np.ndarray]) -> np.ndarray:
+    def get_internal_response(self, observation: dict[str, np.ndarray]) -> np.ndarray:
         """Get internal response to an observation."""
         obs_tensors = {
             k: torch.tensor(v, dtype=torch.float32, device=self.device)
@@ -281,7 +281,7 @@ class SACAgent(BaseAgent):
             _ = self.network.get_features(obs_tensors)
             return self.network._last_features.cpu().numpy().flatten()
 
-    def get_action_probabilities(self, observation: Dict[str, np.ndarray]) -> np.ndarray:
+    def get_action_probabilities(self, observation: dict[str, np.ndarray]) -> np.ndarray:
         """Get action probability distribution."""
         obs_tensors = {
             k: torch.tensor(v, dtype=torch.float32, device=self.device)
@@ -300,10 +300,10 @@ class SACAgent(BaseAgent):
 
     def update(
         self,
-        observation: Dict[str, np.ndarray],
+        observation: dict[str, np.ndarray],
         action: int,
         reward: float,
-        next_observation: Dict[str, np.ndarray],
+        next_observation: dict[str, np.ndarray],
         done: bool,
     ) -> None:
         """Store transition and update networks."""
@@ -329,7 +329,7 @@ class SACAgent(BaseAgent):
         ):
             self._update_networks()
 
-    def _update_networks(self) -> Dict[str, float]:
+    def _update_networks(self) -> dict[str, float]:
         """Update Q-networks and policy."""
         # Sample batch
         indices = self._rng.choice(len(self.replay_buffer), size=self.batch_size, replace=False)
@@ -420,7 +420,7 @@ class SACAgent(BaseAgent):
 
         # Soft update target network
         for param, target_param in zip(
-            self.network.parameters(), self.target_network.parameters()
+            self.network.parameters(), self.target_network.parameters(), strict=False
         ):
             target_param.data.copy_(self.tau * param.data + (1 - self.tau) * target_param.data)
 

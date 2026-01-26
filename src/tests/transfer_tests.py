@@ -5,16 +5,16 @@ Tests how well agents trained in one environment configuration
 generalize to novel configurations.
 """
 
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from pathlib import Path
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any
 
 import numpy as np
 
 from src.agents.base_agent import BaseAgent
 from src.environments.foraging_grid import ForagingGridEnv
 from src.environments.modes import EnvironmentMode, ModeConfig, get_mode_config
-from src.tests.base_test import BasePredicateTest, BaselineData, TestResult
+from src.tests.base_test import BaselineData, BasePredicateTest, TestResult
 from src.utils.logging import EpisodeLog
 
 
@@ -24,11 +24,11 @@ class TransferConfig:
 
     name: str
     mode: EnvironmentMode
-    mode_config: Optional[ModeConfig] = None
+    mode_config: ModeConfig | None = None
     grid_size: int = 20
     description: str = ""
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         return {
             "name": self.name,
             "mode": str(self.mode),
@@ -49,7 +49,7 @@ class TransferResult:
     relative_transfer: float  # target_score / source_score
     generalization_gap: float  # source_score - target_score
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         return {
             "source": self.source_config.to_dict(),
             "target": self.target_config.to_dict(),
@@ -72,11 +72,11 @@ class TransferTest(BasePredicateTest):
     def __init__(
         self,
         source_config: TransferConfig,
-        target_configs: List[TransferConfig],
+        target_configs: list[TransferConfig],
         n_trials: int = 5,
         n_episodes_per_config: int = 20,
-        seed: Optional[int] = None,
-        output_dir: Optional[Path] = None,
+        seed: int | None = None,
+        output_dir: Path | None = None,
     ):
         """
         Initialize transfer test.
@@ -103,19 +103,19 @@ class TransferTest(BasePredicateTest):
         self.n_episodes_per_config = n_episodes_per_config
 
         # Transfer matrix: source -> {target -> score}
-        self.transfer_matrix: Dict[str, Dict[str, float]] = {}
+        self.transfer_matrix: dict[str, dict[str, float]] = {}
 
-    def create_baseline_env(self, seed: Optional[int] = None) -> ForagingGridEnv:
+    def create_baseline_env(self, seed: int | None = None) -> ForagingGridEnv:
         """Create source environment."""
         return self._create_env(self.source_config, seed)
 
-    def create_test_env(self, seed: Optional[int] = None) -> ForagingGridEnv:
+    def create_test_env(self, seed: int | None = None) -> ForagingGridEnv:
         """Create test environment (uses first target by default)."""
         if self.target_configs:
             return self._create_env(self.target_configs[0], seed)
         return self.create_baseline_env(seed)
 
-    def _create_env(self, config: TransferConfig, seed: Optional[int] = None) -> ForagingGridEnv:
+    def _create_env(self, config: TransferConfig, seed: int | None = None) -> ForagingGridEnv:
         """Create environment from config."""
         if config.mode_config is not None:
             mode_config = config.mode_config
@@ -136,8 +136,8 @@ class TransferTest(BasePredicateTest):
     def compute_score(
         self,
         baseline_data: BaselineData,
-        test_episodes: List[EpisodeLog],
-    ) -> Tuple[float, Dict[str, Any]]:
+        test_episodes: list[EpisodeLog],
+    ) -> tuple[float, dict[str, Any]]:
         """Compute transfer score."""
         # Score based on average reward
         if not test_episodes:
@@ -159,7 +159,7 @@ class TransferTest(BasePredicateTest):
 
     def run(self, agent: BaseAgent) -> TestResult:
         """Run transfer test across all configurations."""
-        all_results: List[TransferResult] = []
+        all_results: list[TransferResult] = []
 
         # Test on source configuration
         source_score = self._test_on_config(agent, self.source_config)
@@ -223,7 +223,7 @@ class TransferTest(BasePredicateTest):
             env = self._create_env(config, trial_seed)
 
             trial_rewards = []
-            for ep in range(self.n_episodes_per_config):
+            for _ep in range(self.n_episodes_per_config):
                 episode = self._run_episode(env, agent, seed=trial_seed)
                 trial_rewards.append(episode.total_reward)
 
@@ -233,9 +233,9 @@ class TransferTest(BasePredicateTest):
 
     @staticmethod
     def compute_transfer_score(
-        source_results: Dict[str, float],
-        target_results: Dict[str, float],
-    ) -> Dict[str, float]:
+        source_results: dict[str, float],
+        target_results: dict[str, float],
+    ) -> dict[str, float]:
         """
         Compute transfer scores from results dictionaries.
 
@@ -268,7 +268,7 @@ class TransferTest(BasePredicateTest):
 
 def create_standard_transfer_suite(
     grid_size: int = 20,
-) -> Tuple[TransferConfig, List[TransferConfig]]:
+) -> tuple[TransferConfig, list[TransferConfig]]:
     """
     Create standard transfer test suite.
 
@@ -318,13 +318,13 @@ def create_standard_transfer_suite(
 
 
 def run_transfer_test(
-    agents: List[BaseAgent],
-    source_config: Optional[TransferConfig] = None,
-    target_configs: Optional[List[TransferConfig]] = None,
+    agents: list[BaseAgent],
+    source_config: TransferConfig | None = None,
+    target_configs: list[TransferConfig] | None = None,
     n_trials: int = 5,
     n_episodes: int = 20,
-    seed: Optional[int] = None,
-) -> Dict[str, TestResult]:
+    seed: int | None = None,
+) -> dict[str, TestResult]:
     """
     Run transfer test on multiple agents.
 

@@ -2,7 +2,6 @@
 Active Inference agent using pymdp.
 """
 
-from typing import Any, Dict, List, Optional, Tuple
 
 import numpy as np
 
@@ -53,7 +52,7 @@ class ActiveInferenceAgent(BaseAgent):
         low_energy_aversion: float = 3.0,
         grid_size: int = 20,
         name: str = "active_inference",
-        seed: Optional[int] = None,
+        seed: int | None = None,
     ):
         """
         Initialize the Active Inference agent.
@@ -114,7 +113,7 @@ class ActiveInferenceAgent(BaseAgent):
         self.beliefs = None
 
         # Internal state for tracking
-        self._internal_state: Optional[np.ndarray] = None
+        self._internal_state: np.ndarray | None = None
 
     def _build_model(self) -> None:
         """Build the active inference generative model."""
@@ -328,7 +327,7 @@ class ActiveInferenceAgent(BaseAgent):
         # Modality 0: Position preferences - add exploration incentive
         # Slight preference for center positions to encourage movement
         C[0] = np.zeros(self.num_obs[0])
-        center = self.NUM_POSITION_BINS // 2
+        self.NUM_POSITION_BINS // 2
         for x in range(self.NUM_POSITION_BINS):
             for y in range(self.NUM_POSITION_BINS):
                 state = x * self.NUM_POSITION_BINS + y
@@ -358,7 +357,7 @@ class ActiveInferenceAgent(BaseAgent):
 
         return D
 
-    def _discretize_observation(self, observation: Dict[str, np.ndarray]) -> List[int]:
+    def _discretize_observation(self, observation: dict[str, np.ndarray]) -> list[int]:
         """Convert continuous observation to discrete state indices."""
         # Position: convert normalized (x, y) to bin indices
         pos = observation["position"]
@@ -379,7 +378,7 @@ class ActiveInferenceAgent(BaseAgent):
 
         return [pos_state, energy_state, resource_visible]
 
-    def act(self, observation: Dict[str, np.ndarray]) -> int:
+    def act(self, observation: dict[str, np.ndarray]) -> int:
         """Select action using active inference with resource-aware behavior."""
         # Discretize observation
         obs_indices = self._discretize_observation(observation)
@@ -446,7 +445,7 @@ class ActiveInferenceAgent(BaseAgent):
             ])
         return self._internal_state.copy()
 
-    def get_internal_response(self, observation: Dict[str, np.ndarray]) -> np.ndarray:
+    def get_internal_response(self, observation: dict[str, np.ndarray]) -> np.ndarray:
         """Get internal response to a hypothetical observation."""
         # Discretize observation
         obs_indices = self._discretize_observation(observation)

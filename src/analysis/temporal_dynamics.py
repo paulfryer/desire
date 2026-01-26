@@ -5,12 +5,11 @@ Analyzes how activation patterns evolve over time as agents approach goals,
 including onset timing, ramp rates, and trajectory characteristics.
 """
 
-from dataclasses import dataclass, field
-from typing import Any, Dict, List, Optional, Tuple
+from dataclasses import dataclass
+from typing import Any
 
 import numpy as np
 from scipy import signal
-from scipy import stats
 
 from src.utils.logging import EpisodeLog
 
@@ -23,9 +22,9 @@ class ActivationTrajectory:
     activations: np.ndarray  # Activation magnitudes
     distances: np.ndarray  # Distances to goal
     derivatives: np.ndarray  # d(activation)/dt
-    goal_position: Tuple[int, int] = (0, 0)
+    goal_position: tuple[int, int] = (0, 0)
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         return {
             "n_steps": len(self.timestamps),
             "mean_activation": float(np.mean(self.activations)),
@@ -46,7 +45,7 @@ class AnticipationTimingResult:
     peak_activation: float  # Maximum activation value
     baseline_activation: float  # Activation far from goal
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         return {
             "onset_distance": self.onset_distance,
             "peak_distance": self.peak_distance,
@@ -59,7 +58,7 @@ class AnticipationTimingResult:
 
 def analyze_activation_trajectory(
     episode: EpisodeLog,
-    goal_position: Optional[Tuple[int, int]] = None,
+    goal_position: tuple[int, int] | None = None,
 ) -> ActivationTrajectory:
     """
     Extract activation trajectory from an episode.
@@ -118,7 +117,7 @@ def analyze_activation_trajectory(
 
 
 def compute_anticipation_timing(
-    trajectories: List[ActivationTrajectory],
+    trajectories: list[ActivationTrajectory],
     baseline_distance: float = 10.0,
     onset_threshold: float = 1.5,  # Multiples of baseline std
 ) -> AnticipationTimingResult:
@@ -138,7 +137,7 @@ def compute_anticipation_timing(
     all_activations = []
 
     for traj in trajectories:
-        for dist, act in zip(traj.distances, traj.activations):
+        for dist, act in zip(traj.distances, traj.activations, strict=False):
             all_distances.append(dist)
             all_activations.append(act)
 
@@ -205,7 +204,7 @@ def compute_anticipation_timing(
 
 def compute_activation_dynamics_features(
     trajectory: ActivationTrajectory,
-) -> Dict[str, float]:
+) -> dict[str, float]:
     """
     Compute dynamic features of an activation trajectory.
 
@@ -279,7 +278,7 @@ def detect_activation_events(
     trajectory: ActivationTrajectory,
     threshold_std: float = 2.0,
     min_duration: int = 3,
-) -> List[Dict[str, Any]]:
+) -> list[dict[str, Any]]:
     """
     Detect significant activation events in trajectory.
 
@@ -354,8 +353,8 @@ def detect_activation_events(
 
 
 def compute_phase_space_metrics(
-    trajectories: List[ActivationTrajectory],
-) -> Dict[str, float]:
+    trajectories: list[ActivationTrajectory],
+) -> dict[str, float]:
     """
     Compute phase space characteristics of activation dynamics.
 

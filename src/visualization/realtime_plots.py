@@ -6,11 +6,10 @@ and agent behavior visualization.
 """
 
 from collections import deque
-from typing import Any, Callable, Dict, List, Optional, Tuple
+from typing import Any
 
 import matplotlib.pyplot as plt
 import numpy as np
-from matplotlib.animation import FuncAnimation
 
 
 class RealtimePlotter:
@@ -23,8 +22,8 @@ class RealtimePlotter:
     def __init__(
         self,
         n_plots: int = 1,
-        plot_names: Optional[List[str]] = None,
-        figsize: Tuple[int, int] = (12, 4),
+        plot_names: list[str] | None = None,
+        figsize: tuple[int, int] = (12, 4),
         max_points: int = 1000,
         update_interval: int = 100,
     ):
@@ -47,7 +46,7 @@ class RealtimePlotter:
         self.plot_names = plot_names
 
         # Data storage
-        self.data: Dict[str, deque] = {
+        self.data: dict[str, deque] = {
             name: deque(maxlen=max_points) for name in plot_names
         }
         self.x_data: deque = deque(maxlen=max_points)
@@ -58,8 +57,8 @@ class RealtimePlotter:
         if n_plots == 1:
             self.axes = [self.axes]
 
-        self.lines: Dict[str, Any] = {}
-        for ax, name in zip(self.axes, plot_names):
+        self.lines: dict[str, Any] = {}
+        for ax, name in zip(self.axes, plot_names, strict=False):
             (line,) = ax.plot([], [], 'b-', linewidth=1)
             self.lines[name] = line
             ax.set_title(name)
@@ -68,7 +67,7 @@ class RealtimePlotter:
 
         plt.tight_layout()
 
-    def add_point(self, values: Dict[str, float]) -> None:
+    def add_point(self, values: dict[str, float]) -> None:
         """
         Add a data point to the plots.
 
@@ -86,7 +85,7 @@ class RealtimePlotter:
         """Update the plot display."""
         x = list(self.x_data)
 
-        for ax, name in zip(self.axes, self.plot_names):
+        for ax, name in zip(self.axes, self.plot_names, strict=False):
             y = list(self.data[name])
             if x and y:
                 self.lines[name].set_data(x[-len(y):], y)
@@ -115,8 +114,8 @@ class TrainingMonitor:
 
     def __init__(
         self,
-        metrics: List[str] = None,
-        figsize: Tuple[int, int] = (14, 6),
+        metrics: list[str] = None,
+        figsize: tuple[int, int] = (14, 6),
         window_size: int = 100,
     ):
         """
@@ -134,8 +133,8 @@ class TrainingMonitor:
         self.window_size = window_size
 
         # Data storage
-        self.raw_data: Dict[str, List[float]] = {m: [] for m in metrics}
-        self.smoothed_data: Dict[str, List[float]] = {m: [] for m in metrics}
+        self.raw_data: dict[str, list[float]] = {m: [] for m in metrics}
+        self.smoothed_data: dict[str, list[float]] = {m: [] for m in metrics}
 
         # Create figure
         n_cols = min(3, len(metrics))
@@ -144,8 +143,8 @@ class TrainingMonitor:
         self.fig, self.axes = plt.subplots(n_rows, n_cols, figsize=figsize)
         self.axes = np.atleast_2d(self.axes).flatten()
 
-        self.lines: Dict[str, Tuple[Any, Any]] = {}
-        for ax, metric in zip(self.axes[:len(metrics)], metrics):
+        self.lines: dict[str, tuple[Any, Any]] = {}
+        for ax, metric in zip(self.axes[:len(metrics)], metrics, strict=False):
             (raw_line,) = ax.plot([], [], 'b-', alpha=0.3, label='Raw')
             (smooth_line,) = ax.plot([], [], 'r-', linewidth=2, label='Smoothed')
             self.lines[metric] = (raw_line, smooth_line)
@@ -156,7 +155,7 @@ class TrainingMonitor:
 
         plt.tight_layout()
 
-    def log(self, metrics: Dict[str, float]) -> None:
+    def log(self, metrics: dict[str, float]) -> None:
         """
         Log metrics for an episode.
 
@@ -210,7 +209,7 @@ class EpisodeVisualizer:
     def __init__(
         self,
         grid_size: int,
-        figsize: Tuple[int, int] = (14, 5),
+        figsize: tuple[int, int] = (14, 5),
     ):
         """
         Initialize episode visualizer.
@@ -253,16 +252,16 @@ class EpisodeVisualizer:
         plt.tight_layout()
 
         # Data storage
-        self.energy_history: List[float] = []
-        self.internal_history: List[float] = []
-        self.trajectory: List[Tuple[int, int]] = []
+        self.energy_history: list[float] = []
+        self.internal_history: list[float] = []
+        self.trajectory: list[tuple[int, int]] = []
 
     def update(
         self,
-        position: Tuple[int, int],
+        position: tuple[int, int],
         energy: float,
-        internal_state: Optional[np.ndarray],
-        resources: Optional[List[Tuple[int, int]]] = None,
+        internal_state: np.ndarray | None,
+        resources: list[tuple[int, int]] | None = None,
     ) -> None:
         """
         Update visualization with new state.
@@ -329,9 +328,9 @@ class EpisodeVisualizer:
 
 
 def create_live_comparison(
-    agent_names: List[str],
-    figsize: Tuple[int, int] = (12, 8),
-) -> Tuple[plt.Figure, Dict[str, Any]]:
+    agent_names: list[str],
+    figsize: tuple[int, int] = (12, 8),
+) -> tuple[plt.Figure, dict[str, Any]]:
     """
     Create a live comparison figure for multiple agents.
 

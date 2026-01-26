@@ -5,17 +5,15 @@ Supports competitive and cooperative multi-agent scenarios for testing
 social behavior and resource competition.
 """
 
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from enum import IntEnum
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any
 
 import numpy as np
 from gymnasium import spaces
 
-from src.environments.foraging_grid import ForagingGridEnv, Action, DIRECTION_VECTORS
+from src.environments.foraging_grid import DIRECTION_VECTORS, Action, ForagingGridEnv
 from src.environments.modes import EnvironmentMode, ModeConfig
-from src.environments.resources import Resource, ResourceType
-from src.environments.terrain import TerrainGrid, TerrainType
 
 
 class AgentRole(IntEnum):
@@ -38,7 +36,7 @@ class MultiAgentState:
     is_alive: bool = True
     resources_collected: int = 0
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         return {
             "agent_id": self.agent_id,
             "position": tuple(self.position),
@@ -66,13 +64,13 @@ class MultiAgentForagingEnv(ForagingGridEnv):
         n_agents: int = 2,
         max_steps: int = 1000,
         initial_energy: float = 150.0,
-        max_energy: Optional[float] = None,
+        max_energy: float | None = None,
         energy_decay_rate: float = 0.3,
         local_view_size: int = 5,
         mode: str = "competitive",  # competitive, cooperative, predator_prey
         collision_penalty: float = 0.0,
         sharing_bonus: float = 0.0,
-        seed: Optional[int] = None,
+        seed: int | None = None,
     ):
         """
         Initialize multi-agent environment.
@@ -96,7 +94,7 @@ class MultiAgentForagingEnv(ForagingGridEnv):
         self.sharing_bonus = sharing_bonus
 
         # Agent states (will be initialized in reset)
-        self.agent_states: List[MultiAgentState] = []
+        self.agent_states: list[MultiAgentState] = []
         self.current_agent_idx = 0  # For turn-based stepping
 
         # Create mode config for multi-agent
@@ -143,7 +141,7 @@ class MultiAgentForagingEnv(ForagingGridEnv):
             ),
         })
 
-    def _reset_state(self, options: Optional[Dict[str, Any]] = None) -> None:
+    def _reset_state(self, options: dict[str, Any] | None = None) -> None:
         """Reset multi-agent state."""
         super()._reset_state(options)
 
@@ -184,7 +182,7 @@ class MultiAgentForagingEnv(ForagingGridEnv):
         self.agent_energy = self.agent_states[0].energy
         self.current_agent_idx = 0
 
-    def _get_observation(self, agent_idx: Optional[int] = None) -> Dict[str, np.ndarray]:
+    def _get_observation(self, agent_idx: int | None = None) -> dict[str, np.ndarray]:
         """Get observation for a specific agent."""
         if agent_idx is None:
             agent_idx = self.current_agent_idx
@@ -262,7 +260,7 @@ class MultiAgentForagingEnv(ForagingGridEnv):
 
         return info
 
-    def step_agent(self, action: int, agent_idx: Optional[int] = None) -> Tuple[Dict, float, bool, bool, Dict]:
+    def step_agent(self, action: int, agent_idx: int | None = None) -> tuple[dict, float, bool, bool, dict]:
         """
         Step a specific agent.
 
@@ -368,7 +366,7 @@ class MultiAgentForagingEnv(ForagingGridEnv):
 
         return self._get_observation(agent_idx), reward, terminated, truncated, info
 
-    def _get_info_multi_agent(self, agent_idx: int) -> Dict[str, Any]:
+    def _get_info_multi_agent(self, agent_idx: int) -> dict[str, Any]:
         """Get info for multi-agent environment."""
         agent = self.agent_states[agent_idx]
 
@@ -382,7 +380,7 @@ class MultiAgentForagingEnv(ForagingGridEnv):
             "all_agent_states": [a.to_dict() for a in self.agent_states],
         }
 
-    def step(self, action: int) -> Tuple[Dict, float, bool, bool, Dict]:
+    def step(self, action: int) -> tuple[dict, float, bool, bool, dict]:
         """Step current agent and advance to next."""
         result = self.step_agent(action, self.current_agent_idx)
 
@@ -394,6 +392,6 @@ class MultiAgentForagingEnv(ForagingGridEnv):
 
         return result
 
-    def get_all_observations(self) -> List[Dict[str, np.ndarray]]:
+    def get_all_observations(self) -> list[dict[str, np.ndarray]]:
         """Get observations for all agents."""
         return [self._get_observation(i) for i in range(self.n_agents)]

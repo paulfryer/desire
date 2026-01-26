@@ -5,23 +5,21 @@ Provides activation heatmaps, visitation heatmaps, and comparison views.
 """
 
 from pathlib import Path
-from typing import Any, Dict, List, Optional, Tuple, Union
 
 import matplotlib.pyplot as plt
 import numpy as np
-from matplotlib.colors import Normalize
 from mpl_toolkits.axes_grid1 import make_axes_locatable
 
 from src.utils.logging import EpisodeLog
 
 
 def create_activation_heatmap(
-    episodes: List[EpisodeLog],
+    episodes: list[EpisodeLog],
     grid_size: int,
     title: str = "Activation Heatmap",
-    figsize: Tuple[int, int] = (10, 8),
+    figsize: tuple[int, int] = (10, 8),
     cmap: str = "viridis",
-    save_path: Optional[Path] = None,
+    save_path: Path | None = None,
 ) -> plt.Figure:
     """
     Create heatmap of internal state activations across the grid.
@@ -77,13 +75,13 @@ def create_activation_heatmap(
 
 
 def create_visitation_heatmap(
-    episodes: List[EpisodeLog],
+    episodes: list[EpisodeLog],
     grid_size: int,
     title: str = "Visitation Heatmap",
-    figsize: Tuple[int, int] = (10, 8),
+    figsize: tuple[int, int] = (10, 8),
     log_scale: bool = True,
     cmap: str = "hot",
-    save_path: Optional[Path] = None,
+    save_path: Path | None = None,
 ) -> plt.Figure:
     """
     Create heatmap of position visitation frequency.
@@ -137,12 +135,12 @@ def create_visitation_heatmap(
 
 
 def create_comparison_heatmap(
-    episodes_dict: Dict[str, List[EpisodeLog]],
+    episodes_dict: dict[str, list[EpisodeLog]],
     grid_size: int,
     metric: str = "activation",
-    figsize: Optional[Tuple[int, int]] = None,
+    figsize: tuple[int, int] | None = None,
     cmap: str = "viridis",
-    save_path: Optional[Path] = None,
+    save_path: Path | None = None,
 ) -> plt.Figure:
     """
     Create side-by-side heatmap comparison across agents.
@@ -181,7 +179,7 @@ def create_comparison_heatmap(
     vmin, vmax = np.percentile(all_values[all_values > 0], [5, 95]) if np.any(all_values > 0) else (0, 1)
 
     # Plot each agent
-    for ax, (name, heatmap) in zip(axes, heatmaps.items()):
+    for ax, (name, heatmap) in zip(axes, heatmaps.items(), strict=False):
         im = ax.imshow(heatmap, cmap=cmap, origin='lower', vmin=vmin, vmax=vmax)
         ax.set_title(name)
         ax.set_xlabel("Y")
@@ -198,7 +196,7 @@ def create_comparison_heatmap(
     return fig
 
 
-def _compute_activation_map(episodes: List[EpisodeLog], grid_size: int) -> np.ndarray:
+def _compute_activation_map(episodes: list[EpisodeLog], grid_size: int) -> np.ndarray:
     """Compute activation map from episodes."""
     activation_sum = np.zeros((grid_size, grid_size))
     activation_count = np.zeros((grid_size, grid_size))
@@ -219,7 +217,7 @@ def _compute_activation_map(episodes: List[EpisodeLog], grid_size: int) -> np.nd
     return result
 
 
-def _compute_visitation_map(episodes: List[EpisodeLog], grid_size: int) -> np.ndarray:
+def _compute_visitation_map(episodes: list[EpisodeLog], grid_size: int) -> np.ndarray:
     """Compute visitation map from episodes."""
     visitation = np.zeros((grid_size, grid_size))
 
@@ -234,14 +232,14 @@ def _compute_visitation_map(episodes: List[EpisodeLog], grid_size: int) -> np.nd
 
 
 def create_trajectory_overlay(
-    episodes: List[EpisodeLog],
+    episodes: list[EpisodeLog],
     grid_size: int,
-    resource_positions: Optional[List[Tuple[int, int]]] = None,
+    resource_positions: list[tuple[int, int]] | None = None,
     max_trajectories: int = 10,
     title: str = "Trajectory Overlay",
-    figsize: Tuple[int, int] = (10, 10),
+    figsize: tuple[int, int] = (10, 10),
     alpha: float = 0.3,
-    save_path: Optional[Path] = None,
+    save_path: Path | None = None,
 ) -> plt.Figure:
     """
     Create overlay of multiple trajectories on the grid.
@@ -296,11 +294,11 @@ def create_trajectory_overlay(
 
 
 def create_distance_activation_profile(
-    episodes: List[EpisodeLog],
+    episodes: list[EpisodeLog],
     max_distance: int = 15,
     title: str = "Activation vs Distance to Goal",
-    figsize: Tuple[int, int] = (10, 6),
-    save_path: Optional[Path] = None,
+    figsize: tuple[int, int] = (10, 6),
+    save_path: Path | None = None,
 ) -> plt.Figure:
     """
     Create plot of activation as function of distance to goal.

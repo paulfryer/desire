@@ -6,7 +6,7 @@ cross-entropy method (CEM) for action selection.
 """
 
 from pathlib import Path
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any
 
 import numpy as np
 import torch
@@ -97,11 +97,11 @@ class WorldModelNetwork(nn.Module):
         )
 
         # Store for internal state access
-        self._last_latent: Optional[torch.Tensor] = None
-        self._last_imagined_rewards: Optional[torch.Tensor] = None
-        self._last_value_estimate: Optional[torch.Tensor] = None
+        self._last_latent: torch.Tensor | None = None
+        self._last_imagined_rewards: torch.Tensor | None = None
+        self._last_value_estimate: torch.Tensor | None = None
 
-    def encode(self, observation: Dict[str, torch.Tensor]) -> Tuple[torch.Tensor, torch.Tensor]:
+    def encode(self, observation: dict[str, torch.Tensor]) -> tuple[torch.Tensor, torch.Tensor]:
         """Encode observation to latent state distribution."""
         # Process local view
         local_view = observation["local_view"]
@@ -142,7 +142,7 @@ class WorldModelNetwork(nn.Module):
         self,
         latent: torch.Tensor,
         action: torch.Tensor,
-    ) -> Tuple[torch.Tensor, torch.Tensor]:
+    ) -> tuple[torch.Tensor, torch.Tensor]:
         """Predict next latent state given current latent and action."""
         # One-hot encode action if needed
         if action.dim() == 1:
@@ -166,9 +166,9 @@ class WorldModelNetwork(nn.Module):
 
     def forward(
         self,
-        observation: Dict[str, torch.Tensor],
-        action: Optional[torch.Tensor] = None,
-    ) -> Dict[str, torch.Tensor]:
+        observation: dict[str, torch.Tensor],
+        action: torch.Tensor | None = None,
+    ) -> dict[str, torch.Tensor]:
         """Forward pass through world model."""
         # Encode observation
         mean, log_var = self.encode(observation)
@@ -221,7 +221,7 @@ class ModelBasedRLAgent(BaseAgent):
         learning_rate: float = 1e-3,
         device: str = "auto",
         name: str = "model_based_rl",
-        seed: Optional[int] = None,
+        seed: int | None = None,
     ):
         """
         Initialize Model-Based RL agent.
@@ -278,10 +278,10 @@ class ModelBasedRLAgent(BaseAgent):
         self.training_mode = False
 
         # Experience buffer for training
-        self.experience_buffer: List[Dict[str, Any]] = []
+        self.experience_buffer: list[dict[str, Any]] = []
         self.buffer_capacity = 10000
 
-    def act(self, observation: Dict[str, np.ndarray]) -> int:
+    def act(self, observation: dict[str, np.ndarray]) -> int:
         """Select action using MPC planning in latent space."""
         if self.training_mode:
             # Epsilon-greedy during training
@@ -293,7 +293,7 @@ class ModelBasedRLAgent(BaseAgent):
 
         return action
 
-    def plan_with_mpc(self, observation: Dict[str, np.ndarray]) -> int:
+    def plan_with_mpc(self, observation: dict[str, np.ndarray]) -> int:
         """
         Plan using Cross-Entropy Method in latent space.
 
@@ -389,7 +389,7 @@ class ModelBasedRLAgent(BaseAgent):
         """Get internal state: latent + imagined rewards + value estimates."""
         return self._last_internal_state.copy()
 
-    def get_internal_response(self, observation: Dict[str, np.ndarray]) -> np.ndarray:
+    def get_internal_response(self, observation: dict[str, np.ndarray]) -> np.ndarray:
         """Get internal response to an observation."""
         obs_tensors = {
             k: torch.tensor(v, dtype=torch.float32, device=self.device)
@@ -414,10 +414,10 @@ class ModelBasedRLAgent(BaseAgent):
 
     def update(
         self,
-        observation: Dict[str, np.ndarray],
+        observation: dict[str, np.ndarray],
         action: int,
         reward: float,
-        next_observation: Dict[str, np.ndarray],
+        next_observation: dict[str, np.ndarray],
         done: bool,
     ) -> None:
         """Store experience and train world model."""

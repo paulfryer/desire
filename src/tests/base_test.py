@@ -5,13 +5,13 @@ Base interface for predicate tests.
 from abc import ABC, abstractmethod
 from dataclasses import dataclass, field
 from pathlib import Path
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any
 
 import numpy as np
 
 from src.agents.base_agent import BaseAgent
 from src.environments.foraging_grid import ForagingGridEnv
-from src.utils.logging import EpisodeLog, TrajectoryLogger
+from src.utils.logging import EpisodeLog
 
 
 @dataclass
@@ -21,10 +21,10 @@ class TestResult:
     test_name: str
     agent_name: str
     score: float
-    raw_data: Dict[str, Any] = field(default_factory=dict)
-    metadata: Dict[str, Any] = field(default_factory=dict)
+    raw_data: dict[str, Any] = field(default_factory=dict)
+    metadata: dict[str, Any] = field(default_factory=dict)
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         return {
             "test_name": self.test_name,
             "agent_name": self.agent_name,
@@ -43,7 +43,7 @@ class BaselineData:
     mean_energy: float
     mean_path_length: float
     action_distribution: np.ndarray
-    episodes: List[EpisodeLog] = field(default_factory=list)
+    episodes: list[EpisodeLog] = field(default_factory=list)
 
 
 class BasePredicateTest(ABC):
@@ -66,8 +66,8 @@ class BasePredicateTest(ABC):
         n_trials: int = 10,
         baseline_episodes: int = 50,
         test_episodes: int = 50,
-        seed: Optional[int] = None,
-        output_dir: Optional[Path] = None,
+        seed: int | None = None,
+        output_dir: Path | None = None,
     ):
         """
         Initialize the predicate test.
@@ -90,12 +90,12 @@ class BasePredicateTest(ABC):
         self._rng = np.random.default_rng(seed)
 
     @abstractmethod
-    def create_baseline_env(self, seed: Optional[int] = None) -> ForagingGridEnv:
+    def create_baseline_env(self, seed: int | None = None) -> ForagingGridEnv:
         """Create environment for baseline measurement."""
         pass
 
     @abstractmethod
-    def create_test_env(self, seed: Optional[int] = None) -> ForagingGridEnv:
+    def create_test_env(self, seed: int | None = None) -> ForagingGridEnv:
         """Create environment for test condition."""
         pass
 
@@ -103,8 +103,8 @@ class BasePredicateTest(ABC):
     def compute_score(
         self,
         baseline_data: BaselineData,
-        test_episodes: List[EpisodeLog],
-    ) -> Tuple[float, Dict[str, Any]]:
+        test_episodes: list[EpisodeLog],
+    ) -> tuple[float, dict[str, Any]]:
         """
         Compute the test score.
 
@@ -169,7 +169,7 @@ class BasePredicateTest(ABC):
     def _collect_baseline(
         self,
         agent: BaseAgent,
-        seed: Optional[int] = None,
+        seed: int | None = None,
     ) -> BaselineData:
         """Collect baseline behavior data."""
         env = self.create_baseline_env(seed)
@@ -180,7 +180,7 @@ class BasePredicateTest(ABC):
         total_energy = 0.0
         total_path_length = 0.0
 
-        for ep in range(self.baseline_episodes):
+        for _ep in range(self.baseline_episodes):
             episode_data = self._run_episode(env, agent, seed=seed)
             episodes.append(episode_data)
 
@@ -213,13 +213,13 @@ class BasePredicateTest(ABC):
     def _run_test(
         self,
         agent: BaseAgent,
-        seed: Optional[int] = None,
-    ) -> List[EpisodeLog]:
+        seed: int | None = None,
+    ) -> list[EpisodeLog]:
         """Run test condition episodes."""
         env = self.create_test_env(seed)
         episodes = []
 
-        for ep in range(self.test_episodes):
+        for _ep in range(self.test_episodes):
             episode_data = self._run_episode(env, agent, seed=seed)
             episodes.append(episode_data)
 
@@ -229,8 +229,8 @@ class BasePredicateTest(ABC):
         self,
         env: ForagingGridEnv,
         agent: BaseAgent,
-        seed: Optional[int] = None,
-        max_steps: Optional[int] = None,
+        seed: int | None = None,
+        max_steps: int | None = None,
     ) -> EpisodeLog:
         """Run a single episode and return the log."""
         obs, info = env.reset(seed=seed)
@@ -286,7 +286,7 @@ class BasePredicateTest(ABC):
 
     def _compute_action_intensity(
         self,
-        episodes: List[EpisodeLog],
+        episodes: list[EpisodeLog],
         window_size: int = 10,
     ) -> np.ndarray:
         """
@@ -319,7 +319,7 @@ class BasePredicateTest(ABC):
 
     def _compute_position_variance(
         self,
-        episodes: List[EpisodeLog],
+        episodes: list[EpisodeLog],
         window_size: int = 10,
     ) -> np.ndarray:
         """Compute position variance over time as exploration measure."""

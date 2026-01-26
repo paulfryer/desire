@@ -6,19 +6,17 @@ import argparse
 import json
 from datetime import datetime
 from pathlib import Path
-from typing import Dict, List
 
 import numpy as np
-from scipy import stats
 
+from src.agents.heuristic import HeuristicAgent
 from src.environments.foraging_grid import ForagingGridEnv
 from src.environments.modes import EnvironmentMode
-from src.agents.heuristic import HeuristicAgent
 from src.tests.anticipation import AnticipatoryActivationTest
 from src.utils.config import Config, load_config
 
 
-def run_aa_with_seed(config: Config, seed: int, n_trials: int = 10) -> Dict[str, float]:
+def run_aa_with_seed(config: Config, seed: int, n_trials: int = 10) -> dict[str, float]:
     """Run AA test for all agents with a specific seed."""
     print(f"\n  Seed {seed}:")
 

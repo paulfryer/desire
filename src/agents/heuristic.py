@@ -3,7 +3,6 @@ Heuristic (rule-based) agent for baseline comparison.
 """
 
 from enum import IntEnum
-from typing import Dict, Optional, List, Tuple
 
 import numpy as np
 
@@ -39,7 +38,7 @@ class HeuristicAgent(BaseAgent):
         energy_consume_threshold: float = 80.0,
         energy_critical_threshold: float = 20.0,
         name: str = "heuristic",
-        seed: Optional[int] = None,
+        seed: int | None = None,
     ):
         """
         Initialize the heuristic agent.
@@ -61,15 +60,15 @@ class HeuristicAgent(BaseAgent):
         self.current_rule = Rule.RANDOM_WALK
 
         # Memory of known resource locations (for emergency seeking)
-        self.known_resources: List[Tuple[int, int]] = []
+        self.known_resources: list[tuple[int, int]] = []
 
         # Last action for momentum in random walk
-        self.last_direction: Optional[int] = None
+        self.last_direction: int | None = None
 
         # Internal state dimension (one-hot of rules)
         self._internal_state_dim = len(Rule)
 
-    def act(self, observation: Dict[str, np.ndarray]) -> int:
+    def act(self, observation: dict[str, np.ndarray]) -> int:
         """Select action based on rules."""
         local_view = observation["local_view"]
         energy_normalized = observation["energy"][0]
@@ -93,7 +92,7 @@ class HeuristicAgent(BaseAgent):
 
         return action
 
-    def _find_resources_in_view(self, local_view: np.ndarray) -> List[Tuple[int, int]]:
+    def _find_resources_in_view(self, local_view: np.ndarray) -> list[tuple[int, int]]:
         """Find resource positions in local view (relative to center)."""
         resources = []
         center = local_view.shape[0] // 2
@@ -110,8 +109,8 @@ class HeuristicAgent(BaseAgent):
 
     def _update_known_resources(
         self,
-        visible_resources: List[Tuple[int, int]],
-        observation: Dict[str, np.ndarray],
+        visible_resources: list[tuple[int, int]],
+        observation: dict[str, np.ndarray],
     ) -> None:
         """Update memory of known resource locations."""
         # Convert relative positions to absolute
@@ -134,7 +133,7 @@ class HeuristicAgent(BaseAgent):
         self,
         on_resource: bool,
         energy: float,
-        resource_positions: List[Tuple[int, int]],
+        resource_positions: list[tuple[int, int]],
     ) -> int:
         """Select action based on current state and rules."""
 
@@ -164,7 +163,7 @@ class HeuristicAgent(BaseAgent):
         self.current_rule = Rule.RANDOM_WALK
         return self._random_walk()
 
-    def _move_toward_nearest(self, positions: List[Tuple[int, int]]) -> int:
+    def _move_toward_nearest(self, positions: list[tuple[int, int]]) -> int:
         """Move toward the nearest position."""
         if not positions:
             return self._random_walk()
@@ -212,7 +211,7 @@ class HeuristicAgent(BaseAgent):
         state[self.current_rule] = 1.0
         return state
 
-    def get_internal_response(self, observation: Dict[str, np.ndarray]) -> np.ndarray:
+    def get_internal_response(self, observation: dict[str, np.ndarray]) -> np.ndarray:
         """Get internal response to observation."""
         # Temporarily compute what rule would be active
         local_view = observation["local_view"]

@@ -8,7 +8,7 @@ Provides environments where resources have unpredictable behavior:
 - Resource clusters with correlations
 """
 
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any
 
 import numpy as np
 from gymnasium import Wrapper
@@ -60,7 +60,7 @@ class StochasticResourceWrapper(Wrapper):
 
         self._rng = np.random.default_rng()
 
-    def reset(self, **kwargs) -> Tuple[Dict[str, np.ndarray], Dict[str, Any]]:
+    def reset(self, **kwargs) -> tuple[dict[str, np.ndarray], dict[str, Any]]:
         """Reset environment."""
         if "seed" in kwargs:
             self._rng = np.random.default_rng(kwargs["seed"])
@@ -69,7 +69,7 @@ class StochasticResourceWrapper(Wrapper):
         info["resource_dynamics"] = "stochastic"
         return obs, info
 
-    def step(self, action: int) -> Tuple[Dict, float, bool, bool, Dict]:
+    def step(self, action: int) -> tuple[dict, float, bool, bool, dict]:
         """Step with stochastic resource updates."""
         obs, reward, terminated, truncated, info = self.env.step(action)
 
@@ -187,9 +187,9 @@ class ResourceClusterWrapper(Wrapper):
         self.cluster_despawn_rate = cluster_despawn_rate
 
         self._rng = np.random.default_rng()
-        self.cluster_centers: List[Tuple[int, int]] = []
+        self.cluster_centers: list[tuple[int, int]] = []
 
-    def reset(self, **kwargs) -> Tuple[Dict[str, np.ndarray], Dict[str, Any]]:
+    def reset(self, **kwargs) -> tuple[dict[str, np.ndarray], dict[str, Any]]:
         """Reset with cluster initialization."""
         if "seed" in kwargs:
             self._rng = np.random.default_rng(kwargs["seed"])
@@ -213,7 +213,7 @@ class ResourceClusterWrapper(Wrapper):
             y = self._rng.integers(self.cluster_radius, grid - self.cluster_radius)
             self.cluster_centers.append((x, y))
 
-    def step(self, action: int) -> Tuple[Dict, float, bool, bool, Dict]:
+    def step(self, action: int) -> tuple[dict, float, bool, bool, dict]:
         """Step with cluster dynamics."""
         obs, reward, terminated, truncated, info = self.env.step(action)
 
@@ -233,7 +233,7 @@ class ResourceClusterWrapper(Wrapper):
             elif self._rng.random() < self.cluster_despawn_rate:
                 self._despawn_in_cluster(center)
 
-    def _spawn_in_cluster(self, center: Tuple[int, int]) -> None:
+    def _spawn_in_cluster(self, center: tuple[int, int]) -> None:
         """Spawn resources in cluster area."""
         cx, cy = center
 
@@ -251,7 +251,7 @@ class ResourceClusterWrapper(Wrapper):
                         energy_value=20.0,
                     ))
 
-    def _despawn_in_cluster(self, center: Tuple[int, int]) -> None:
+    def _despawn_in_cluster(self, center: tuple[int, int]) -> None:
         """Despawn resources in cluster area."""
         cx, cy = center
 
@@ -292,7 +292,7 @@ class SeasonalResourceWrapper(Wrapper):
         self.abundance_amplitude = abundance_amplitude
         self.min_abundance = min_abundance
 
-    def step(self, action: int) -> Tuple[Dict, float, bool, bool, Dict]:
+    def step(self, action: int) -> tuple[dict, float, bool, bool, dict]:
         """Step with seasonal updates."""
         obs, reward, terminated, truncated, info = self.env.step(action)
 

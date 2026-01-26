@@ -7,10 +7,10 @@ Provides various partial observability mechanisms including:
 - Stochastic observation
 """
 
-from typing import Any, Dict, Optional, Tuple
+from typing import Any
 
 import numpy as np
-from gymnasium import spaces, Wrapper
+from gymnasium import Wrapper, spaces
 
 from src.environments.foraging_grid import ForagingGridEnv
 
@@ -29,7 +29,7 @@ class FogOfWarWrapper(Wrapper):
     def __init__(
         self,
         env: ForagingGridEnv,
-        visibility_radius: Optional[int] = None,
+        visibility_radius: int | None = None,
         enable_memory: bool = True,
         memory_decay: float = 0.0,
         observation_noise: float = 0.0,
@@ -55,14 +55,14 @@ class FogOfWarWrapper(Wrapper):
         self.mask_unexplored = mask_unexplored
 
         # Exploration tracking
-        self.explored_map: Optional[np.ndarray] = None  # 0 = unexplored, 1 = explored
-        self.memory_map: Optional[np.ndarray] = None  # Strength of memory (decays)
+        self.explored_map: np.ndarray | None = None  # 0 = unexplored, 1 = explored
+        self.memory_map: np.ndarray | None = None  # Strength of memory (decays)
 
         # Modify observation space to include exploration map
         if enable_memory:
             base_space = env.observation_space
             self.observation_space = spaces.Dict({
-                **{k: v for k, v in base_space.spaces.items()},
+                **dict(base_space.spaces.items()),
                 "explored": spaces.Box(
                     low=0, high=1,
                     shape=(env.grid_size, env.grid_size),
@@ -70,7 +70,7 @@ class FogOfWarWrapper(Wrapper):
                 ),
             })
 
-    def reset(self, **kwargs) -> Tuple[Dict[str, np.ndarray], Dict[str, Any]]:
+    def reset(self, **kwargs) -> tuple[dict[str, np.ndarray], dict[str, Any]]:
         """Reset environment and exploration state."""
         obs, info = self.env.reset(**kwargs)
 
@@ -87,7 +87,7 @@ class FogOfWarWrapper(Wrapper):
 
         return obs, info
 
-    def step(self, action: int) -> Tuple[Dict, float, bool, bool, Dict]:
+    def step(self, action: int) -> tuple[dict, float, bool, bool, dict]:
         """Step environment and update exploration."""
         obs, reward, terminated, truncated, info = self.env.step(action)
 
@@ -123,7 +123,7 @@ class FogOfWarWrapper(Wrapper):
                         self.explored_map[gx, gy] = 1.0
                         self.memory_map[gx, gy] = 1.0
 
-    def _apply_fog(self, obs: Dict[str, np.ndarray]) -> Dict[str, np.ndarray]:
+    def _apply_fog(self, obs: dict[str, np.ndarray]) -> dict[str, np.ndarray]:
         """Apply fog of war to observation."""
         obs = obs.copy()
 
@@ -154,7 +154,7 @@ class FogOfWarWrapper(Wrapper):
 
         return obs
 
-    def get_exploration_stats(self) -> Dict[str, float]:
+    def get_exploration_stats(self) -> dict[str, float]:
         """Get exploration statistics."""
         return {
             "explored_fraction": float(np.mean(self.explored_map > 0)),
@@ -195,20 +195,20 @@ class StochasticObservationWrapper(Wrapper):
         self.false_positive_prob = false_positive_prob
         self.false_negative_prob = false_negative_prob
 
-    def reset(self, **kwargs) -> Tuple[Dict[str, np.ndarray], Dict[str, Any]]:
+    def reset(self, **kwargs) -> tuple[dict[str, np.ndarray], dict[str, Any]]:
         """Reset environment."""
         obs, info = self.env.reset(**kwargs)
         obs = self._add_noise(obs)
         return obs, info
 
-    def step(self, action: int) -> Tuple[Dict, float, bool, bool, Dict]:
+    def step(self, action: int) -> tuple[dict, float, bool, bool, dict]:
         """Step with noisy observation."""
         obs, reward, terminated, truncated, info = self.env.step(action)
         obs = self._add_noise(obs)
         info["observation_noisy"] = True
         return obs, reward, terminated, truncated, info
 
-    def _add_noise(self, obs: Dict[str, np.ndarray]) -> Dict[str, np.ndarray]:
+    def _add_noise(self, obs: dict[str, np.ndarray]) -> dict[str, np.ndarray]:
         """Add noise to observation."""
         obs = obs.copy()
         local_view = obs["local_view"].copy()
@@ -261,7 +261,7 @@ class DelayedObservationWrapper(Wrapper):
         self.delay = delay
         self.obs_buffer = []
 
-    def reset(self, **kwargs) -> Tuple[Dict[str, np.ndarray], Dict[str, Any]]:
+    def reset(self, **kwargs) -> tuple[dict[str, np.ndarray], dict[str, Any]]:
         """Reset environment and clear buffer."""
         obs, info = self.env.reset(**kwargs)
 
@@ -270,7 +270,7 @@ class DelayedObservationWrapper(Wrapper):
 
         return self.obs_buffer[0], info
 
-    def step(self, action: int) -> Tuple[Dict, float, bool, bool, Dict]:
+    def step(self, action: int) -> tuple[dict, float, bool, bool, dict]:
         """Step with delayed observation."""
         obs, reward, terminated, truncated, info = self.env.step(action)
 

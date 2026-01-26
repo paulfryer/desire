@@ -2,14 +2,14 @@
 State-Dependent Valuation (SDV) test implementation.
 """
 
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any
 
 import numpy as np
 
 from src.agents.base_agent import BaseAgent
 from src.environments.foraging_grid import ForagingGridEnv
 from src.environments.modes import EnvironmentMode
-from src.tests.base_test import BasePredicateTest, BaselineData, TestResult
+from src.tests.base_test import BaselineData, BasePredicateTest, TestResult
 from src.utils.logging import EpisodeLog
 
 
@@ -41,8 +41,8 @@ class StateDependentValuationTest(BasePredicateTest):
         high_energy_threshold: float = 0.8,  # As fraction of max
         low_energy_threshold: float = 0.4,   # As fraction of max
         grid_size: int = 20,
-        seed: Optional[int] = None,
-        output_dir: Optional[str] = None,
+        seed: int | None = None,
+        output_dir: str | None = None,
     ):
         """
         Initialize the State-Dependent Valuation test.
@@ -70,7 +70,7 @@ class StateDependentValuationTest(BasePredicateTest):
         self.low_energy_threshold = low_energy_threshold
         self.grid_size = grid_size
 
-    def create_baseline_env(self, seed: Optional[int] = None) -> ForagingGridEnv:
+    def create_baseline_env(self, seed: int | None = None) -> ForagingGridEnv:
         """Create baseline environment."""
         return ForagingGridEnv(
             grid_size=self.grid_size,
@@ -82,7 +82,7 @@ class StateDependentValuationTest(BasePredicateTest):
             seed=seed,
         )
 
-    def create_test_env(self, seed: Optional[int] = None) -> ForagingGridEnv:
+    def create_test_env(self, seed: int | None = None) -> ForagingGridEnv:
         """Create test environment (same as baseline)."""
         return ForagingGridEnv(
             grid_size=self.grid_size,
@@ -97,8 +97,8 @@ class StateDependentValuationTest(BasePredicateTest):
     def compute_score(
         self,
         baseline_data: BaselineData,
-        test_episodes: List[EpisodeLog],
-    ) -> Tuple[float, Dict[str, Any]]:
+        test_episodes: list[EpisodeLog],
+    ) -> tuple[float, dict[str, Any]]:
         """
         Compute the State-Dependent Valuation score.
 
@@ -184,11 +184,11 @@ class StateDependentValuationTest(BasePredicateTest):
 
 
 def run_state_dependent_test(
-    agents: List[BaseAgent],
+    agents: list[BaseAgent],
     n_trials: int = 10,
-    seed: Optional[int] = None,
-    output_dir: Optional[str] = None,
-) -> Dict[str, TestResult]:
+    seed: int | None = None,
+    output_dir: str | None = None,
+) -> dict[str, TestResult]:
     """Run the State-Dependent Valuation test on multiple agents."""
     test = StateDependentValuationTest(
         n_trials=n_trials,

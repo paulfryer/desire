@@ -3,7 +3,6 @@ Reinforcement Learning agent using PPO from stable-baselines3.
 """
 
 from pathlib import Path
-from typing import Any, Dict, Optional, Tuple
 
 import numpy as np
 import torch
@@ -15,8 +14,8 @@ from src.agents.base_agent import BaseAgent
 # Try to import stable-baselines3
 try:
     from stable_baselines3 import PPO
-    from stable_baselines3.common.torch_layers import BaseFeaturesExtractor
     from stable_baselines3.common.policies import ActorCriticPolicy
+    from stable_baselines3.common.torch_layers import BaseFeaturesExtractor
     HAS_SB3 = True
 except ImportError:
     HAS_SB3 = False
@@ -73,9 +72,9 @@ class ForagingFeatureExtractor(BaseFeaturesExtractor if HAS_SB3 else nn.Module):
         )
 
         # Store for internal state access
-        self._last_features: Optional[torch.Tensor] = None
+        self._last_features: torch.Tensor | None = None
 
-    def forward(self, observations: Dict[str, torch.Tensor]) -> torch.Tensor:
+    def forward(self, observations: dict[str, torch.Tensor]) -> torch.Tensor:
         """Forward pass through feature extractor."""
         # Process local view with CNN
         # Input shape: (batch, H, W, C) -> need (batch, C, H, W)
@@ -136,7 +135,7 @@ class RLAgent(BaseAgent):
         features_dim: int = 64,
         device: str = "auto",
         name: str = "rl_ppo",
-        seed: Optional[int] = None,
+        seed: int | None = None,
     ):
         """
         Initialize the RL agent.
@@ -175,8 +174,8 @@ class RLAgent(BaseAgent):
         self.device = device
 
         # Model will be created when training starts
-        self.model: Optional[PPO] = None
-        self._feature_extractor: Optional[ForagingFeatureExtractor] = None
+        self.model: PPO | None = None
+        self._feature_extractor: ForagingFeatureExtractor | None = None
 
         # Internal state storage
         self._last_internal_state = np.zeros(features_dim, dtype=np.float32)
@@ -191,11 +190,11 @@ class RLAgent(BaseAgent):
         Args:
             env: The training environment
         """
-        policy_kwargs = dict(
-            features_extractor_class=ForagingFeatureExtractor,
-            features_extractor_kwargs=dict(features_dim=self.features_dim),
-            net_arch=dict(pi=[64, 64], vf=[64, 64]),
-        )
+        policy_kwargs = {
+            "features_extractor_class": ForagingFeatureExtractor,
+            "features_extractor_kwargs": {"features_dim": self.features_dim},
+            "net_arch": {"pi": [64, 64], "vf": [64, 64]},
+        }
 
         self.model = PPO(
             "MultiInputPolicy",
@@ -231,7 +230,7 @@ class RLAgent(BaseAgent):
         self.model.learn(total_timesteps=total_timesteps, callback=callback)
         self.training_mode = False
 
-    def act(self, observation: Dict[str, np.ndarray]) -> int:
+    def act(self, observation: dict[str, np.ndarray]) -> int:
         """Select action using the trained policy."""
         if self.model is None:
             # Random action if not trained
@@ -248,7 +247,7 @@ class RLAgent(BaseAgent):
 
         return int(action)
 
-    def _prepare_observation(self, observation: Dict[str, np.ndarray]) -> Dict[str, np.ndarray]:
+    def _prepare_observation(self, observation: dict[str, np.ndarray]) -> dict[str, np.ndarray]:
         """Prepare observation for the model."""
         return {
             "local_view": observation["local_view"].astype(np.float32),
@@ -257,7 +256,7 @@ class RLAgent(BaseAgent):
             "step": observation["step"].astype(np.float32),
         }
 
-    def _update_internal_state(self, observation: Dict[str, np.ndarray]) -> None:
+    def _update_internal_state(self, observation: dict[str, np.ndarray]) -> None:
         """Update the internal state representation."""
         if self._feature_extractor is None:
             return
@@ -279,7 +278,7 @@ class RLAgent(BaseAgent):
         """Get the penultimate layer activations."""
         return self._last_internal_state.copy()
 
-    def get_internal_response(self, observation: Dict[str, np.ndarray]) -> np.ndarray:
+    def get_internal_response(self, observation: dict[str, np.ndarray]) -> np.ndarray:
         """Get internal response to an observation."""
         if self._feature_extractor is None:
             return np.zeros(self.features_dim, dtype=np.float32)
@@ -295,7 +294,7 @@ class RLAgent(BaseAgent):
             features = self._feature_extractor(obs_tensors)
             return features.cpu().numpy().flatten()
 
-    def get_action_probabilities(self, observation: Dict[str, np.ndarray]) -> np.ndarray:
+    def get_action_probabilities(self, observation: dict[str, np.ndarray]) -> np.ndarray:
         """Get action probability distribution."""
         if self.model is None:
             # Uniform distribution
@@ -312,7 +311,7 @@ class RLAgent(BaseAgent):
 
         return probs.flatten()
 
-    def get_value_function_estimate(self, observation: Dict[str, np.ndarray]) -> float:
+    def get_value_function_estimate(self, observation: dict[str, np.ndarray]) -> float:
         """
         Get value function estimate for an observation.
 
@@ -333,7 +332,7 @@ class RLAgent(BaseAgent):
             value = self.model.policy.predict_values(obs_tensor)
             return float(value.cpu().numpy().flatten()[0])
 
-    def get_gradient_magnitude(self, observation: Dict[str, np.ndarray]) -> float:
+    def get_gradient_magnitude(self, observation: dict[str, np.ndarray]) -> float:
         """
         Get magnitude of policy gradient for an observation.
 
@@ -349,7 +348,7 @@ class RLAgent(BaseAgent):
             return 0.0
 
         obs = self._prepare_observation(observation)
-        obs_tensor = self.model.policy.obs_to_tensor(obs)[0]
+        self.model.policy.obs_to_tensor(obs)[0]
 
         # Enable gradients temporarily
         for param in self.model.policy.parameters():
@@ -377,7 +376,7 @@ class RLAgent(BaseAgent):
 
         return float(grad_magnitude)
 
-    def get_policy_entropy(self, observation: Dict[str, np.ndarray]) -> float:
+    def get_policy_entropy(self, observation: dict[str, np.ndarray]) -> float:
         """
         Get entropy of the policy distribution for an observation.
 

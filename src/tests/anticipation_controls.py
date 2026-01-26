@@ -6,15 +6,15 @@ goal-directed behavior and not explained by confounds.
 """
 
 from dataclasses import dataclass
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any
 
 import numpy as np
 from scipy import stats
 
 from src.agents.base_agent import BaseAgent
 from src.environments.foraging_grid import ForagingGridEnv
-from src.environments.modes import EnvironmentMode, ModeConfig
-from src.tests.base_test import BasePredicateTest, BaselineData, TestResult
+from src.environments.modes import EnvironmentMode
+from src.tests.base_test import BaselineData, BasePredicateTest, TestResult
 from src.utils.logging import EpisodeLog
 
 
@@ -25,10 +25,10 @@ class ControlAnalysisResult:
     control_name: str
     passes: bool
     aa_score: float
-    expected_range: Tuple[float, float]
-    details: Dict[str, Any]
+    expected_range: tuple[float, float]
+    details: dict[str, Any]
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         return {
             "control_name": self.control_name,
             "passes": self.passes,
@@ -52,7 +52,7 @@ class AAControlAnalysis:
         self,
         grid_size: int = 20,
         n_episodes: int = 30,
-        seed: Optional[int] = None,
+        seed: int | None = None,
     ):
         self.grid_size = grid_size
         self.n_episodes = n_episodes
@@ -62,7 +62,7 @@ class AAControlAnalysis:
     def measure_non_goal_activation(
         self,
         agent: BaseAgent,
-        episodes: List[EpisodeLog],
+        episodes: list[EpisodeLog],
         n_random_locations: int = 10,
     ) -> ControlAnalysisResult:
         """
@@ -181,7 +181,7 @@ class AAControlAnalysis:
             obs, info = env.reset(seed=self.seed + ep if self.seed else None)
             agent.reset()
 
-            for step in range(env.max_steps):
+            for _step in range(env.max_steps):
                 action = agent.act(obs)
                 internal_state = agent.get_internal_state()
 
@@ -213,7 +213,7 @@ class AAControlAnalysis:
                 obs = next_obs
 
         # Compute AA for high vs low energy conditions
-        def compute_aa(near: List[float], far: List[float]) -> float:
+        def compute_aa(near: list[float], far: list[float]) -> float:
             if not near or not far:
                 return 1.0
             near_mean = np.mean(near)
@@ -245,8 +245,8 @@ class AAControlAnalysis:
 
     def compute_partial_correlations(
         self,
-        episodes: List[EpisodeLog],
-        confounds: List[str] = None,
+        episodes: list[EpisodeLog],
+        confounds: list[str] = None,
     ) -> ControlAnalysisResult:
         """
         Compute partial correlations to control for confounds.
@@ -354,9 +354,9 @@ class AAControlAnalysis:
     def run_all_controls(
         self,
         agent: BaseAgent,
-        episodes: List[EpisodeLog],
-        env: Optional[ForagingGridEnv] = None,
-    ) -> Dict[str, ControlAnalysisResult]:
+        episodes: list[EpisodeLog],
+        env: ForagingGridEnv | None = None,
+    ) -> dict[str, ControlAnalysisResult]:
         """
         Run all control analyses.
 
@@ -398,8 +398,8 @@ class ControlledAATest(BasePredicateTest):
         near_threshold: int = 3,
         far_threshold: int = 8,
         grid_size: int = 20,
-        seed: Optional[int] = None,
-        output_dir: Optional[str] = None,
+        seed: int | None = None,
+        output_dir: str | None = None,
     ):
         super().__init__(
             name="anticipatory_activation_controlled",
@@ -418,7 +418,7 @@ class ControlledAATest(BasePredicateTest):
             seed=seed,
         )
 
-    def create_baseline_env(self, seed: Optional[int] = None) -> ForagingGridEnv:
+    def create_baseline_env(self, seed: int | None = None) -> ForagingGridEnv:
         return ForagingGridEnv(
             grid_size=self.grid_size,
             max_steps=500,
@@ -429,14 +429,14 @@ class ControlledAATest(BasePredicateTest):
             seed=seed,
         )
 
-    def create_test_env(self, seed: Optional[int] = None) -> ForagingGridEnv:
+    def create_test_env(self, seed: int | None = None) -> ForagingGridEnv:
         return self.create_baseline_env(seed)
 
     def compute_score(
         self,
         baseline_data: BaselineData,
-        test_episodes: List[EpisodeLog],
-    ) -> Tuple[float, Dict[str, Any]]:
+        test_episodes: list[EpisodeLog],
+    ) -> tuple[float, dict[str, Any]]:
         """Compute AA score with control analyses."""
         # Standard AA computation
         near_activations = []

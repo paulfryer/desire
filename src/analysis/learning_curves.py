@@ -7,14 +7,11 @@ identifying learning phases, and comparing learning efficiency.
 
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Any, Dict, List, Optional, Tuple
-
-import json
-import numpy as np
-from scipy import optimize
-from scipy import signal
+from typing import Any
 
 import matplotlib.pyplot as plt
+import numpy as np
+from scipy import optimize, signal
 
 
 @dataclass
@@ -37,7 +34,7 @@ class LearningCurveMetrics:
     variance_late: float  # Variance in last 10%
     stability_ratio: float  # late/early variance
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         return {
             "initial_performance": self.initial_performance,
             "final_performance": self.final_performance,
@@ -53,7 +50,7 @@ class LearningCurveMetrics:
 
 
 def analyze_learning_curve(
-    rewards: List[float],
+    rewards: list[float],
     window_size: int = 10,
 ) -> LearningCurveMetrics:
     """
@@ -144,9 +141,9 @@ def analyze_learning_curve(
 
 
 def compare_learning_curves(
-    curves: Dict[str, List[float]],
+    curves: dict[str, list[float]],
     window_size: int = 10,
-) -> Dict[str, Any]:
+) -> dict[str, Any]:
     """
     Compare learning curves across multiple agents.
 
@@ -194,11 +191,11 @@ def compare_learning_curves(
 
 
 def plot_learning_curves(
-    curves: Dict[str, List[float]],
+    curves: dict[str, list[float]],
     title: str = "Learning Curves",
-    figsize: Tuple[int, int] = (12, 6),
+    figsize: tuple[int, int] = (12, 6),
     window_size: int = 10,
-    save_path: Optional[Path] = None,
+    save_path: Path | None = None,
 ) -> plt.Figure:
     """
     Plot learning curves with confidence intervals.
@@ -218,7 +215,7 @@ def plot_learning_curves(
     colors = plt.cm.tab10(np.linspace(0, 1, len(curves)))
 
     # Left: Raw curves with smoothing
-    for (name, rewards), color in zip(curves.items(), colors):
+    for (name, rewards), color in zip(curves.items(), colors, strict=False):
         x = np.arange(len(rewards))
 
         # Raw data (light)
@@ -265,9 +262,9 @@ def plot_learning_curves(
 
 
 def detect_learning_phases(
-    rewards: List[float],
+    rewards: list[float],
     n_phases: int = 3,
-) -> Dict[str, Any]:
+) -> dict[str, Any]:
     """
     Detect distinct learning phases in a curve.
 
@@ -324,10 +321,10 @@ def detect_learning_phases(
 
 
 def estimate_convergence(
-    rewards: List[float],
+    rewards: list[float],
     window_size: int = 50,
     threshold: float = 0.01,
-) -> Dict[str, Any]:
+) -> dict[str, Any]:
     """
     Estimate if and when learning has converged.
 

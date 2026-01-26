@@ -2,14 +2,14 @@
 Means-End Decoupling (MED) test implementation.
 """
 
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any
 
 import numpy as np
 
 from src.agents.base_agent import BaseAgent
 from src.environments.foraging_grid import ForagingGridEnv
 from src.environments.modes import EnvironmentMode, ModeConfig
-from src.tests.base_test import BasePredicateTest, BaselineData, TestResult
+from src.tests.base_test import BaselineData, BasePredicateTest, TestResult
 from src.utils.logging import EpisodeLog
 
 
@@ -39,8 +39,8 @@ class MeansEndDecouplingTest(BasePredicateTest):
         training_episodes: int = 100,
         transfer_episodes: int = 50,
         grid_size: int = 20,
-        seed: Optional[int] = None,
-        output_dir: Optional[str] = None,
+        seed: int | None = None,
+        output_dir: str | None = None,
     ):
         """
         Initialize the Means-End Decoupling test.
@@ -93,7 +93,7 @@ class MeansEndDecouplingTest(BasePredicateTest):
             detour = 2 * (center - 2)  # Distance to go around
             return direct + detour
 
-    def create_baseline_env(self, seed: Optional[int] = None) -> ForagingGridEnv:
+    def create_baseline_env(self, seed: int | None = None) -> ForagingGridEnv:
         """Create training environment with open path P1."""
         mode_config = self._create_mode_config(blocked=False)
 
@@ -105,7 +105,7 @@ class MeansEndDecouplingTest(BasePredicateTest):
             seed=seed,
         )
 
-    def create_test_env(self, seed: Optional[int] = None) -> ForagingGridEnv:
+    def create_test_env(self, seed: int | None = None) -> ForagingGridEnv:
         """Create test environment with P1 blocked, P2 open."""
         mode_config = self._create_mode_config(blocked=True)
 
@@ -153,8 +153,8 @@ class MeansEndDecouplingTest(BasePredicateTest):
     def compute_score(
         self,
         baseline_data: BaselineData,
-        test_episodes: List[EpisodeLog],
-    ) -> Tuple[float, Dict[str, Any]]:
+        test_episodes: list[EpisodeLog],
+    ) -> tuple[float, dict[str, Any]]:
         """
         Compute the Means-End Decoupling score.
 
@@ -195,7 +195,7 @@ class MeansEndDecouplingTest(BasePredicateTest):
 
         return med_score, raw_data
 
-    def _compute_goal_reach_times(self, episodes: List[EpisodeLog]) -> List[int]:
+    def _compute_goal_reach_times(self, episodes: list[EpisodeLog]) -> list[int]:
         """
         Compute time to first resource consumption for each episode.
 
@@ -216,8 +216,8 @@ class MeansEndDecouplingTest(BasePredicateTest):
 
     def _compute_transfer_efficiency(
         self,
-        p1_times: List[int],
-        p2_times: List[int],
+        p1_times: list[int],
+        p2_times: list[int],
     ) -> float:
         """
         Compute transfer efficiency ratio.
@@ -238,11 +238,11 @@ class MeansEndDecouplingTest(BasePredicateTest):
 
 
 def run_means_end_test(
-    agents: List[BaseAgent],
+    agents: list[BaseAgent],
     n_trials: int = 10,
-    seed: Optional[int] = None,
-    output_dir: Optional[str] = None,
-) -> Dict[str, TestResult]:
+    seed: int | None = None,
+    output_dir: str | None = None,
+) -> dict[str, TestResult]:
     """
     Run the Means-End Decoupling test on multiple agents.
 

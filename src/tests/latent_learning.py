@@ -5,14 +5,14 @@ Tests whether agents learn about the environment structure
 even without immediate reward, then use that knowledge later.
 """
 
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any
 
 import numpy as np
 
 from src.agents.base_agent import BaseAgent
 from src.environments.foraging_grid import ForagingGridEnv
 from src.environments.modes import EnvironmentMode, ModeConfig
-from src.tests.base_test import BasePredicateTest, BaselineData, TestResult
+from src.tests.base_test import BaselineData, BasePredicateTest, TestResult
 from src.utils.logging import EpisodeLog
 
 
@@ -38,8 +38,8 @@ class LatentLearningTest(BasePredicateTest):
         exploration_episodes: int = 20,
         test_episodes: int = 20,
         grid_size: int = 20,
-        seed: Optional[int] = None,
-        output_dir: Optional[str] = None,
+        seed: int | None = None,
+        output_dir: str | None = None,
     ):
         """
         Initialize Latent Learning test.
@@ -72,7 +72,7 @@ class LatentLearningTest(BasePredicateTest):
             (grid_size - 4, grid_size - 4),
         ]
 
-    def create_baseline_env(self, seed: Optional[int] = None) -> ForagingGridEnv:
+    def create_baseline_env(self, seed: int | None = None) -> ForagingGridEnv:
         """Create exploration environment (no resources)."""
         config = ModeConfig(
             mode=EnvironmentMode.BASELINE,
@@ -94,7 +94,7 @@ class LatentLearningTest(BasePredicateTest):
             seed=seed,
         )
 
-    def create_test_env(self, seed: Optional[int] = None) -> ForagingGridEnv:
+    def create_test_env(self, seed: int | None = None) -> ForagingGridEnv:
         """Create test environment with resources at corners."""
         config = ModeConfig(
             mode=EnvironmentMode.BASELINE,
@@ -119,7 +119,7 @@ class LatentLearningTest(BasePredicateTest):
     def _collect_baseline(
         self,
         agent: BaseAgent,
-        seed: Optional[int] = None,
+        seed: int | None = None,
     ) -> BaselineData:
         """
         Collect exploration data (baseline phase).
@@ -131,7 +131,7 @@ class LatentLearningTest(BasePredicateTest):
         episodes = []
         visited_positions = set()
 
-        for ep in range(self.exploration_episodes):
+        for _ep in range(self.exploration_episodes):
             episode = self._run_episode(env, agent, seed=seed)
             episodes.append(episode)
 
@@ -158,8 +158,8 @@ class LatentLearningTest(BasePredicateTest):
     def compute_score(
         self,
         baseline_data: BaselineData,
-        test_episodes: List[EpisodeLog],
-    ) -> Tuple[float, Dict[str, Any]]:
+        test_episodes: list[EpisodeLog],
+    ) -> tuple[float, dict[str, Any]]:
         """
         Compute Latent Learning score.
 
@@ -241,8 +241,8 @@ class DelayedRewardTest(BasePredicateTest):
         test_episodes: int = 30,
         grid_size: int = 20,
         reward_delay_steps: int = 100,
-        seed: Optional[int] = None,
-        output_dir: Optional[str] = None,
+        seed: int | None = None,
+        output_dir: str | None = None,
     ):
         super().__init__(
             name="delayed_reward",
@@ -256,7 +256,7 @@ class DelayedRewardTest(BasePredicateTest):
         self.grid_size = grid_size
         self.reward_delay_steps = reward_delay_steps
 
-    def create_baseline_env(self, seed: Optional[int] = None) -> ForagingGridEnv:
+    def create_baseline_env(self, seed: int | None = None) -> ForagingGridEnv:
         """Create baseline with immediate rewards."""
         return ForagingGridEnv(
             grid_size=self.grid_size,
@@ -268,15 +268,15 @@ class DelayedRewardTest(BasePredicateTest):
             seed=seed,
         )
 
-    def create_test_env(self, seed: Optional[int] = None) -> ForagingGridEnv:
+    def create_test_env(self, seed: int | None = None) -> ForagingGridEnv:
         """Create test environment (same as baseline for this test)."""
         return self.create_baseline_env(seed)
 
     def compute_score(
         self,
         baseline_data: BaselineData,
-        test_episodes: List[EpisodeLog],
-    ) -> Tuple[float, Dict[str, Any]]:
+        test_episodes: list[EpisodeLog],
+    ) -> tuple[float, dict[str, Any]]:
         """Compute delayed reward learning score."""
         # Compare performance early vs late in episodes
         early_rewards = []
@@ -317,11 +317,11 @@ class DelayedRewardTest(BasePredicateTest):
 
 
 def run_latent_learning_test(
-    agents: List[BaseAgent],
+    agents: list[BaseAgent],
     n_trials: int = 10,
-    seed: Optional[int] = None,
-    output_dir: Optional[str] = None,
-) -> Dict[str, TestResult]:
+    seed: int | None = None,
+    output_dir: str | None = None,
+) -> dict[str, TestResult]:
     """Run Latent Learning test on multiple agents."""
     test = LatentLearningTest(
         n_trials=n_trials,

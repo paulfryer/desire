@@ -5,7 +5,7 @@ Tools for analyzing and comparing neural representations across agents and condi
 """
 
 from dataclasses import dataclass
-from typing import Any, Dict, List, Optional, Tuple, Union
+from typing import Any
 
 import numpy as np
 from scipy import stats
@@ -33,7 +33,7 @@ class RSAResult:
     rdm2: np.ndarray
     n_samples: int
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         return {
             "rsa_correlation": self.rsa_correlation,
             "p_value": self.p_value,
@@ -52,7 +52,7 @@ class CKAResult:
     hsic_xx: float
     hsic_yy: float
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         return {
             "cka_score": self.cka_score,
             "kernel": self.kernel,
@@ -70,9 +70,9 @@ class ProjectionResult:
     projections: np.ndarray
     labels: np.ndarray
     method: str
-    explained_variance: Optional[float] = None
+    explained_variance: float | None = None
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         return {
             "method": self.method,
             "n_samples": len(self.labels),
@@ -165,7 +165,7 @@ def compute_cka(
     X: np.ndarray,
     Y: np.ndarray,
     kernel: str = "linear",
-    sigma: Optional[float] = None,
+    sigma: float | None = None,
 ) -> CKAResult:
     """
     Compute Centered Kernel Alignment between two representations.
@@ -226,12 +226,12 @@ def compute_cka(
 def create_projection_visualization(
     internal_states: np.ndarray,
     labels: np.ndarray,
-    methods: List[str] = None,
+    methods: list[str] = None,
     n_components: int = 2,
     perplexity: int = 30,
     n_neighbors: int = 15,
     random_state: int = 42,
-) -> Dict[str, ProjectionResult]:
+) -> dict[str, ProjectionResult]:
     """
     Create dimensionality reduction projections of internal states.
 
@@ -312,7 +312,7 @@ def compare_agent_representations(
     agent2_states: np.ndarray,
     agent1_name: str = "agent1",
     agent2_name: str = "agent2",
-) -> Dict[str, Any]:
+) -> dict[str, Any]:
     """
     Compare representations between two agents.
 
@@ -360,7 +360,7 @@ def compare_agent_representations(
 def analyze_representation_geometry(
     internal_states: np.ndarray,
     labels: np.ndarray,
-) -> Dict[str, float]:
+) -> dict[str, float]:
     """
     Analyze geometric properties of internal representations.
 

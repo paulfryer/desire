@@ -2,14 +2,14 @@
 Frustration Intensification (FI) test implementation.
 """
 
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any
 
 import numpy as np
 
 from src.agents.base_agent import BaseAgent
 from src.environments.foraging_grid import ForagingGridEnv
 from src.environments.modes import EnvironmentMode, get_mode_config
-from src.tests.base_test import BasePredicateTest, BaselineData, TestResult
+from src.tests.base_test import BaselineData, BasePredicateTest, TestResult
 from src.utils.logging import EpisodeLog
 
 
@@ -44,8 +44,8 @@ class FrustrationIntensificationTest(BasePredicateTest):
         blockage_step: int = 100,
         post_blockage_steps: int = 200,
         grid_size: int = 20,
-        seed: Optional[int] = None,
-        output_dir: Optional[str] = None,
+        seed: int | None = None,
+        output_dir: str | None = None,
     ):
         """
         Initialize the Frustration Intensification test.
@@ -73,7 +73,7 @@ class FrustrationIntensificationTest(BasePredicateTest):
         self.post_blockage_steps = post_blockage_steps
         self.grid_size = grid_size
 
-    def create_baseline_env(self, seed: Optional[int] = None) -> ForagingGridEnv:
+    def create_baseline_env(self, seed: int | None = None) -> ForagingGridEnv:
         """Create baseline environment (open path to resource)."""
         # Use path blockage config but start with path open
         mode_config = get_mode_config(EnvironmentMode.PATH_BLOCKAGE, self.grid_size)
@@ -88,7 +88,7 @@ class FrustrationIntensificationTest(BasePredicateTest):
             seed=seed,
         )
 
-    def create_test_env(self, seed: Optional[int] = None) -> ForagingGridEnv:
+    def create_test_env(self, seed: int | None = None) -> ForagingGridEnv:
         """Create test environment (path gets blocked)."""
         mode_config = get_mode_config(EnvironmentMode.PATH_BLOCKAGE, self.grid_size)
         mode_config.blockage_step = self.blockage_step
@@ -104,8 +104,8 @@ class FrustrationIntensificationTest(BasePredicateTest):
     def compute_score(
         self,
         baseline_data: BaselineData,
-        test_episodes: List[EpisodeLog],
-    ) -> Tuple[float, Dict[str, Any]]:
+        test_episodes: list[EpisodeLog],
+    ) -> tuple[float, dict[str, Any]]:
         """
         Compute the Frustration Intensification score.
 
@@ -169,7 +169,7 @@ class FrustrationIntensificationTest(BasePredicateTest):
 
     def _compute_action_intensity(
         self,
-        episodes: List[EpisodeLog],
+        episodes: list[EpisodeLog],
         window_size: int = 10,
     ) -> np.ndarray:
         """
@@ -236,11 +236,11 @@ class FrustrationIntensificationTest(BasePredicateTest):
 
 
 def run_frustration_test(
-    agents: List[BaseAgent],
+    agents: list[BaseAgent],
     n_trials: int = 10,
-    seed: Optional[int] = None,
-    output_dir: Optional[str] = None,
-) -> Dict[str, TestResult]:
+    seed: int | None = None,
+    output_dir: str | None = None,
+) -> dict[str, TestResult]:
     """
     Run the Frustration Intensification test on multiple agents.
 

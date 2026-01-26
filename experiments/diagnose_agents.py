@@ -2,15 +2,15 @@
 Diagnostic script to observe agent behavior in detail.
 """
 
-import numpy as np
 from collections import Counter
 
+import numpy as np
+
+from src.agents.active_inference import HAS_PYMDP, ActiveInferenceAgent
+from src.agents.heuristic import HeuristicAgent
+from src.agents.rl_agent import HAS_SB3, RLAgent
 from src.environments.foraging_grid import ForagingGridEnv
 from src.environments.modes import EnvironmentMode
-from src.agents.heuristic import HeuristicAgent
-from src.agents.rl_agent import RLAgent, HAS_SB3
-from src.agents.active_inference import ActiveInferenceAgent, HAS_PYMDP
-
 
 ACTION_NAMES = ["UP", "DOWN", "LEFT", "RIGHT", "STAY", "CONSUME"]
 
@@ -25,7 +25,7 @@ def diagnose_agent(agent, env, n_steps=100, verbose=True):
     energies = []
     internal_states = []
 
-    for step in range(n_steps):
+    for _step in range(n_steps):
         action = agent.act(obs)
         actions.append(action)
         positions.append(obs["position"].copy())
@@ -40,7 +40,7 @@ def diagnose_agent(agent, env, n_steps=100, verbose=True):
 
     # Analysis
     action_counts = Counter(actions)
-    unique_positions = len(set(tuple(p) for p in positions))
+    unique_positions = len({tuple(p) for p in positions})
 
     if verbose:
         print(f"\n{'='*50}")
@@ -48,7 +48,7 @@ def diagnose_agent(agent, env, n_steps=100, verbose=True):
         print(f"{'='*50}")
         print(f"Steps taken: {len(actions)}")
         print(f"Unique positions visited: {unique_positions}")
-        print(f"\nAction distribution:")
+        print("\nAction distribution:")
         for a, name in enumerate(ACTION_NAMES):
             count = action_counts.get(a, 0)
             pct = 100 * count / len(actions) if actions else 0
@@ -163,7 +163,7 @@ def main():
         print(f"\nFirst action chosen: {ACTION_NAMES[action]}")
 
         if ai_agent.beliefs is not None:
-            print(f"\nBeliefs after first action:")
+            print("\nBeliefs after first action:")
             for i, b in enumerate(ai_agent.beliefs):
                 print(f"  Factor {i}: shape={b.shape}, max={b.max():.3f}, entropy={-np.sum(b * np.log(b + 1e-10)):.3f}")
 

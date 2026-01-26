@@ -5,20 +5,19 @@ Unit tests for metrics and analysis components.
 import numpy as np
 import pytest
 
-from src.analysis.metrics import (
-    compute_frustration_score,
-    compute_means_end_score,
-    compute_action_entropy,
-    compute_goal_directedness,
-    compare_agents,
-    aggregate_metrics,
-)
 from src.analysis.fitting import (
-    fit_exponential_decay,
-    fit_power_law_decay,
-    fit_linear,
     compare_fits,
     compute_half_life,
+    fit_exponential_decay,
+    fit_power_law_decay,
+)
+from src.analysis.metrics import (
+    aggregate_metrics,
+    compare_agents,
+    compute_action_entropy,
+    compute_frustration_score,
+    compute_goal_directedness,
+    compute_means_end_score,
 )
 from src.tests.base_test import TestResult
 from src.utils.logging import EpisodeLog, StepLog

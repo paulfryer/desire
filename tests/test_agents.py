@@ -5,9 +5,8 @@ Unit tests for agent implementations.
 import numpy as np
 import pytest
 
-from src.environments.foraging_grid import ForagingGridEnv
-from src.agents.base_agent import BaseAgent
 from src.agents.heuristic import HeuristicAgent, Rule
+from src.environments.foraging_grid import ForagingGridEnv
 
 
 class TestHeuristicAgent:
@@ -157,7 +156,7 @@ class TestRLAgent:
     def test_rl_agent_creation(self, env):
         """Test RL agent creation."""
         try:
-            from src.agents.rl_agent import RLAgent, HAS_SB3
+            from src.agents.rl_agent import HAS_SB3, RLAgent
 
             if HAS_SB3:
                 agent = RLAgent(
@@ -172,7 +171,7 @@ class TestRLAgent:
     def test_rl_agent_without_model(self, env):
         """Test RL agent acts randomly without trained model."""
         try:
-            from src.agents.rl_agent import RLAgent, HAS_SB3
+            from src.agents.rl_agent import HAS_SB3, RLAgent
 
             if HAS_SB3:
                 agent = RLAgent(
@@ -200,7 +199,7 @@ class TestActiveInferenceAgent:
     def test_active_inference_creation(self, env):
         """Test Active Inference agent creation."""
         try:
-            from src.agents.active_inference import ActiveInferenceAgent, HAS_PYMDP
+            from src.agents.active_inference import HAS_PYMDP, ActiveInferenceAgent
 
             if HAS_PYMDP:
                 agent = ActiveInferenceAgent(
@@ -216,7 +215,7 @@ class TestActiveInferenceAgent:
     def test_active_inference_act(self, env):
         """Test Active Inference agent action selection."""
         try:
-            from src.agents.active_inference import ActiveInferenceAgent, HAS_PYMDP
+            from src.agents.active_inference import HAS_PYMDP, ActiveInferenceAgent
 
             if HAS_PYMDP:
                 agent = ActiveInferenceAgent(
@@ -236,7 +235,7 @@ class TestActiveInferenceAgent:
     def test_active_inference_beliefs(self, env):
         """Test Active Inference agent returns beliefs as internal state."""
         try:
-            from src.agents.active_inference import ActiveInferenceAgent, HAS_PYMDP
+            from src.agents.active_inference import HAS_PYMDP, ActiveInferenceAgent
 
             if HAS_PYMDP:
                 agent = ActiveInferenceAgent(

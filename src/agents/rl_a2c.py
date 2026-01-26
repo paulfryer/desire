@@ -3,7 +3,6 @@ A2C (Advantage Actor-Critic) agent using stable-baselines3.
 """
 
 from pathlib import Path
-from typing import Any, Dict, Optional
 
 import numpy as np
 import torch
@@ -63,9 +62,9 @@ class A2CFeatureExtractor(BaseFeaturesExtractor if HAS_SB3 else nn.Module):
             nn.ReLU(),
         )
 
-        self._last_features: Optional[torch.Tensor] = None
+        self._last_features: torch.Tensor | None = None
 
-    def forward(self, observations: Dict[str, torch.Tensor]) -> torch.Tensor:
+    def forward(self, observations: dict[str, torch.Tensor]) -> torch.Tensor:
         local_view = observations["local_view"]
         if local_view.dim() == 3:
             local_view = local_view.unsqueeze(0)
@@ -120,7 +119,7 @@ class A2CAgent(BaseAgent):
         features_dim: int = 64,
         device: str = "auto",
         name: str = "rl_a2c",
-        seed: Optional[int] = None,
+        seed: int | None = None,
     ):
         """
         Initialize A2C agent.
@@ -162,18 +161,18 @@ class A2CAgent(BaseAgent):
         self.features_dim = features_dim
         self.device = device
 
-        self.model: Optional[A2C] = None
-        self._feature_extractor: Optional[A2CFeatureExtractor] = None
+        self.model: A2C | None = None
+        self._feature_extractor: A2CFeatureExtractor | None = None
         self._last_internal_state = np.zeros(features_dim, dtype=np.float32)
         self.training_mode = False
 
     def create_model(self, env) -> None:
         """Create the A2C model for training."""
-        policy_kwargs = dict(
-            features_extractor_class=A2CFeatureExtractor,
-            features_extractor_kwargs=dict(features_dim=self.features_dim),
-            net_arch=dict(pi=[64, 64], vf=[64, 64]),
-        )
+        policy_kwargs = {
+            "features_extractor_class": A2CFeatureExtractor,
+            "features_extractor_kwargs": {"features_dim": self.features_dim},
+            "net_arch": {"pi": [64, 64], "vf": [64, 64]},
+        }
 
         self.model = A2C(
             "MultiInputPolicy",
@@ -204,7 +203,7 @@ class A2CAgent(BaseAgent):
         self.model.learn(total_timesteps=total_timesteps, callback=callback)
         self.training_mode = False
 
-    def act(self, observation: Dict[str, np.ndarray]) -> int:
+    def act(self, observation: dict[str, np.ndarray]) -> int:
         """Select action using trained policy."""
         if self.model is None:
             return self._rng.integers(0, self.action_space.n)
@@ -215,7 +214,7 @@ class A2CAgent(BaseAgent):
 
         return int(action)
 
-    def _prepare_observation(self, observation: Dict[str, np.ndarray]) -> Dict[str, np.ndarray]:
+    def _prepare_observation(self, observation: dict[str, np.ndarray]) -> dict[str, np.ndarray]:
         return {
             "local_view": observation["local_view"].astype(np.float32),
             "energy": observation["energy"].astype(np.float32),
@@ -223,7 +222,7 @@ class A2CAgent(BaseAgent):
             "step": observation["step"].astype(np.float32),
         }
 
-    def _update_internal_state(self, observation: Dict[str, np.ndarray]) -> None:
+    def _update_internal_state(self, observation: dict[str, np.ndarray]) -> None:
         if self._feature_extractor is None:
             return
 
@@ -241,7 +240,7 @@ class A2CAgent(BaseAgent):
         """Get penultimate layer activations."""
         return self._last_internal_state.copy()
 
-    def get_internal_response(self, observation: Dict[str, np.ndarray]) -> np.ndarray:
+    def get_internal_response(self, observation: dict[str, np.ndarray]) -> np.ndarray:
         """Get internal response to an observation."""
         if self._feature_extractor is None:
             return np.zeros(self.features_dim, dtype=np.float32)
@@ -256,7 +255,7 @@ class A2CAgent(BaseAgent):
             features = self._feature_extractor(obs_tensors)
             return features.cpu().numpy().flatten()
 
-    def get_action_probabilities(self, observation: Dict[str, np.ndarray]) -> np.ndarray:
+    def get_action_probabilities(self, observation: dict[str, np.ndarray]) -> np.ndarray:
         """Get action probability distribution."""
         if self.model is None:
             return np.ones(self.action_space.n) / self.action_space.n

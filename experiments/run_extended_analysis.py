@@ -12,15 +12,13 @@ import argparse
 import json
 from datetime import datetime
 from pathlib import Path
-from typing import Any, Dict, List, Optional
+from typing import Any
 
 import numpy as np
 
-from src.agents import create_agent
 from src.analysis.failure_analysis import FailureModeAnalyzer, identify_edge_cases
 from src.analysis.hyperparameter_sensitivity import (
     HyperparameterSensitivityAnalysis,
-    analyze_sample_size_requirements,
 )
 from src.analysis.learning_curves import (
     analyze_learning_curve,
@@ -34,14 +32,13 @@ from src.analysis.statistical_power import (
     compute_power_analysis,
 )
 from src.environments.foraging_grid import ForagingGridEnv
-from src.tests import create_test
 from src.utils.logging import EpisodeLog
 
 
 def run_learning_curve_analysis(
     training_logs_dir: Path,
     output_dir: Path,
-) -> Dict[str, Any]:
+) -> dict[str, Any]:
     """
     Analyze learning curves from training logs.
 
@@ -110,7 +107,7 @@ def run_learning_curve_analysis(
 def run_failure_analysis(
     test_results_path: Path,
     output_dir: Path,
-) -> Dict[str, Any]:
+) -> dict[str, Any]:
     """
     Analyze failure modes from test results.
 
@@ -160,15 +157,15 @@ def run_failure_analysis(
 
 
 def _reconstruct_episode_logs(
-    test_results: Dict,
+    test_results: dict,
     agent_name: str,
-) -> List[EpisodeLog]:
+) -> list[EpisodeLog]:
     """Reconstruct episode logs from test results (simplified)."""
     # This is a placeholder - in practice would load actual logs
     episodes = []
 
     results = test_results.get("results", {})
-    for test_name, agent_results in results.items():
+    for _test_name, agent_results in results.items():
         if agent_name in agent_results:
             raw_data = agent_results[agent_name].get("raw_data", {})
             trial_scores = raw_data.get("trial_scores", [])
@@ -192,7 +189,7 @@ def run_sensitivity_analysis(
     agents_dir: Path,
     output_dir: Path,
     n_repeats: int = 3,
-) -> Dict[str, Any]:
+) -> dict[str, Any]:
     """
     Run hyperparameter sensitivity analysis.
 
@@ -224,9 +221,9 @@ def run_sensitivity_analysis(
     }
 
     # Create test function
-    env = ForagingGridEnv()
+    ForagingGridEnv()
 
-    def run_test(config: Dict[str, Any]) -> float:
+    def run_test(config: dict[str, Any]) -> float:
         # Simplified test - would load actual agent
         np.random.seed(config.get("seed", 42))
         return np.random.uniform(0.5, 1.0)
@@ -263,7 +260,7 @@ def run_sensitivity_analysis(
 def run_power_analysis(
     test_results_path: Path,
     output_dir: Path,
-) -> Dict[str, Any]:
+) -> dict[str, Any]:
     """
     Run statistical power analysis on test results.
 
@@ -280,7 +277,7 @@ def run_power_analysis(
         test_results = json.load(f)
 
     results = {"tests": {}}
-    power_analyzer = PowerAnalysis()
+    PowerAnalysis()
 
     test_data = test_results.get("results", {})
 
@@ -333,7 +330,7 @@ def run_power_analysis(
 
 
 def generate_appendix_report(
-    all_results: Dict[str, Dict],
+    all_results: dict[str, dict],
     output_dir: Path,
 ) -> None:
     """Generate HTML appendix report."""
@@ -541,7 +538,7 @@ def main():
     output_dir = Path(args.output_dir)
     output_dir.mkdir(parents=True, exist_ok=True)
 
-    print(f"Running extended analysis...")
+    print("Running extended analysis...")
     print(f"  Test results: {test_results_path}")
     print(f"  Training logs: {training_logs_dir}")
     print(f"  Output: {output_dir}")
@@ -582,7 +579,7 @@ def main():
         json.dump(all_results, f, indent=2)
 
     print()
-    print(f"Extended analysis complete!")
+    print("Extended analysis complete!")
     print(f"Results saved to: {output_dir}")
 
 

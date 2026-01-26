@@ -6,7 +6,7 @@ sequence modeling, predicting actions conditioned on desired returns.
 """
 
 from pathlib import Path
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any
 
 import numpy as np
 import torch
@@ -113,10 +113,10 @@ class DecisionTransformerNetwork(nn.Module):
         self.ln = nn.LayerNorm(hidden_dim)
 
         # Store for internal state access
-        self._last_hidden_state: Optional[torch.Tensor] = None
-        self._last_attention_weights: Optional[torch.Tensor] = None
+        self._last_hidden_state: torch.Tensor | None = None
+        self._last_attention_weights: torch.Tensor | None = None
 
-    def encode_state(self, observations: Dict[str, torch.Tensor]) -> torch.Tensor:
+    def encode_state(self, observations: dict[str, torch.Tensor]) -> torch.Tensor:
         """Encode observation to state embedding."""
         local_view = observations["local_view"]
         if local_view.dim() == 3:
@@ -216,7 +216,7 @@ class DecisionTransformerAgent(BaseAgent):
         dropout: float = 0.1,
         device: str = "auto",
         name: str = "decision_transformer",
-        seed: Optional[int] = None,
+        seed: int | None = None,
     ):
         """
         Initialize Decision Transformer agent.
@@ -271,19 +271,19 @@ class DecisionTransformerAgent(BaseAgent):
         )
 
         # Context buffer for inference
-        self._state_buffer: List[torch.Tensor] = []
-        self._action_buffer: List[int] = []
-        self._return_buffer: List[float] = []
+        self._state_buffer: list[torch.Tensor] = []
+        self._action_buffer: list[int] = []
+        self._return_buffer: list[float] = []
         self._current_return_to_go = target_return
 
         # Internal state storage
         self._last_internal_state = np.zeros(hidden_dim * 2, dtype=np.float32)
 
         # Training data
-        self.trajectory_buffer: List[Dict[str, Any]] = []
+        self.trajectory_buffer: list[dict[str, Any]] = []
         self.training_mode = False
 
-    def act(self, observation: Dict[str, np.ndarray]) -> int:
+    def act(self, observation: dict[str, np.ndarray]) -> int:
         """Select action using transformer prediction."""
         # Encode current state
         obs_tensors = {
@@ -311,7 +311,7 @@ class DecisionTransformerAgent(BaseAgent):
 
             # Prepare returns-to-go
             returns = []
-            for i in range(seq_len):
+            for _i in range(seq_len):
                 rtg = self._current_return_to_go / self.return_scale
                 returns.append(rtg)
             returns = torch.tensor([[returns]], dtype=torch.float32, device=self.device)
@@ -358,7 +358,7 @@ class DecisionTransformerAgent(BaseAgent):
         """Get transformer hidden states."""
         return self._last_internal_state.copy()
 
-    def get_internal_response(self, observation: Dict[str, np.ndarray]) -> np.ndarray:
+    def get_internal_response(self, observation: dict[str, np.ndarray]) -> np.ndarray:
         """Get internal response to an observation."""
         obs_tensors = {
             k: torch.tensor(v, dtype=torch.float32, device=self.device)
@@ -369,7 +369,7 @@ class DecisionTransformerAgent(BaseAgent):
             state_embed = self.network.encode_state(obs_tensors)
             return state_embed.cpu().numpy().flatten()
 
-    def get_action_probabilities(self, observation: Dict[str, np.ndarray]) -> np.ndarray:
+    def get_action_probabilities(self, observation: dict[str, np.ndarray]) -> np.ndarray:
         """Get action probability distribution."""
         # This requires context, so return uniform if no context
         if len(self._state_buffer) == 0:
@@ -420,10 +420,10 @@ class DecisionTransformerAgent(BaseAgent):
 
     def update(
         self,
-        observation: Dict[str, np.ndarray],
+        observation: dict[str, np.ndarray],
         action: int,
         reward: float,
-        next_observation: Dict[str, np.ndarray],
+        next_observation: dict[str, np.ndarray],
         done: bool,
     ) -> None:
         """Update return-to-go and store trajectory."""
@@ -443,7 +443,7 @@ class DecisionTransformerAgent(BaseAgent):
 
     def train_offline(
         self,
-        trajectories: List[List[Dict[str, Any]]],
+        trajectories: list[list[dict[str, Any]]],
         n_iterations: int = 1000,
         batch_size: int = 64,
     ) -> float:
@@ -461,7 +461,7 @@ class DecisionTransformerAgent(BaseAgent):
         self.training_mode = True
         total_loss = 0.0
 
-        for iteration in range(n_iterations):
+        for _iteration in range(n_iterations):
             # Sample trajectories
             batch_states = []
             batch_actions = []

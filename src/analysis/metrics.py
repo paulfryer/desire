@@ -4,22 +4,21 @@ Metrics computation for behavioral analysis.
 Extended with power analysis, Bayesian statistics, and comprehensive effect sizes.
 """
 
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any
 
 import numpy as np
 from scipy import stats
 
-from src.tests.base_test import TestResult
-from src.utils.logging import EpisodeLog
 from src.analysis.statistical_power import (
-    compute_power_analysis,
     bootstrap_difference_ci,
     compute_bayes_factor,
     compute_cohens_d,
     compute_hedges_g,
+    compute_power_analysis,
     compute_probability_of_superiority,
-    compute_comprehensive_statistics,
 )
+from src.tests.base_test import TestResult
+from src.utils.logging import EpisodeLog
 
 
 def compute_frustration_score(
@@ -48,7 +47,7 @@ def compute_frustration_score(
 
 def compute_means_end_score(
     optimal_path_length: int,
-    actual_reach_times: List[int],
+    actual_reach_times: list[int],
 ) -> float:
     """
     Compute the Means-End Decoupling (MED) score.
@@ -74,10 +73,10 @@ def compute_means_end_score(
 
 
 def compute_extinction_resistance(
-    episodes: List[EpisodeLog],
+    episodes: list[EpisodeLog],
     resource_depletion_step: int,
     window_size: int = 50,
-) -> Dict[str, float]:
+) -> dict[str, float]:
     """
     Compute extinction resistance metrics.
 
@@ -164,7 +163,7 @@ def compute_action_entropy(action_sequence: np.ndarray) -> float:
 
 def compute_goal_directedness(
     trajectory: np.ndarray,
-    goal_position: Tuple[int, int],
+    goal_position: tuple[int, int],
 ) -> float:
     """
     Compute goal-directedness of a trajectory.
@@ -195,14 +194,14 @@ def compute_goal_directedness(
 
 
 def compare_agents(
-    results: Dict[str, TestResult],
+    results: dict[str, TestResult],
     test_name: str = "frustration_intensification",
     alpha: float = 0.05,
     include_power_analysis: bool = True,
     include_bayes_factor: bool = True,
     include_bootstrap_ci: bool = True,
     n_bootstrap: int = 10000,
-) -> Dict[str, Any]:
+) -> dict[str, Any]:
     """
     Statistical comparison of agent test results.
 
@@ -325,7 +324,7 @@ def compare_agents(
     }
 
 
-def compute_survival_rate(episodes: List[EpisodeLog]) -> float:
+def compute_survival_rate(episodes: list[EpisodeLog]) -> float:
     """Compute the fraction of episodes where agent survived."""
     if not episodes:
         return 0.0
@@ -333,21 +332,21 @@ def compute_survival_rate(episodes: List[EpisodeLog]) -> float:
     return survived / len(episodes)
 
 
-def compute_mean_reward(episodes: List[EpisodeLog]) -> float:
+def compute_mean_reward(episodes: list[EpisodeLog]) -> float:
     """Compute mean total reward across episodes."""
     if not episodes:
         return 0.0
     return float(np.mean([e.total_reward for e in episodes]))
 
 
-def compute_mean_steps(episodes: List[EpisodeLog]) -> float:
+def compute_mean_steps(episodes: list[EpisodeLog]) -> float:
     """Compute mean episode length."""
     if not episodes:
         return 0.0
     return float(np.mean([e.total_steps for e in episodes]))
 
 
-def aggregate_metrics(episodes: List[EpisodeLog]) -> Dict[str, float]:
+def aggregate_metrics(episodes: list[EpisodeLog]) -> dict[str, float]:
     """
     Compute aggregate metrics across a set of episodes.
 

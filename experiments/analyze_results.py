@@ -8,29 +8,24 @@ Usage:
 import argparse
 import json
 from pathlib import Path
-from typing import Dict, List, Optional
 
 import numpy as np
 
-from src.tests.base_test import TestResult
-from src.analysis.metrics import compare_agents, aggregate_metrics
 from src.analysis.fitting import compare_fits, fit_exponential_decay, fit_power_law_decay
 from src.analysis.visualization import (
     plot_predicate_scores,
-    plot_comparison_grid,
-    plot_frustration_response,
     save_figure,
-    create_summary_report,
 )
+from src.tests.base_test import TestResult
 
 
-def load_results(results_path: Path) -> Dict:
+def load_results(results_path: Path) -> dict:
     """Load test results from JSON file."""
-    with open(results_path, 'r') as f:
+    with open(results_path) as f:
         return json.load(f)
 
 
-def reconstruct_test_results(data: Dict) -> Dict[str, Dict[str, TestResult]]:
+def reconstruct_test_results(data: dict) -> dict[str, dict[str, TestResult]]:
     """Reconstruct TestResult objects from JSON data."""
     results = {}
 
@@ -48,7 +43,7 @@ def reconstruct_test_results(data: Dict) -> Dict[str, Dict[str, TestResult]]:
     return results
 
 
-def analyze_frustration_dynamics(results: Dict[str, TestResult]) -> Dict:
+def analyze_frustration_dynamics(results: dict[str, TestResult]) -> dict:
     """Analyze the dynamics of frustration responses."""
     analysis = {}
 
@@ -67,8 +62,8 @@ def analyze_frustration_dynamics(results: Dict[str, TestResult]) -> Dict:
         x = np.arange(len(post_curve))
 
         # Fit decay curves
-        exp_fit = fit_exponential_decay(x, post_curve)
-        power_fit = fit_power_law_decay(x, post_curve)
+        fit_exponential_decay(x, post_curve)
+        fit_power_law_decay(x, post_curve)
 
         # Compare fits
         comparison = compare_fits(x, post_curve)
@@ -86,7 +81,7 @@ def analyze_frustration_dynamics(results: Dict[str, TestResult]) -> Dict:
     return analysis
 
 
-def _interpret_frustration(comparison: Dict, post_curve: np.ndarray, baseline: float) -> str:
+def _interpret_frustration(comparison: dict, post_curve: np.ndarray, baseline: float) -> str:
     """Generate interpretation of frustration dynamics."""
     peak = np.max(post_curve)
     fi_ratio = peak / baseline if baseline > 0 else 0
@@ -113,7 +108,7 @@ def _interpret_frustration(comparison: Dict, post_curve: np.ndarray, baseline: f
     return "; ".join(interpretations)
 
 
-def analyze_means_end_transfer(results: Dict[str, TestResult]) -> Dict:
+def analyze_means_end_transfer(results: dict[str, TestResult]) -> dict:
     """Analyze means-end decoupling transfer efficiency."""
     analysis = {}
 
@@ -176,7 +171,7 @@ def _interpret_transfer(p1_success: float, p2_success: float, med_score: float) 
     return "; ".join(interpretations)
 
 
-def generate_report(data: Dict, output_dir: Path) -> None:
+def generate_report(data: dict, output_dir: Path) -> None:
     """Generate a comprehensive analysis report."""
     results = reconstruct_test_results(data)
 
@@ -271,15 +266,15 @@ def generate_report(data: Dict, output_dir: Path) -> None:
 
 
 def _generate_conclusions(
-    results: Dict[str, Dict[str, TestResult]],
-    analysis: Dict,
+    results: dict[str, dict[str, TestResult]],
+    analysis: dict,
 ) -> str:
     """Generate overall conclusions from the analysis."""
     conclusions = []
 
     # Check for significant differences
     has_significant = False
-    for test_name, test_analysis in analysis.items():
+    for _test_name, test_analysis in analysis.items():
         if test_analysis.get("kruskal_wallis", {}).get("significant", False):
             has_significant = True
             break

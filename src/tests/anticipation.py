@@ -2,14 +2,14 @@
 Anticipatory Activation (AA) test implementation.
 """
 
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any
 
 import numpy as np
 
 from src.agents.base_agent import BaseAgent
 from src.environments.foraging_grid import ForagingGridEnv
 from src.environments.modes import EnvironmentMode
-from src.tests.base_test import BasePredicateTest, BaselineData, TestResult
+from src.tests.base_test import BaselineData, BasePredicateTest, TestResult
 from src.utils.logging import EpisodeLog
 
 
@@ -42,8 +42,8 @@ class AnticipatoryActivationTest(BasePredicateTest):
         near_threshold: int = 3,  # Distance considered "near" goal
         far_threshold: int = 8,   # Distance considered "far" from goal
         grid_size: int = 20,
-        seed: Optional[int] = None,
-        output_dir: Optional[str] = None,
+        seed: int | None = None,
+        output_dir: str | None = None,
     ):
         """
         Initialize the Anticipatory Activation test.
@@ -71,7 +71,7 @@ class AnticipatoryActivationTest(BasePredicateTest):
         self.far_threshold = far_threshold
         self.grid_size = grid_size
 
-    def create_baseline_env(self, seed: Optional[int] = None) -> ForagingGridEnv:
+    def create_baseline_env(self, seed: int | None = None) -> ForagingGridEnv:
         """Create baseline environment."""
         return ForagingGridEnv(
             grid_size=self.grid_size,
@@ -83,7 +83,7 @@ class AnticipatoryActivationTest(BasePredicateTest):
             seed=seed,
         )
 
-    def create_test_env(self, seed: Optional[int] = None) -> ForagingGridEnv:
+    def create_test_env(self, seed: int | None = None) -> ForagingGridEnv:
         """Create test environment (same as baseline for AA test)."""
         return ForagingGridEnv(
             grid_size=self.grid_size,
@@ -98,8 +98,8 @@ class AnticipatoryActivationTest(BasePredicateTest):
     def compute_score(
         self,
         baseline_data: BaselineData,
-        test_episodes: List[EpisodeLog],
-    ) -> Tuple[float, Dict[str, Any]]:
+        test_episodes: list[EpisodeLog],
+    ) -> tuple[float, dict[str, Any]]:
         """
         Compute the Anticipatory Activation score.
 
@@ -169,11 +169,11 @@ class AnticipatoryActivationTest(BasePredicateTest):
 
 
 def run_anticipation_test(
-    agents: List[BaseAgent],
+    agents: list[BaseAgent],
     n_trials: int = 10,
-    seed: Optional[int] = None,
-    output_dir: Optional[str] = None,
-) -> Dict[str, TestResult]:
+    seed: int | None = None,
+    output_dir: str | None = None,
+) -> dict[str, TestResult]:
     """Run the Anticipatory Activation test on multiple agents."""
     test = AnticipatoryActivationTest(
         n_trials=n_trials,

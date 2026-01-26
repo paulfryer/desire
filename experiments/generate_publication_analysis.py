@@ -8,20 +8,20 @@ Outputs:
 
 import argparse
 import json
+from datetime import datetime
 from pathlib import Path
-from typing import Dict, List, Any
+
 import numpy as np
 from scipy import stats
-from datetime import datetime
 
 
-def load_results(results_path: Path) -> Dict:
+def load_results(results_path: Path) -> dict:
     """Load test results from JSON."""
     with open(results_path) as f:
         return json.load(f)
 
 
-def compute_confidence_interval(data: List[float], confidence: float = 0.95) -> tuple:
+def compute_confidence_interval(data: list[float], confidence: float = 0.95) -> tuple:
     """Compute confidence interval for mean."""
     n = len(data)
     if n < 2:
@@ -33,7 +33,7 @@ def compute_confidence_interval(data: List[float], confidence: float = 0.95) -> 
     return (mean - h, mean + h)
 
 
-def compute_effect_size_eta_squared(groups: List[List[float]]) -> float:
+def compute_effect_size_eta_squared(groups: list[list[float]]) -> float:
     """Compute eta-squared effect size for Kruskal-Wallis."""
     # Combine all data
     all_data = []
@@ -54,7 +54,7 @@ def compute_effect_size_eta_squared(groups: List[List[float]]) -> float:
     return max(0, eta_sq)
 
 
-def compute_cohens_d(group1: List[float], group2: List[float]) -> tuple:
+def compute_cohens_d(group1: list[float], group2: list[float]) -> tuple:
     """
     Compute Cohen's d effect size with edge case handling.
 
@@ -88,7 +88,7 @@ def compute_cohens_d(group1: List[float], group2: List[float]) -> tuple:
     return (d, "normal")
 
 
-def pairwise_mann_whitney(groups: Dict[str, List[float]]) -> List[Dict]:
+def pairwise_mann_whitney(groups: dict[str, list[float]]) -> list[dict]:
     """Perform pairwise Mann-Whitney U tests with Bonferroni correction."""
     agents = list(groups.keys())
     n_comparisons = len(agents) * (len(agents) - 1) // 2
@@ -121,7 +121,7 @@ def pairwise_mann_whitney(groups: Dict[str, List[float]]) -> List[Dict]:
     return results
 
 
-def generate_html_report(results: Dict, output_path: Path) -> None:
+def generate_html_report(results: dict, output_path: Path) -> None:
     """Generate publication-ready HTML report."""
 
     # Extract data
@@ -457,7 +457,7 @@ def generate_html_report(results: Dict, output_path: Path) -> None:
 '''
 
     # Build summary data
-    predicates = [t for t in stats_data.keys()]
+    predicates = list(stats_data.keys())
     agents = ['heuristic', 'rl_ppo', 'active_inference']
 
     traces = []
@@ -542,7 +542,7 @@ def generate_html_report(results: Dict, output_path: Path) -> None:
         f.write(html)
 
 
-def export_raw_data(results: Dict, output_path: Path) -> None:
+def export_raw_data(results: dict, output_path: Path) -> None:
     """Export raw trial data to CSV."""
     rows = ['agent_type,trial,predicate,score']
 

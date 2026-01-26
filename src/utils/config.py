@@ -4,7 +4,7 @@ Configuration management for the Desire research project.
 
 from dataclasses import dataclass, field
 from pathlib import Path
-from typing import Optional, Dict, Any, List
+from typing import Any
 
 import yaml
 
@@ -20,9 +20,9 @@ class EnvironmentConfig:
     energy_decay_rate: float = 1.0
     local_view_size: int = 5
     mode: str = "baseline"
-    render_mode: Optional[str] = None
+    render_mode: str | None = None
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         return {
             "grid_size": self.grid_size,
             "max_steps": self.max_steps,
@@ -56,9 +56,9 @@ class AgentConfig:
     policy_precision: float = 4.0
 
     # Common
-    hidden_sizes: List[int] = field(default_factory=lambda: [64, 64])
+    hidden_sizes: list[int] = field(default_factory=lambda: [64, 64])
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         return {
             "agent_type": self.agent_type,
             "learning_rate": self.learning_rate,
@@ -87,7 +87,7 @@ class TrainingConfig:
     seed: int = 42
     device: str = "auto"  # auto, cpu, cuda
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         return {
             "total_timesteps": self.total_timesteps,
             "eval_freq": self.eval_freq,
@@ -116,7 +116,7 @@ class TestConfig:
     training_episodes: int = 100
     transfer_episodes: int = 50
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         return {
             "n_trials": self.n_trials,
             "baseline_episodes": self.baseline_episodes,
@@ -141,7 +141,7 @@ class Config:
     training: TrainingConfig = field(default_factory=TrainingConfig)
     test: TestConfig = field(default_factory=TestConfig)
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         return {
             "experiment_name": self.experiment_name,
             "output_dir": self.output_dir,
@@ -160,7 +160,7 @@ class Config:
             yaml.dump(self.to_dict(), f, default_flow_style=False, sort_keys=False)
 
     @classmethod
-    def from_dict(cls, data: Dict[str, Any]) -> "Config":
+    def from_dict(cls, data: dict[str, Any]) -> "Config":
         """Create Config from dictionary."""
         return cls(
             experiment_name=data.get("experiment_name", "desire_experiment"),
@@ -187,13 +187,13 @@ def load_config(path: Path) -> Config:
     if not path.exists():
         raise FileNotFoundError(f"Configuration file not found: {path}")
 
-    with open(path, 'r') as f:
+    with open(path) as f:
         data = yaml.safe_load(f)
 
     return Config.from_dict(data)
 
 
-def merge_configs(base: Config, override: Dict[str, Any]) -> Config:
+def merge_configs(base: Config, override: dict[str, Any]) -> Config:
     """
     Merge override settings into base config.
 
@@ -206,7 +206,7 @@ def merge_configs(base: Config, override: Dict[str, Any]) -> Config:
     """
     base_dict = base.to_dict()
 
-    def deep_merge(d1: Dict, d2: Dict) -> Dict:
+    def deep_merge(d1: dict, d2: dict) -> dict:
         result = d1.copy()
         for key, value in d2.items():
             if key in result and isinstance(result[key], dict) and isinstance(value, dict):

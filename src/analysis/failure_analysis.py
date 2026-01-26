@@ -8,7 +8,7 @@ error patterns, and edge cases.
 from collections import Counter
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any
 
 import numpy as np
 
@@ -22,10 +22,10 @@ class FailureMode:
     name: str
     description: str
     frequency: float
-    example_episodes: List[int]
-    characteristics: Dict[str, Any]
+    example_episodes: list[int]
+    characteristics: dict[str, Any]
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         return {
             "name": self.name,
             "description": self.description,
@@ -42,11 +42,11 @@ class FailureAnalysisResult:
     total_episodes: int
     failure_episodes: int
     failure_rate: float
-    identified_modes: List[FailureMode]
-    common_patterns: Dict[str, int]
-    recommendations: List[str]
+    identified_modes: list[FailureMode]
+    common_patterns: dict[str, int]
+    recommendations: list[str]
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         return {
             "total_episodes": self.total_episodes,
             "failure_episodes": self.failure_episodes,
@@ -85,7 +85,7 @@ class FailureModeAnalyzer:
 
     def analyze_episodes(
         self,
-        episodes: List[EpisodeLog],
+        episodes: list[EpisodeLog],
     ) -> FailureAnalysisResult:
         """
         Analyze episodes for failure modes.
@@ -131,7 +131,7 @@ class FailureModeAnalyzer:
     def _classify_episode_failure(
         self,
         episode: EpisodeLog,
-    ) -> List[str]:
+    ) -> list[str]:
         """Classify failures in a single episode."""
         failures = []
 
@@ -178,10 +178,10 @@ class FailureModeAnalyzer:
 
     def _identify_failure_modes(
         self,
-        episodes: List[EpisodeLog],
-        failure_indices: List[int],
+        episodes: list[EpisodeLog],
+        failure_indices: list[int],
         type_counts: Counter,
-    ) -> List[FailureMode]:
+    ) -> list[FailureMode]:
         """Identify distinct failure modes."""
         modes = []
 
@@ -220,9 +220,9 @@ class FailureModeAnalyzer:
 
     def _analyze_failure_characteristics(
         self,
-        episodes: List[EpisodeLog],
+        episodes: list[EpisodeLog],
         failure_type: str,
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """Analyze characteristics of a failure type."""
         if not episodes:
             return {}
@@ -269,9 +269,9 @@ class FailureModeAnalyzer:
 
     def _extract_common_patterns(
         self,
-        episodes: List[EpisodeLog],
-        failure_indices: List[int],
-    ) -> Dict[str, int]:
+        episodes: list[EpisodeLog],
+        failure_indices: list[int],
+    ) -> dict[str, int]:
         """Extract common patterns in failure episodes."""
         patterns = Counter()
 
@@ -307,9 +307,9 @@ class FailureModeAnalyzer:
 
     def _generate_recommendations(
         self,
-        modes: List[FailureMode],
+        modes: list[FailureMode],
         type_counts: Counter,
-    ) -> List[str]:
+    ) -> list[str]:
         """Generate recommendations based on failure analysis."""
         recommendations = []
 
@@ -346,9 +346,9 @@ class FailureModeAnalyzer:
 
 
 def identify_edge_cases(
-    episodes: List[EpisodeLog],
+    episodes: list[EpisodeLog],
     percentile: float = 5.0,
-) -> Dict[str, List[int]]:
+) -> dict[str, list[int]]:
     """
     Identify edge case episodes.
 
@@ -376,10 +376,10 @@ def identify_edge_cases(
 
 
 def run_failure_analysis(
-    episodes: List[EpisodeLog],
+    episodes: list[EpisodeLog],
     agent_name: str = "unknown",
-    output_dir: Optional[Path] = None,
-) -> Dict[str, Any]:
+    output_dir: Path | None = None,
+) -> dict[str, Any]:
     """
     Run comprehensive failure analysis.
 

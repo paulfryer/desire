@@ -3,11 +3,9 @@ Curve fitting utilities for behavioral analysis.
 """
 
 from dataclasses import dataclass
-from typing import Optional, Tuple
 
 import numpy as np
-from scipy import optimize
-from scipy import stats
+from scipy import optimize, stats
 
 
 @dataclass
@@ -20,13 +18,13 @@ class FitResult:
     residuals: np.ndarray
     predicted: np.ndarray
     success: bool
-    error_message: Optional[str] = None
+    error_message: str | None = None
 
 
 def fit_exponential_decay(
     x: np.ndarray,
     y: np.ndarray,
-    p0: Optional[Tuple[float, float, float]] = None,
+    p0: tuple[float, float, float] | None = None,
 ) -> FitResult:
     """
     Fit exponential decay: y = a * exp(-b * x) + c
@@ -99,7 +97,7 @@ def fit_exponential_decay(
 def fit_power_law_decay(
     x: np.ndarray,
     y: np.ndarray,
-    p0: Optional[Tuple[float, float, float]] = None,
+    p0: tuple[float, float, float] | None = None,
 ) -> FitResult:
     """
     Fit power law decay: y = a * (x + 1)^(-b) + c
@@ -334,7 +332,7 @@ def _classify_decay_type(
         return "indeterminate"
 
 
-def compute_half_life(fit: FitResult) -> Optional[float]:
+def compute_half_life(fit: FitResult) -> float | None:
     """
     Compute the half-life from a decay fit.
 

@@ -5,8 +5,8 @@ Provides multiple approaches for measuring anticipatory activation in agents,
 enabling comparison across different measurement methodologies.
 """
 
-from dataclasses import dataclass, field
-from typing import Any, Dict, List, Optional, Tuple
+from dataclasses import dataclass
+from typing import Any
 
 import numpy as np
 
@@ -22,13 +22,13 @@ class AAMeasurementSuite:
     value_function: float
     gradient_magnitude: float
     policy_entropy: float
-    belief_precision: Optional[float] = None
+    belief_precision: float | None = None
 
     # Raw data for analysis
     near_samples: int = 0
     far_samples: int = 0
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         return {
             "internal_state_norm": self.internal_state_norm,
             "value_function": self.value_function,
@@ -50,7 +50,7 @@ class AADistanceProfile:
     entropy_values: np.ndarray
     gradient_magnitudes: np.ndarray
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         return {
             "distances": self.distances.tolist(),
             "activations": self.activations.tolist(),
@@ -61,9 +61,9 @@ class AADistanceProfile:
 
 
 def compute_alternative_aa_scores(
-    episodes: List[EpisodeLog],
+    episodes: list[EpisodeLog],
     agent: BaseAgent,
-    methods: List[str] = None,
+    methods: list[str] = None,
     near_threshold: int = 3,
     far_threshold: int = 8,
 ) -> AAMeasurementSuite:
@@ -121,7 +121,7 @@ def compute_alternative_aa_scores(
                 far_data["entropies"].append(entropy)
 
     # Compute AA scores for each method
-    def compute_ratio(near_vals: List[float], far_vals: List[float]) -> float:
+    def compute_ratio(near_vals: list[float], far_vals: list[float]) -> float:
         if not near_vals or not far_vals:
             return 1.0
         near_mean = np.mean(near_vals)
@@ -158,7 +158,7 @@ def compute_alternative_aa_scores(
 
 
 def compute_aa_distance_profile(
-    episodes: List[EpisodeLog],
+    episodes: list[EpisodeLog],
     agent: BaseAgent,
     max_distance: int = 15,
     bin_size: int = 1,
@@ -227,7 +227,7 @@ def compute_aa_distance_profile(
     )
 
 
-def _get_value_estimate(agent: BaseAgent, step: Any, info: Dict) -> float:
+def _get_value_estimate(agent: BaseAgent, step: Any, info: dict) -> float:
     """Get value function estimate from agent or step info."""
     # Check if value stored in info
     if "value_estimate" in info:
@@ -247,7 +247,7 @@ def _get_value_estimate(agent: BaseAgent, step: Any, info: Dict) -> float:
     return 0.0
 
 
-def _get_gradient_magnitude(agent: BaseAgent, step: Any, info: Dict) -> float:
+def _get_gradient_magnitude(agent: BaseAgent, step: Any, info: dict) -> float:
     """Get gradient magnitude from agent or step info."""
     # Check if stored in info
     if "gradient_magnitude" in info:
@@ -266,7 +266,7 @@ def _get_gradient_magnitude(agent: BaseAgent, step: Any, info: Dict) -> float:
     return 0.0
 
 
-def _get_policy_entropy(agent: BaseAgent, step: Any, info: Dict) -> float:
+def _get_policy_entropy(agent: BaseAgent, step: Any, info: dict) -> float:
     """Get policy entropy from step info."""
     if "policy_entropy" in info:
         return float(info["policy_entropy"])
@@ -282,9 +282,9 @@ def _get_policy_entropy(agent: BaseAgent, step: Any, info: Dict) -> float:
 
 
 def compute_aa_correlation_analysis(
-    episodes: List[EpisodeLog],
-    variables: List[str] = None,
-) -> Dict[str, float]:
+    episodes: list[EpisodeLog],
+    variables: list[str] = None,
+) -> dict[str, float]:
     """
     Compute correlations between distance and various AA measures.
 
@@ -352,11 +352,11 @@ def compute_aa_correlation_analysis(
 
 
 def compare_aa_methods(
-    episodes: List[EpisodeLog],
+    episodes: list[EpisodeLog],
     agent: BaseAgent,
     near_threshold: int = 3,
     far_threshold: int = 8,
-) -> Dict[str, Any]:
+) -> dict[str, Any]:
     """
     Compare different AA measurement methods and assess convergence.
 

@@ -7,8 +7,8 @@ real-time plotting, video comparison, and heatmaps.
 
 from src.visualization.heatmaps import (
     create_activation_heatmap,
-    create_visitation_heatmap,
     create_comparison_heatmap,
+    create_visitation_heatmap,
 )
 
 __all__ = [

@@ -8,7 +8,6 @@ Key optimizations:
 4. Use simplified expected free energy computation
 """
 
-from typing import Any, Dict, List, Optional, Tuple
 
 import numpy as np
 from gymnasium import spaces
@@ -45,7 +44,7 @@ class ActiveInferenceFast(BaseAgent):
         grid_size: int = 20,
         beam_width: int = 20,  # Top-k policies to evaluate
         name: str = "active_inference",
-        seed: Optional[int] = None,
+        seed: int | None = None,
     ):
         super().__init__(observation_space, action_space, name, seed)
 
@@ -278,7 +277,7 @@ class ActiveInferenceFast(BaseAgent):
             D[f] = np.ones(self.num_states[f]) / self.num_states[f]
         return D
 
-    def _discretize_observation(self, obs: Dict[str, np.ndarray]) -> List[int]:
+    def _discretize_observation(self, obs: dict[str, np.ndarray]) -> list[int]:
         """Convert observation to discrete indices."""
         pos = obs["position"]
         px = int(np.clip(pos[0] * (self.NUM_POSITION_BINS - 1), 0, self.NUM_POSITION_BINS - 1))
@@ -293,7 +292,7 @@ class ActiveInferenceFast(BaseAgent):
 
         return [pos_state, energy_state, resource_visible]
 
-    def _update_beliefs(self, obs_indices: List[int]):
+    def _update_beliefs(self, obs_indices: list[int]):
         """Update beliefs given observation (simplified Bayesian update)."""
         if self.beliefs is None:
             self.beliefs = [d.copy() for d in self.D]
@@ -329,7 +328,7 @@ class ActiveInferenceFast(BaseAgent):
 
         total_efe = 0.0
 
-        for t, action in enumerate(policy):
+        for _t, action in enumerate(policy):
             # Predict next state: qs_next = B @ qs
             # Position
             qs_pos_next = self.B[0][:, :, action] @ qs[0]
@@ -376,9 +375,9 @@ class ActiveInferenceFast(BaseAgent):
         beam = beam[:self.beam_width]
 
         # Expand beam for remaining horizon
-        for t in range(1, horizon):
+        for _t in range(1, horizon):
             new_beam = []
-            for efe, actions in beam:
+            for _efe, actions in beam:
                 for a in range(n_actions):
                     new_actions = actions + [a]
                     new_efe = self._compute_efe_fast(np.array(new_actions))
@@ -407,7 +406,7 @@ class ActiveInferenceFast(BaseAgent):
         # Return first action
         return int(self.policies[policy_idx, 0])
 
-    def act(self, observation: Dict[str, np.ndarray]) -> int:
+    def act(self, observation: dict[str, np.ndarray]) -> int:
         """Select action using fast active inference."""
         obs_indices = self._discretize_observation(observation)
         self._update_beliefs(obs_indices)
@@ -446,7 +445,7 @@ class ActiveInferenceFast(BaseAgent):
             return np.concatenate([np.ones(ns)/ns for ns in self.num_states])
         return self._internal_state.copy()
 
-    def get_internal_response(self, observation: Dict[str, np.ndarray]) -> np.ndarray:
+    def get_internal_response(self, observation: dict[str, np.ndarray]) -> np.ndarray:
         """Get internal response to observation."""
         obs_indices = self._discretize_observation(observation)
         beliefs = []

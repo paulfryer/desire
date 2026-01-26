@@ -3,7 +3,6 @@ Terrain types and grid management for the foraging environment.
 """
 
 from enum import Enum, auto
-from typing import Optional, Tuple
 
 import numpy as np
 
@@ -35,7 +34,7 @@ class TerrainGrid:
         self,
         size: int = 20,
         slow_cost: float = 1.0,
-        rng: Optional[np.random.Generator] = None,
+        rng: np.random.Generator | None = None,
     ):
         """
         Initialize the terrain grid.
@@ -53,15 +52,15 @@ class TerrainGrid:
         self.grid = np.full((size, size), TerrainType.OPEN, dtype=object)
 
         # Track dynamic obstacle states
-        self.dynamic_positions: list[Tuple[int, int]] = []
-        self.dynamic_blocked: dict[Tuple[int, int], bool] = {}
+        self.dynamic_positions: list[tuple[int, int]] = []
+        self.dynamic_blocked: dict[tuple[int, int], bool] = {}
 
-    def __getitem__(self, key: Tuple[int, int]) -> TerrainType:
+    def __getitem__(self, key: tuple[int, int]) -> TerrainType:
         """Get terrain type at position."""
         x, y = key
         return self.grid[x, y]
 
-    def __setitem__(self, key: Tuple[int, int], value: TerrainType) -> None:
+    def __setitem__(self, key: tuple[int, int], value: TerrainType) -> None:
         """Set terrain type at position."""
         x, y = key
         self.grid[x, y] = value
@@ -114,8 +113,8 @@ class TerrainGrid:
 
     def add_wall(
         self,
-        start: Tuple[int, int],
-        end: Tuple[int, int],
+        start: tuple[int, int],
+        end: tuple[int, int],
         terrain_type: TerrainType = TerrainType.OBSTACLE,
     ) -> None:
         """
@@ -154,7 +153,7 @@ class TerrainGrid:
 
     def add_rectangle(
         self,
-        top_left: Tuple[int, int],
+        top_left: tuple[int, int],
         width: int,
         height: int,
         terrain_type: TerrainType = TerrainType.OBSTACLE,
@@ -180,8 +179,8 @@ class TerrainGrid:
 
     def create_corridor(
         self,
-        start: Tuple[int, int],
-        end: Tuple[int, int],
+        start: tuple[int, int],
+        end: tuple[int, int],
         width: int = 1,
     ) -> None:
         """
@@ -207,7 +206,7 @@ class TerrainGrid:
                 if self.in_bounds(x2 + w, y):
                     self[x2 + w, y] = TerrainType.OPEN
 
-    def get_passable_positions(self) -> list[Tuple[int, int]]:
+    def get_passable_positions(self) -> list[tuple[int, int]]:
         """Get all passable positions on the grid."""
         positions = []
         for x in range(self.size):

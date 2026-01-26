@@ -11,27 +11,25 @@ Debug mode:
 
 import argparse
 import json
-import signal
 import sys
 import time
 from datetime import datetime
 from pathlib import Path
-from typing import Dict, List, Optional
 
 import numpy as np
 
-from src.environments.foraging_grid import ForagingGridEnv
-from src.environments.modes import EnvironmentMode
 from src.agents.base_agent import BaseAgent
 from src.agents.heuristic import HeuristicAgent
+from src.analysis.metrics import compare_agents
+from src.environments.foraging_grid import ForagingGridEnv
+from src.environments.modes import EnvironmentMode
+from src.tests.anticipation import AnticipatoryActivationTest
+from src.tests.base_test import TestResult
+from src.tests.extinction import ExtinctionResistanceTest
 from src.tests.frustration import FrustrationIntensificationTest
 from src.tests.means_end import MeansEndDecouplingTest
-from src.tests.extinction import ExtinctionResistanceTest
-from src.tests.anticipation import AnticipatoryActivationTest
 from src.tests.opportunity_cost import OpportunityCostSensitivityTest
 from src.tests.state_dependent import StateDependentValuationTest
-from src.tests.base_test import TestResult
-from src.analysis.metrics import compare_agents
 from src.utils.config import Config, load_config
 
 
@@ -47,7 +45,7 @@ def timeout_handler(signum, frame):
 def load_single_agent(
     agent_name: str,
     config: Config,
-    model_dir: Optional[Path] = None,
+    model_dir: Path | None = None,
     verbose: bool = False,
 ) -> BaseAgent:
     """Load a single agent by name."""
@@ -67,7 +65,7 @@ def load_single_agent(
             seed=config.training.seed,
         )
     elif agent_name == "rl_ppo":
-        from src.agents.rl_agent import RLAgent, HAS_SB3
+        from src.agents.rl_agent import HAS_SB3, RLAgent
         if not HAS_SB3:
             raise ImportError("stable-baselines3 required")
         agent = RLAgent(
@@ -83,7 +81,7 @@ def load_single_agent(
                 if verbose:
                     print(f"    Loaded model from {model_path}")
     elif agent_name == "active_inference":
-        from src.agents.active_inference_fast import ActiveInferenceFast, HAS_PYMDP
+        from src.agents.active_inference_fast import HAS_PYMDP, ActiveInferenceFast
         if not HAS_PYMDP:
             raise ImportError("pymdp required")
         agent = ActiveInferenceFast(
@@ -104,10 +102,10 @@ def load_single_agent(
 
 def load_agents(
     config: Config,
-    model_dir: Optional[Path] = None,
-    agent_filter: Optional[List[str]] = None,
+    model_dir: Path | None = None,
+    agent_filter: list[str] | None = None,
     verbose: bool = False,
-) -> Dict[str, BaseAgent]:
+) -> dict[str, BaseAgent]:
     """Load agent types, optionally filtered."""
     all_agent_names = ["heuristic", "rl_ppo", "active_inference"]
 
@@ -136,7 +134,7 @@ def run_single_test_debug(
     n_trials: int = 1,
     timeout_sec: int = 60,
     verbose: bool = True,
-) -> Optional[TestResult]:
+) -> TestResult | None:
     """Run a single test with verbose debugging output."""
 
     print(f"\n{'='*60}")
@@ -171,7 +169,7 @@ def run_single_test_debug(
         return None
 
     # Run with verbose output
-    print(f"\n  Starting test...")
+    print("\n  Starting test...")
 
     try:
         # Manual trial loop with timeout checking
@@ -180,7 +178,7 @@ def run_single_test_debug(
             print(f"\n  Trial {trial + 1}/{n_trials}:")
 
             # Run baseline episodes
-            print(f"    Running baseline episodes...")
+            print("    Running baseline episodes...")
             baseline_env = test.create_baseline_env(seed=config.training.seed + trial)
 
             for ep in range(test.baseline_episodes):
@@ -212,10 +210,10 @@ def run_single_test_debug(
                     print(f"      Baseline episode {ep+1}/{test.baseline_episodes} done ({step} steps, {elapsed:.1f}s)")
 
             baseline_env.close()
-            print(f"    Baseline complete.")
+            print("    Baseline complete.")
 
             # Run test episodes
-            print(f"    Running test episodes...")
+            print("    Running test episodes...")
             test_env = test.create_test_env(seed=config.training.seed + trial + 1000)
 
             for ep in range(test.test_episodes):
@@ -253,7 +251,7 @@ def run_single_test_debug(
         print(f"\n  All trials complete in {total_elapsed:.1f}s")
 
         # Now run the actual test to get the score
-        print(f"\n  Computing final score...")
+        print("\n  Computing final score...")
         result = test.run(agent)
         print(f"  Score: {result.score:.4f}")
         return result
@@ -266,12 +264,12 @@ def run_single_test_debug(
 
 
 def run_all_tests(
-    agents: Dict[str, BaseAgent],
+    agents: dict[str, BaseAgent],
     config: Config,
     output_dir: Path,
-    test_filter: Optional[List[str]] = None,
+    test_filter: list[str] | None = None,
     verbose: bool = False,
-) -> Dict[str, Dict[str, TestResult]]:
+) -> dict[str, dict[str, TestResult]]:
     """Run predicate tests on agents."""
     all_results = {}
 
@@ -458,8 +456,8 @@ def run_all_tests(
 
 
 def analyze_results(
-    results: Dict[str, Dict[str, TestResult]],
-) -> Dict[str, Dict]:
+    results: dict[str, dict[str, TestResult]],
+) -> dict[str, dict]:
     """Perform statistical analysis on results."""
     analysis = {}
 
@@ -560,9 +558,9 @@ def main():
     print(f"Output directory: {output_dir}")
     print(f"Model directory: {model_dir}")
     if args.verbose:
-        print(f"Verbose mode: ON")
+        print("Verbose mode: ON")
     if args.debug:
-        print(f"Debug mode: ON (minimal episodes)")
+        print("Debug mode: ON (minimal episodes)")
 
     # Set random seed
     np.random.seed(config.training.seed)

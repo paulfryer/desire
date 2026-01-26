@@ -4,9 +4,7 @@ Environment modes for different test configurations.
 
 from dataclasses import dataclass, field
 from enum import Enum, auto
-from typing import Optional, Dict, Any, List, Tuple
-
-import numpy as np
+from typing import Any
 
 
 class EnvironmentMode(Enum):
@@ -40,17 +38,17 @@ class ModeConfig:
 
     # Resource configuration
     num_resources: int = 5
-    resource_types: List[str] = field(default_factory=lambda: ["renewable"])
-    resource_positions: Optional[List[Tuple[int, int]]] = None
+    resource_types: list[str] = field(default_factory=lambda: ["renewable"])
+    resource_positions: list[tuple[int, int]] | None = None
 
     # Terrain configuration
     add_obstacles: bool = False
-    obstacle_positions: Optional[List[Tuple[int, int]]] = None
-    wall_positions: Optional[List[Tuple[Tuple[int, int], Tuple[int, int]]]] = None
-    dynamic_obstacle_positions: Optional[List[Tuple[int, int]]] = None
+    obstacle_positions: list[tuple[int, int]] | None = None
+    wall_positions: list[tuple[tuple[int, int], tuple[int, int]]] | None = None
+    dynamic_obstacle_positions: list[tuple[int, int]] | None = None
 
     # Agent configuration
-    agent_start_position: Optional[Tuple[int, int]] = None
+    agent_start_position: tuple[int, int] | None = None
 
     # Mode-specific parameters
     blockage_step: int = 100        # When to activate path blockage
@@ -58,7 +56,7 @@ class ModeConfig:
     phantom_ratio: float = 0.3     # Ratio of phantom resources
 
     # Additional parameters
-    extra_params: Dict[str, Any] = field(default_factory=dict)
+    extra_params: dict[str, Any] = field(default_factory=dict)
 
 
 def get_mode_config(mode: EnvironmentMode, grid_size: int = 20) -> ModeConfig:

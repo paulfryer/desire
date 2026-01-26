@@ -5,10 +5,10 @@ Provides a comprehensive dashboard for exploring experimental results,
 comparing agents, and visualizing behavioral patterns.
 """
 
-from pathlib import Path
-from typing import Any, Dict, List, Optional
-
 import json
+from pathlib import Path
+from typing import Any
+
 import numpy as np
 
 # Try to import streamlit (optional dependency)
@@ -22,17 +22,11 @@ except ImportError:
 try:
     import panel as pn
     HAS_PANEL = True
+    del pn  # Only checking availability, not using yet
 except ImportError:
     HAS_PANEL = False
 
 import matplotlib.pyplot as plt
-
-from src.visualization.heatmaps import (
-    create_activation_heatmap,
-    create_visitation_heatmap,
-    create_comparison_heatmap,
-    create_distance_activation_profile,
-)
 
 
 def create_streamlit_dashboard():
@@ -126,7 +120,7 @@ def _render_comparison_page():
         ax.set_ylabel(metric)
         ax.set_title(f"{metric} by Agent Type")
 
-        for bar, score in zip(bars, scores):
+        for bar, score in zip(bars, scores, strict=False):
             ax.text(bar.get_x() + bar.get_width()/2, bar.get_height() + 0.02,
                    f'{score:.2f}', ha='center', va='bottom')
 
@@ -223,22 +217,22 @@ def _render_settings_page():
     st.header("Dashboard Settings")
 
     st.subheader("Data Source")
-    data_dir = st.text_input("Results Directory", "outputs/")
+    st.text_input("Results Directory", "outputs/")
 
     st.subheader("Visualization")
-    cmap = st.selectbox("Colormap", ["viridis", "plasma", "inferno", "magma", "cividis"])
-    fig_width = st.slider("Figure Width", 5, 20, 10)
-    fig_height = st.slider("Figure Height", 5, 20, 8)
+    st.selectbox("Colormap", ["viridis", "plasma", "inferno", "magma", "cividis"])
+    st.slider("Figure Width", 5, 20, 10)
+    st.slider("Figure Height", 5, 20, 8)
 
     st.subheader("Statistical Settings")
-    alpha = st.slider("Significance Level (alpha)", 0.01, 0.10, 0.05)
-    n_bootstrap = st.number_input("Bootstrap Samples", 1000, 50000, 10000)
+    st.slider("Significance Level (alpha)", 0.01, 0.10, 0.05)
+    st.number_input("Bootstrap Samples", 1000, 50000, 10000)
 
     if st.button("Save Settings"):
         st.success("Settings saved!")
 
 
-def load_results(results_path: Path) -> Dict[str, Any]:
+def load_results(results_path: Path) -> dict[str, Any]:
     """
     Load experimental results from file.
 
@@ -255,9 +249,9 @@ def load_results(results_path: Path) -> Dict[str, Any]:
 
 
 def create_summary_figure(
-    results: Dict[str, Any],
-    figsize: Tuple[int, int] = (14, 10),
-    save_path: Optional[Path] = None,
+    results: dict[str, Any],
+    figsize: tuple[int, int] = (14, 10),
+    save_path: Path | None = None,
 ) -> plt.Figure:
     """
     Create summary figure of all results.

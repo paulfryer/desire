@@ -5,15 +5,13 @@ Provides larger environments (50x50+) with configurable resource density
 to test how agents perform as environment complexity increases.
 """
 
-from typing import Any, Dict, List, Optional, Tuple
 
 import numpy as np
-from gymnasium import spaces
 
-from src.environments.foraging_grid import ForagingGridEnv, Action, DIRECTION_VECTORS
+from src.environments.foraging_grid import ForagingGridEnv
 from src.environments.modes import EnvironmentMode, ModeConfig
 from src.environments.resources import Resource, ResourceType
-from src.environments.terrain import TerrainGrid, TerrainType
+from src.environments.terrain import TerrainType
 
 
 class ScaledGridEnv(ForagingGridEnv):
@@ -32,7 +30,7 @@ class ScaledGridEnv(ForagingGridEnv):
         grid_size: int = 50,
         max_steps: int = 2000,
         initial_energy: float = 200.0,
-        max_energy: Optional[float] = None,
+        max_energy: float | None = None,
         energy_decay_rate: float = 0.3,
         local_view_size: int = 7,
         resource_density: float = 0.02,  # Resources per cell
@@ -40,8 +38,8 @@ class ScaledGridEnv(ForagingGridEnv):
         generate_maze: bool = False,
         maze_complexity: float = 0.5,
         mode: EnvironmentMode = EnvironmentMode.BASELINE,
-        render_mode: Optional[str] = None,
-        seed: Optional[int] = None,
+        render_mode: str | None = None,
+        seed: int | None = None,
     ):
         """
         Initialize scaled grid environment.
@@ -179,7 +177,7 @@ class ScaledGridEnv(ForagingGridEnv):
                 energy_value=20.0,
             ))
 
-    def get_complexity_metrics(self) -> Dict[str, float]:
+    def get_complexity_metrics(self) -> dict[str, float]:
         """Get metrics characterizing environment complexity."""
         # Count terrain types
         n_obstacles = sum(

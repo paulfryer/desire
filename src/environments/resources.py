@@ -4,7 +4,6 @@ Resource types and management for the foraging environment.
 
 from dataclasses import dataclass, field
 from enum import Enum, auto
-from typing import Optional
 
 import numpy as np
 
@@ -45,7 +44,7 @@ class Resource:
     decay_time: int = 100
     is_active: bool = True
     steps_since_consumed: int = 0
-    steps_until_decay: Optional[int] = None
+    steps_until_decay: int | None = None
     id: int = field(default_factory=lambda: Resource._next_id())
 
     _id_counter: int = 0
@@ -146,7 +145,7 @@ def create_resource_cluster(
     resource_type: ResourceType,
     count: int = 5,
     spread: int = 3,
-    rng: Optional[np.random.Generator] = None,
+    rng: np.random.Generator | None = None,
     grid_size: int = 20,
     energy_value: float = 20.0,
 ) -> list[Resource]:

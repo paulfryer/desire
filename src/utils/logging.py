@@ -3,10 +3,10 @@ Logging utilities for trajectory recording and analysis.
 """
 
 import json
-from dataclasses import dataclass, field, asdict
+from dataclasses import dataclass, field
 from datetime import datetime
 from pathlib import Path
-from typing import Optional, Dict, Any, List
+from typing import Any
 
 import numpy as np
 
@@ -20,11 +20,11 @@ class StepLog:
     position: tuple[int, int]
     energy: float
     reward: float
-    observation: Optional[np.ndarray] = None
-    internal_state: Optional[np.ndarray] = None
-    info: Dict[str, Any] = field(default_factory=dict)
+    observation: np.ndarray | None = None
+    internal_state: np.ndarray | None = None
+    info: dict[str, Any] = field(default_factory=dict)
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         """Convert to dictionary for serialization."""
         d = {
             "step": self.step,
@@ -43,7 +43,7 @@ class StepLog:
         return d
 
     @classmethod
-    def from_dict(cls, data: Dict[str, Any]) -> "StepLog":
+    def from_dict(cls, data: dict[str, Any]) -> "StepLog":
         """Create from dictionary."""
         observation = None
         if "observation" in data:
@@ -76,11 +76,11 @@ class EpisodeLog:
     total_reward: float
     final_energy: float
     survived: bool
-    steps: List[StepLog] = field(default_factory=list)
-    metadata: Dict[str, Any] = field(default_factory=dict)
+    steps: list[StepLog] = field(default_factory=list)
+    metadata: dict[str, Any] = field(default_factory=dict)
     timestamp: str = field(default_factory=lambda: datetime.now().isoformat())
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         """Convert to dictionary for serialization."""
         return {
             "episode_id": self.episode_id,
@@ -96,7 +96,7 @@ class EpisodeLog:
         }
 
     @classmethod
-    def from_dict(cls, data: Dict[str, Any]) -> "EpisodeLog":
+    def from_dict(cls, data: dict[str, Any]) -> "EpisodeLog":
         """Create from dictionary."""
         steps = [StepLog.from_dict(s) for s in data.get("steps", [])]
 
@@ -130,7 +130,7 @@ class EpisodeLog:
         """Get sequence of actions taken."""
         return np.array([s.action for s in self.steps])
 
-    def get_internal_states(self) -> Optional[np.ndarray]:
+    def get_internal_states(self) -> np.ndarray | None:
         """Get internal states if recorded."""
         states = [s.internal_state for s in self.steps if s.internal_state is not None]
         if not states:
@@ -176,13 +176,13 @@ class TrajectoryLogger:
         self.output_dir.mkdir(parents=True, exist_ok=True)
 
         # Current episode tracking
-        self.current_episode: Optional[EpisodeLog] = None
+        self.current_episode: EpisodeLog | None = None
         self.episode_count = 0
 
         # All episodes
-        self.episodes: List[EpisodeLog] = []
+        self.episodes: list[EpisodeLog] = []
 
-    def start_episode(self, metadata: Optional[Dict[str, Any]] = None) -> None:
+    def start_episode(self, metadata: dict[str, Any] | None = None) -> None:
         """Start logging a new episode."""
         self.current_episode = EpisodeLog(
             episode_id=self.episode_count,
@@ -202,9 +202,9 @@ class TrajectoryLogger:
         position: tuple[int, int],
         energy: float,
         reward: float,
-        observation: Optional[np.ndarray] = None,
-        internal_state: Optional[np.ndarray] = None,
-        info: Optional[Dict[str, Any]] = None,
+        observation: np.ndarray | None = None,
+        internal_state: np.ndarray | None = None,
+        info: dict[str, Any] | None = None,
     ) -> None:
         """Log a single step."""
         if self.current_episode is None:
@@ -240,7 +240,7 @@ class TrajectoryLogger:
 
         return episode
 
-    def save_episode(self, episode: EpisodeLog, filename: Optional[str] = None) -> Path:
+    def save_episode(self, episode: EpisodeLog, filename: str | None = None) -> Path:
         """Save a single episode to file."""
         if filename is None:
             filename = f"episode_{episode.episode_id:05d}.json"
@@ -252,7 +252,7 @@ class TrajectoryLogger:
 
         return path
 
-    def save_all(self, filename: Optional[str] = None) -> Path:
+    def save_all(self, filename: str | None = None) -> Path:
         """Save all episodes to a single file."""
         if filename is None:
             timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
@@ -274,11 +274,11 @@ class TrajectoryLogger:
         return path
 
     @classmethod
-    def load(cls, path: Path) -> List[EpisodeLog]:
+    def load(cls, path: Path) -> list[EpisodeLog]:
         """Load episodes from file."""
         path = Path(path)
 
-        with open(path, 'r') as f:
+        with open(path) as f:
             data = json.load(f)
 
         if "episodes" in data:
@@ -287,7 +287,7 @@ class TrajectoryLogger:
             # Single episode file
             return [EpisodeLog.from_dict(data)]
 
-    def get_summary(self) -> Dict[str, Any]:
+    def get_summary(self) -> dict[str, Any]:
         """Get summary statistics for all logged episodes."""
         if not self.episodes:
             return {"num_episodes": 0}

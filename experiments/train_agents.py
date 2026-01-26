@@ -10,20 +10,17 @@ import argparse
 import json
 from datetime import datetime
 from pathlib import Path
-from typing import Dict, List, Optional
 
 import numpy as np
-from tqdm import tqdm
 
-from src.environments.foraging_grid import ForagingGridEnv
-from src.environments.modes import EnvironmentMode
 from src.agents.base_agent import BaseAgent
 from src.agents.heuristic import HeuristicAgent
+from src.environments.foraging_grid import ForagingGridEnv
+from src.environments.modes import EnvironmentMode
 from src.utils.config import Config, load_config
-from src.utils.logging import TrajectoryLogger, setup_logging
 
 
-def create_agents(config: Config, env: ForagingGridEnv) -> Dict[str, BaseAgent]:
+def create_agents(config: Config, env: ForagingGridEnv) -> dict[str, BaseAgent]:
     """Create all agent types for training."""
     agents = {}
 
@@ -36,7 +33,7 @@ def create_agents(config: Config, env: ForagingGridEnv) -> Dict[str, BaseAgent]:
 
     # 2. RL agent (PPO)
     try:
-        from src.agents.rl_agent import RLAgent, HAS_SB3
+        from src.agents.rl_agent import HAS_SB3, RLAgent
         if not HAS_SB3:
             raise ImportError("stable-baselines3 is required. Install with: pip install stable-baselines3")
         agents["rl_ppo"] = RLAgent(
@@ -53,11 +50,11 @@ def create_agents(config: Config, env: ForagingGridEnv) -> Dict[str, BaseAgent]:
             seed=config.training.seed,
         )
     except ImportError as e:
-        raise ImportError(f"Could not create RL agent: {e}")
+        raise ImportError(f"Could not create RL agent: {e}") from e
 
     # 3. Active Inference agent (using fast implementation)
     try:
-        from src.agents.active_inference_fast import ActiveInferenceFast, HAS_PYMDP
+        from src.agents.active_inference_fast import HAS_PYMDP, ActiveInferenceFast
         if not HAS_PYMDP:
             raise ImportError("pymdp is required. Install with: pip install inferactively-pymdp")
         agents["active_inference"] = ActiveInferenceFast(
@@ -70,7 +67,7 @@ def create_agents(config: Config, env: ForagingGridEnv) -> Dict[str, BaseAgent]:
             seed=config.training.seed,
         )
     except ImportError as e:
-        raise ImportError(f"Could not create Active Inference agent: {e}")
+        raise ImportError(f"Could not create Active Inference agent: {e}") from e
 
     return agents
 
@@ -79,7 +76,7 @@ def train_rl_agent(
     agent,
     config: Config,
     output_dir: Path,
-) -> Dict[str, List[float]]:
+) -> dict[str, list[float]]:
     """Train the RL agent using stable-baselines3."""
     from src.agents.rl_agent import HAS_SB3
     if not HAS_SB3:
@@ -140,7 +137,7 @@ def evaluate_agent(
     agent: BaseAgent,
     config: Config,
     n_episodes: int = 10,
-) -> Dict[str, float]:
+) -> dict[str, float]:
     """Evaluate an agent on the baseline environment."""
     env = ForagingGridEnv(
         grid_size=config.environment.grid_size,
