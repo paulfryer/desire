@@ -5,6 +5,12 @@ Provides different agent architectures (heuristic, RL, active inference)
 with a common interface for behavioral comparison.
 """
 
+# Import torch first to ensure proper DLL loading order on Windows
+try:
+    import torch  # noqa: F401
+except ImportError:
+    pass
+
 from src.agents.active_inference import ActiveInferenceAgent
 from src.agents.active_inference_fast import ActiveInferenceFast
 from src.agents.base_agent import BaseAgent

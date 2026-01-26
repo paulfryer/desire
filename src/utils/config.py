@@ -86,6 +86,8 @@ class TrainingConfig:
     log_freq: int = 1000
     seed: int = 42
     device: str = "auto"  # auto, cpu, cuda
+    checkpoint_keep_last: int = 5  # Keep last 5 checkpoints
+    resume_from: str | None = None  # Path to resume checkpoint
 
     def to_dict(self) -> dict[str, Any]:
         return {
@@ -96,6 +98,8 @@ class TrainingConfig:
             "log_freq": self.log_freq,
             "seed": self.seed,
             "device": self.device,
+            "checkpoint_keep_last": self.checkpoint_keep_last,
+            "resume_from": self.resume_from,
         }
 
 

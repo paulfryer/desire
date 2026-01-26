@@ -35,6 +35,8 @@ training:
   log_freq: 1000
   seed: 42
   device: auto
+  checkpoint_keep_last: 5
+  resume_from: null
 
 test:
   n_trials: 10

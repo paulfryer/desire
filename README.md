@@ -49,6 +49,51 @@ python experiments/train_agents.py --config experiments/configs/quick_test.yaml
 python experiments/run_tests.py --config experiments/configs/quick_test.yaml
 ```
 
+## Checkpointing and Resuming Training
+
+Training automatically saves periodic checkpoints to prevent losing progress if training is interrupted.
+
+### Checkpoint Configuration
+
+In your config YAML file:
+```yaml
+training:
+  save_freq: 10000           # Save checkpoint every N timesteps
+  checkpoint_keep_last: 5    # Keep only the last 5 checkpoints (older ones are deleted)
+```
+
+### Output Structure
+
+```
+outputs/training_XXXXXX/
+  checkpoints/
+    rl_ppo_10000_steps.zip
+    rl_ppo_20000_steps.zip
+    ...
+  models/
+    rl_ppo.zip              # Final model
+```
+
+### Resuming Training
+
+**Resume from latest checkpoint:**
+```bash
+python experiments/train_agents.py \
+    --config experiments/configs/default.yaml \
+    --resume latest \
+    --resume-dir outputs/training_20260124_105645
+```
+
+**Resume from specific checkpoint:**
+```bash
+python experiments/train_agents.py \
+    --config experiments/configs/default.yaml \
+    --resume outputs/training_XXXXX/checkpoints/rl_ppo_50000_steps.zip \
+    --output-dir outputs/training_XXXXX
+```
+
+The training will automatically calculate remaining timesteps and continue from where it left off.
+
 ## Reproducing Paper Results
 
 The paper results used `n=10` trials with robustness checks across 3 random seeds:
