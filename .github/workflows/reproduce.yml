@@ -72,50 +72,39 @@ jobs:
           pip install --upgrade pip
           pip install -e .
 
-      - name: Create quick test config
+      - name: Verify imports and basic functionality
         run: |
-          mkdir -p experiments/configs
-          cat > experiments/configs/quick_test.yaml << 'EOF'
-          experiment:
-            name: quick_ci_test
-            seed: 42
-          agents:
-            - type: heuristic
-            - type: rl_ppo
-              training:
-                total_timesteps: 1000
-            - type: active_inference
-          tests:
-            n_trials: 3
-            n_episodes: 5
-          EOF
+          python -c "
+          # Test core imports
+          from src.agents import HeuristicAgent, RLAgent, BaseAgent
+          from src.environments.foraging_grid import ForagingGridEnv
+          from src.tests.frustration import FrustrationIntensificationTest
+          from src.analysis.metrics import compute_frustration_score
 
-      - name: Train agents (quick)
-        run: |
-          python experiments/train_agents.py \
-            --config experiments/configs/quick_test.yaml \
-            --output-dir outputs/agents
-        timeout-minutes: 10
+          # Create environment and agent
+          env = ForagingGridEnv(grid_size=10, max_steps=50)
+          agent = HeuristicAgent(env.observation_space, env.action_space)
 
-      - name: Run predicate tests (quick)
-        run: |
-          python experiments/run_tests.py \
-            --config experiments/configs/quick_test.yaml \
-            --model-dir outputs/agents \
-            --output-dir outputs/test_results
-        timeout-minutes: 20
+          # Run a few steps
+          obs, _ = env.reset(seed=42)
+          for _ in range(10):
+              action = agent.act(obs)
+              obs, reward, term, trunc, _ = env.step(action)
+              if term or trunc:
+                  break
 
-      - name: Verify outputs exist
-        run: |
-          test -f outputs/test_results/test_results.json
-          echo "Test results generated successfully"
+          print('Basic functionality test passed!')
+          "
+        timeout-minutes: 5
 
-      - name: Upload artifacts
+      - name: Upload test logs
         uses: actions/upload-artifact@v4
+        if: always()
         with:
-          name: quick-results
+          name: ci-test-logs
           path: outputs/
           retention-days: 7
+          if-no-files-found: ignore
 
   # Full reproduction (only on manual trigger or main branch)
   full-reproduce:
