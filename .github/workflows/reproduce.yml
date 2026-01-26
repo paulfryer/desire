@@ -184,6 +184,7 @@ jobs:
         with:
           context: .
           push: false
+          load: true
           tags: desire-research:test
           cache-from: type=gha
           cache-to: type=gha,mode=max
