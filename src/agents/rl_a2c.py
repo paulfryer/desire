@@ -194,13 +194,29 @@ class A2CAgent(BaseAgent):
 
         self._feature_extractor = self.model.policy.features_extractor
 
-    def train(self, total_timesteps: int, callback=None) -> None:
-        """Train the agent."""
+    def train(
+        self,
+        total_timesteps: int,
+        callback=None,
+        reset_num_timesteps: bool = True,
+    ) -> None:
+        """
+        Train the agent.
+
+        Args:
+            total_timesteps: Total training steps
+            callback: Optional callback for logging
+            reset_num_timesteps: Whether to reset the timestep counter (False when resuming)
+        """
         if self.model is None:
             raise RuntimeError("Model not created. Call create_model() first.")
 
         self.training_mode = True
-        self.model.learn(total_timesteps=total_timesteps, callback=callback)
+        self.model.learn(
+            total_timesteps=total_timesteps,
+            callback=callback,
+            reset_num_timesteps=reset_num_timesteps,
+        )
         self.training_mode = False
 
     def act(self, observation: dict[str, np.ndarray]) -> int:
@@ -282,11 +298,17 @@ class A2CAgent(BaseAgent):
             path.parent.mkdir(parents=True, exist_ok=True)
             self.model.save(str(path))
 
-    def load(self, path: str) -> None:
-        """Load a trained model."""
+    def load(self, path: str, env=None) -> None:
+        """
+        Load a trained model.
+
+        Args:
+            path: Path to the saved model
+            env: Optional environment to set for continued training
+        """
         path = Path(path)
         if path.exists():
-            self.model = A2C.load(str(path))
+            self.model = A2C.load(str(path), env=env)
             self._feature_extractor = self.model.policy.features_extractor
 
     @property

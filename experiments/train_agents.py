@@ -10,6 +10,9 @@ Resume from latest checkpoint:
 
 Resume from specific checkpoint:
     python experiments/train_agents.py --resume outputs/training_XXXXXX/checkpoints/rl_ppo_50000_steps.zip
+
+Train specific agents:
+    python experiments/train_agents.py --agents rl_ppo rl_dqn rl_a2c
 """
 
 import argparse
@@ -28,69 +31,135 @@ from src.utils.checkpoint import find_latest_checkpoint, get_resume_timestep
 from src.utils.config import Config, load_config
 
 
-def create_agents(config: Config, env: ForagingGridEnv) -> dict[str, BaseAgent]:
-    """Create all agent types for training."""
+# List of all trainable RL agents using stable-baselines3
+SB3_AGENTS = ["rl_ppo", "rl_dqn", "rl_a2c"]
+
+# Agents with custom training loops
+CUSTOM_TRAINING_AGENTS = ["model_based_rl", "decision_transformer"]
+
+
+def create_agents(config: Config, env: ForagingGridEnv, agent_list: list[str] | None = None) -> dict[str, BaseAgent]:
+    """
+    Create agent instances for training.
+
+    Args:
+        config: Configuration object
+        env: Environment for agent initialization
+        agent_list: Optional list of specific agents to create
+
+    Returns:
+        Dictionary of agent name -> agent instance
+    """
     agents = {}
 
+    # Default to all agents if none specified
+    if agent_list is None:
+        agent_list = ["heuristic", "rl_ppo", "rl_dqn", "rl_a2c", "active_inference"]
+
     # 1. Heuristic agent (no training needed)
-    agents["heuristic"] = HeuristicAgent(
-        observation_space=env.observation_space,
-        action_space=env.action_space,
-        seed=config.training.seed,
-    )
+    if "heuristic" in agent_list:
+        agents["heuristic"] = HeuristicAgent(
+            observation_space=env.observation_space,
+            action_space=env.action_space,
+            seed=config.training.seed,
+        )
 
     # 2. RL agent (PPO)
-    try:
-        from src.agents.rl_agent import HAS_SB3, RLAgent
-        if not HAS_SB3:
-            raise ImportError("stable-baselines3 is required. Install with: pip install stable-baselines3")
-        agents["rl_ppo"] = RLAgent(
-            observation_space=env.observation_space,
-            action_space=env.action_space,
-            learning_rate=config.agent.learning_rate,
-            gamma=config.agent.gamma,
-            n_steps=config.agent.n_steps,
-            batch_size=config.agent.batch_size,
-            n_epochs=config.agent.n_epochs,
-            clip_range=config.agent.clip_range,
-            ent_coef=config.agent.ent_coef,
-            device=config.training.device,
-            seed=config.training.seed,
-        )
-    except ImportError as e:
-        raise ImportError(f"Could not create RL agent: {e}") from e
+    if "rl_ppo" in agent_list:
+        try:
+            from src.agents.rl_agent import HAS_SB3, RLAgent
+            if not HAS_SB3:
+                print("Warning: stable-baselines3 not available, skipping rl_ppo")
+            else:
+                agents["rl_ppo"] = RLAgent(
+                    observation_space=env.observation_space,
+                    action_space=env.action_space,
+                    learning_rate=config.agent.learning_rate,
+                    gamma=config.agent.gamma,
+                    n_steps=config.agent.n_steps,
+                    batch_size=config.agent.batch_size,
+                    n_epochs=config.agent.n_epochs,
+                    clip_range=config.agent.clip_range,
+                    ent_coef=config.agent.ent_coef,
+                    device=config.training.device,
+                    seed=config.training.seed,
+                )
+        except ImportError as e:
+            print(f"Warning: Could not create rl_ppo: {e}")
 
-    # 3. Active Inference agent (using fast implementation)
-    try:
-        from src.agents.active_inference_fast import HAS_PYMDP, ActiveInferenceFast
-        if not HAS_PYMDP:
-            raise ImportError("pymdp is required. Install with: pip install inferactively-pymdp")
-        agents["active_inference"] = ActiveInferenceFast(
-            observation_space=env.observation_space,
-            action_space=env.action_space,
-            planning_horizon=config.agent.planning_horizon,
-            policy_precision=config.agent.policy_precision,
-            grid_size=config.environment.grid_size,
-            beam_width=20,
-            seed=config.training.seed,
-        )
-    except ImportError as e:
-        raise ImportError(f"Could not create Active Inference agent: {e}") from e
+    # 3. DQN agent
+    if "rl_dqn" in agent_list:
+        try:
+            from src.agents.rl_dqn import DQNAgent, HAS_SB3
+            if not HAS_SB3:
+                print("Warning: stable-baselines3 not available, skipping rl_dqn")
+            else:
+                agents["rl_dqn"] = DQNAgent(
+                    observation_space=env.observation_space,
+                    action_space=env.action_space,
+                    learning_rate=config.agent.learning_rate,
+                    gamma=config.agent.gamma,
+                    device=config.training.device,
+                    seed=config.training.seed,
+                )
+        except ImportError as e:
+            print(f"Warning: Could not create rl_dqn: {e}")
+
+    # 4. A2C agent
+    if "rl_a2c" in agent_list:
+        try:
+            from src.agents.rl_a2c import A2CAgent, HAS_SB3
+            if not HAS_SB3:
+                print("Warning: stable-baselines3 not available, skipping rl_a2c")
+            else:
+                agents["rl_a2c"] = A2CAgent(
+                    observation_space=env.observation_space,
+                    action_space=env.action_space,
+                    learning_rate=config.agent.learning_rate,
+                    gamma=config.agent.gamma,
+                    n_steps=config.agent.n_steps,
+                    ent_coef=config.agent.ent_coef,
+                    device=config.training.device,
+                    seed=config.training.seed,
+                )
+        except ImportError as e:
+            print(f"Warning: Could not create rl_a2c: {e}")
+
+    # 5. Active Inference agent (using fast implementation)
+    if "active_inference" in agent_list:
+        try:
+            from src.agents.active_inference_fast import HAS_PYMDP, ActiveInferenceFast
+            if not HAS_PYMDP:
+                print("Warning: pymdp not available, skipping active_inference")
+            else:
+                agents["active_inference"] = ActiveInferenceFast(
+                    observation_space=env.observation_space,
+                    action_space=env.action_space,
+                    planning_horizon=config.agent.planning_horizon,
+                    policy_precision=config.agent.policy_precision,
+                    grid_size=config.environment.grid_size,
+                    beam_width=20,
+                    seed=config.training.seed,
+                )
+        except ImportError as e:
+            print(f"Warning: Could not create active_inference: {e}")
 
     return agents
 
 
-def train_rl_agent(
+def train_sb3_agent(
     agent,
+    agent_name: str,
     config: Config,
     output_dir: Path,
     resume_checkpoint: Path | None = None,
 ) -> dict[str, list[float]]:
     """
-    Train the RL agent using stable-baselines3.
+    Train a stable-baselines3 based agent with checkpointing.
 
     Args:
-        agent: The RL agent to train
+        agent: The agent to train (must have create_model, train, save, load methods)
+        agent_name: Name of the agent (for checkpoint naming)
         config: Training configuration
         output_dir: Output directory for models and checkpoints
         resume_checkpoint: Optional path to checkpoint for resuming training
@@ -98,12 +167,9 @@ def train_rl_agent(
     Returns:
         Dictionary with training rewards
     """
-    from src.agents.rl_agent import HAS_SB3
-    if not HAS_SB3:
-        print("Skipping RL training (stable-baselines3 not available)")
-        return {"rewards": []}
+    from stable_baselines3.common.callbacks import BaseCallback, CallbackList
 
-    print("\nTraining RL agent...")
+    print(f"\nTraining {agent_name}...")
 
     # Create training environment
     env = ForagingGridEnv(
@@ -114,15 +180,15 @@ def train_rl_agent(
         seed=config.training.seed,
     )
 
-    # Create checkpoint directory
-    checkpoint_dir = output_dir / "checkpoints"
-    checkpoint_dir.mkdir(exist_ok=True)
+    # Create checkpoint directory for this agent
+    checkpoint_dir = output_dir / "checkpoints" / agent_name
+    checkpoint_dir.mkdir(parents=True, exist_ok=True)
 
     # Handle resume vs new training
     reset_num_timesteps = True
     total_timesteps = config.training.total_timesteps
 
-    if resume_checkpoint is not None:
+    if resume_checkpoint is not None and agent_name in str(resume_checkpoint):
         print(f"Resuming from checkpoint: {resume_checkpoint}")
         agent.load(str(resume_checkpoint), env=env)
         resume_timestep = get_resume_timestep(resume_checkpoint)
@@ -139,8 +205,6 @@ def train_rl_agent(
         agent.create_model(env)
 
     # Training callback for logging
-    from stable_baselines3.common.callbacks import BaseCallback, CallbackList
-
     training_rewards = []
 
     class RewardCallback(BaseCallback):
@@ -165,7 +229,7 @@ def train_rl_agent(
     checkpoint_callback = CheckpointCallbackWithCleanup(
         save_freq=config.training.save_freq,
         save_path=str(checkpoint_dir),
-        name_prefix="rl_ppo",
+        name_prefix=agent_name,
         keep_last=config.training.checkpoint_keep_last,
         verbose=1,
     )
@@ -181,9 +245,9 @@ def train_rl_agent(
     )
 
     # Save final model
-    model_path = output_dir / "models" / "rl_ppo.zip"
+    model_path = output_dir / "models" / f"{agent_name}.zip"
     agent.save(str(model_path))
-    print(f"Saved RL model to {model_path}")
+    print(f"Saved {agent_name} model to {model_path}")
 
     env.close()
 
@@ -238,6 +302,15 @@ def evaluate_agent(
     }
 
 
+def find_agent_checkpoint(checkpoint_base_dir: Path, agent_name: str) -> Path | None:
+    """Find the latest checkpoint for a specific agent."""
+    agent_checkpoint_dir = checkpoint_base_dir / agent_name
+    if agent_checkpoint_dir.exists():
+        return find_latest_checkpoint(agent_checkpoint_dir)
+    # Also check the old flat structure for backwards compatibility
+    return find_latest_checkpoint(checkpoint_base_dir, pattern=f"{agent_name}_*_steps.zip")
+
+
 def main():
     parser = argparse.ArgumentParser(description="Train agents for Desire research")
     parser.add_argument(
@@ -257,7 +330,7 @@ def main():
         type=str,
         nargs="+",
         default=None,
-        help="Specific agents to train (default: all)",
+        help="Specific agents to train (default: all). Options: heuristic, rl_ppo, rl_dqn, rl_a2c, active_inference",
     )
     parser.add_argument(
         "--resume",
@@ -282,20 +355,18 @@ def main():
         config = Config()
 
     # Handle resume logic
-    resume_checkpoint = None
+    resume_mode = False
+    checkpoint_base_dir = None
     if args.resume:
+        resume_mode = True
         if args.resume.lower() == "latest":
             if not args.resume_dir:
                 parser.error("--resume-dir is required when --resume=latest")
-            checkpoint_dir = Path(args.resume_dir) / "checkpoints"
-            resume_checkpoint = find_latest_checkpoint(checkpoint_dir)
-            if resume_checkpoint is None:
-                parser.error(f"No checkpoints found in {checkpoint_dir}")
-            print(f"Found latest checkpoint: {resume_checkpoint}")
+            checkpoint_base_dir = Path(args.resume_dir) / "checkpoints"
+            print(f"Will resume from latest checkpoints in: {checkpoint_base_dir}")
         else:
-            resume_checkpoint = Path(args.resume)
-            if not resume_checkpoint.exists():
-                parser.error(f"Checkpoint not found: {resume_checkpoint}")
+            # Specific checkpoint path provided
+            checkpoint_base_dir = Path(args.resume).parent
 
     # Set output directory
     if args.resume_dir:
@@ -309,11 +380,12 @@ def main():
 
     output_dir.mkdir(parents=True, exist_ok=True)
     (output_dir / "models").mkdir(exist_ok=True)
+    (output_dir / "checkpoints").mkdir(exist_ok=True)
 
     print(f"Output directory: {output_dir}")
     print(f"Configuration: {config.experiment_name}")
-    if resume_checkpoint:
-        print(f"Resuming from: {resume_checkpoint}")
+    if resume_mode:
+        print(f"Resume mode: enabled")
 
     # Set random seed
     np.random.seed(config.training.seed)
@@ -327,13 +399,9 @@ def main():
     )
 
     # Create agents
-    agents = create_agents(config, env)
+    agents = create_agents(config, env, args.agents)
 
-    # Filter agents if specified
-    if args.agents:
-        agents = {k: v for k, v in agents.items() if k in args.agents}
-
-    print(f"\nAgents to train: {list(agents.keys())}")
+    print(f"\nAgents to process: {list(agents.keys())}")
 
     # Training results
     training_results = {}
@@ -345,10 +413,19 @@ def main():
         print(f"Processing agent: {agent_name}")
         print(f"{'='*50}")
 
-        # Train if needed
-        if agent_name == "rl_ppo" and hasattr(agent, 'create_model'):
-            training_data = train_rl_agent(
-                agent, config, output_dir,
+        # Determine if this agent needs training
+        if agent_name in SB3_AGENTS and hasattr(agent, 'create_model'):
+            # Find checkpoint for this agent if resuming
+            resume_checkpoint = None
+            if resume_mode and checkpoint_base_dir:
+                resume_checkpoint = find_agent_checkpoint(checkpoint_base_dir, agent_name)
+                if resume_checkpoint:
+                    print(f"Found checkpoint: {resume_checkpoint}")
+                else:
+                    print(f"No checkpoint found for {agent_name}, starting fresh")
+
+            training_data = train_sb3_agent(
+                agent, agent_name, config, output_dir,
                 resume_checkpoint=resume_checkpoint,
             )
             training_results[agent_name] = training_data
