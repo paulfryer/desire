@@ -94,16 +94,15 @@ jobs:
         run: |
           python experiments/train_agents.py \
             --config experiments/configs/quick_test.yaml \
-            --output-dir outputs/agents \
-            --seed $DESIRE_SEED
+            --output-dir outputs/agents
         timeout-minutes: 10
 
       - name: Run predicate tests (quick)
         run: |
           python experiments/run_tests.py \
-            --agents-dir outputs/agents \
-            --output outputs/test_results \
-            --seed $DESIRE_SEED
+            --config experiments/configs/quick_test.yaml \
+            --model-dir outputs/agents \
+            --output-dir outputs/test_results
         timeout-minutes: 10
 
       - name: Verify outputs exist
