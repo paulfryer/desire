@@ -1,5 +1,5 @@
 \begin{table}[t]
-\caption{Summary of behavioral predicate scores across all agents. AA correlation shows distance-activation relationship (negative = true anticipation). Bold indicates highest score per metric.}
+\caption{Summary of behavioral predicate scores across all agents. AA correlation shows distance-activation relationship (negative = true anticipation, positive = inverse anticipation). Bold indicates highest score per metric. AA Score = $\max(0, -r)$.}
 \label{tab:results}
 \centering
 \small
@@ -7,14 +7,14 @@
 \toprule
 Metric & Heuristic & PPO & DQN & A2C & Active Inf. \\
 \midrule
-AA (True Antic.) & 0.00 & 0.00 & \textbf{0.65} & 0.20 & 0.59 \\
+AA Score & 0.00 & 0.00 & \textbf{0.65} & 0.20 & 0.59 \\
 SDV & 0.00 & 0.00 & 0.00 & \textbf{0.73} & 0.40 \\
 ER & 0.93 & 0.93 & 0.93 & 0.93 & \textbf{0.97} \\
 FI & 0.02 & 0.69 & 0.00 & \textbf{0.88} & 0.05 \\
 OCS & \textbf{1.00} & 0.00 & 0.00 & 0.50 & 0.91 \\
 \midrule
-AA Correlation (r) & 0.00 & 0.63 & -0.65 & -0.20 & -0.59 \\
-Anticipation Type & None & Inverse & True & None & True \\
+AA Correlation ($r$) & 0.00 & +0.63 & $-$0.65 & $-$0.20 & $-$0.59 \\
+Anticipation Type & None & Inverse & True & Weak & True \\
 \bottomrule
 \end{tabular}
 \end{table}

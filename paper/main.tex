@@ -100,9 +100,9 @@ We compare five agent types spanning rule-based, model-free RL, and Active Infer
 \begin{equation}
     r = \text{corr}(d, \|\mathbf{s}\|)
 \end{equation}
-where $d$ is distance to nearest resource and $\mathbf{s}$ is the internal state vector. Negative $r$ indicates \textit{true anticipation} (activation increases as goal approaches); positive $r$ indicates \textit{inverse anticipation}.
+where $d$ is distance to nearest resource and $\mathbf{s}$ is the internal state vector. We classify anticipation type using thresholds: $r < -0.3$ indicates \textit{true anticipation} (activation increases as goal approaches), $r > 0.3$ indicates \textit{inverse anticipation} (activation decreases near goals), and $|r| \leq 0.3$ indicates no reliable anticipation pattern. Values between $-0.3$ and $-0.1$ are classified as \textit{weak} true anticipation.
 
-We also compute the AA ratio (activation near vs.\ far from goals) for backward compatibility.
+We also compute the AA score as $\max(0, -r)$, which captures the strength of true anticipation (higher is more anticipatory).
 
 \paragraph{Other Predicates.} Due to space constraints, we briefly summarize: FI measures activity spike after path blockage; OCS measures choice accuracy in safe/risky tradeoffs; ER measures persistence under extinction; SDV measures correlation between energy level and seeking intensity; MED measures transfer efficiency to alternative paths.
 
@@ -202,7 +202,7 @@ In contrast, PPO's policy gradient optimizes action probabilities directly witho
 
 \subsection{The A2C Anomaly}
 
-A2C's high SDV and FI scores suggest it develops representations that are more responsive to internal state (energy) and environmental perturbations (path blockage). This may reflect its architecture: the critic provides a baseline that tracks state value, while the actor adjusts behavior in response. The synchronous updates may create more reactive dynamics than PPO's clipped updates.
+A2C's high SDV and FI scores suggest it develops representations that are more responsive to internal state (energy) and environmental perturbations (path blockage). One possible explanation involves its architecture: the critic provides a baseline that tracks state value, while the actor adjusts behavior in response. The synchronous updates could potentially create more reactive dynamics than PPO's clipped updates. However, we did not directly test this mechanistic hypothesis, and alternative explanations (e.g., differences in training dynamics or hyperparameters) cannot be ruled out.
 
 \subsection{Implications}
 
@@ -211,6 +211,8 @@ A2C's high SDV and FI scores suggest it develops representations that are more r
 \paragraph{For cognitive science.} The multi-dimensional nature of desire-like behavior in artificial agents parallels psychological findings that motivation has multiple components (wanting, liking, anticipating) that can dissociate \cite{berridge2009dissecting}.
 
 \paragraph{For Active Inference.} Our results neither confirm nor refute Active Inference's special status. The framework produces anticipatory behavior, but so does value-based RL. The distinguishing feature may not be anticipation per se, but rather the integration of epistemic and pragmatic value---which we did not directly measure.
+
+\paragraph{For frontier AI systems.} While our findings are limited to a simple grid world, the principle---that architectural choices determine which aspects of goal-directedness emerge---may generalize to larger systems. Large language models fine-tuned with PPO-based RLHF may exhibit similar inverse anticipation patterns, encoding uncertainty rather than goal proximity in their hidden states. This has implications for interpretability research attempting to locate ``goals'' in neural network representations: the same architecture that produces capable behavior may not produce the prospective representations that intuitive notions of ``goal-directedness'' assume.
 
 \subsection{Limitations}
 

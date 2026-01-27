@@ -376,6 +376,8 @@ Metric & Heuristic & PPO & DQN & A2C & Active Inf. \\
             atype = "True"
         elif corr > 0.3:
             atype = "Inverse"
+        elif corr < -0.1:
+            atype = "Weak"
         else:
             atype = "None"
         latex += f" & {atype}"
