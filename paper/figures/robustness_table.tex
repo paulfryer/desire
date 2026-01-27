@@ -1,5 +1,5 @@
 \begin{table}[t]
-\caption{Robustness analysis: Anticipation patterns under different internal state operationalizations. All values are Pearson correlations between distance-to-goal and the specified representation.}
+\caption{Robustness analysis: Anticipation patterns under different internal state operationalizations. All values are Pearson correlations between distance-to-goal and the specified representation.$^*$}
 \label{tab:robustness}
 \centering
 \small
@@ -8,8 +8,12 @@
 Agent & Hidden Activation & Value Estimate & Policy Features \\
 \midrule
 DQN & $-0.83$ & $-0.85$ & --- \\
-PPO & $0.49$ & $-0.13$ & $-0.39$ \\
-A2C & $-0.23$ & $0.28$ & $-0.23$ \\
+PPO & $+0.49$ & $-0.13$ & $-0.39$ \\
+A2C & $-0.23$ & $+0.28$ & $-0.23$ \\
 \bottomrule
 \end{tabular}
+\vspace{1mm}
+
+\raggedright
+\footnotesize{$^*$Hidden activation values differ slightly from Table~\ref{tab:results} due to independent trial samples. The qualitative patterns (direction of correlation) are consistent.}
 \end{table}
