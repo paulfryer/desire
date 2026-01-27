@@ -50,6 +50,9 @@ notebooks = [
 tracking = [
     "wandb>=0.15.0",
 ]
+gpu-monitor = [
+    "pynvml>=11.0.0",
+]
 
 [project.scripts]
 train-agents = "experiments.train_agents:main"

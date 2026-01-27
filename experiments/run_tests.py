@@ -5,16 +5,28 @@ Usage:
     python experiments/run_tests.py --config experiments/configs/default.yaml
     python experiments/run_tests.py --model-dir outputs/training_xxx
 
+Resume from checkpoint (after crash or interruption):
+    python experiments/run_tests.py --model-dir outputs/training_xxx --output-dir outputs/tests_xxx --resume
+
+With GPU temperature monitoring (prevents overheating):
+    python experiments/run_tests.py --model-dir outputs/training_xxx --resume --gpu-cooldown --gpu-max-temp 80
+
 Debug mode:
     python experiments/run_tests.py --agent heuristic --test frustration --n_trials 1 --verbose
+
+Supported agents: heuristic, rl_ppo, rl_dqn, rl_a2c, active_inference
 """
 
 import argparse
 import json
 import sys
 import time
+import warnings
 from datetime import datetime
 from pathlib import Path
+
+# Suppress pynvml deprecation warning from torch.cuda
+warnings.filterwarnings("ignore", message=".*pynvml package is deprecated.*")
 
 import numpy as np
 
@@ -80,6 +92,38 @@ def load_single_agent(
                 agent.load(str(model_path))
                 if verbose:
                     print(f"    Loaded model from {model_path}")
+    elif agent_name == "rl_dqn":
+        from src.agents.rl_dqn import HAS_SB3, DQNAgent
+        if not HAS_SB3:
+            raise ImportError("stable-baselines3 required")
+        agent = DQNAgent(
+            observation_space=env.observation_space,
+            action_space=env.action_space,
+            device=config.training.device,
+            seed=config.training.seed,
+        )
+        if model_dir:
+            model_path = model_dir / "models" / "rl_dqn.zip"
+            if model_path.exists():
+                agent.load(str(model_path))
+                if verbose:
+                    print(f"    Loaded model from {model_path}")
+    elif agent_name == "rl_a2c":
+        from src.agents.rl_a2c import HAS_SB3, A2CAgent
+        if not HAS_SB3:
+            raise ImportError("stable-baselines3 required")
+        agent = A2CAgent(
+            observation_space=env.observation_space,
+            action_space=env.action_space,
+            device=config.training.device,
+            seed=config.training.seed,
+        )
+        if model_dir:
+            model_path = model_dir / "models" / "rl_a2c.zip"
+            if model_path.exists():
+                agent.load(str(model_path))
+                if verbose:
+                    print(f"    Loaded model from {model_path}")
     elif agent_name == "active_inference":
         from src.agents.active_inference_fast import HAS_PYMDP, ActiveInferenceFast
         if not HAS_PYMDP:
@@ -107,7 +151,7 @@ def load_agents(
     verbose: bool = False,
 ) -> dict[str, BaseAgent]:
     """Load agent types, optionally filtered."""
-    all_agent_names = ["heuristic", "rl_ppo", "active_inference"]
+    all_agent_names = ["heuristic", "rl_ppo", "rl_dqn", "rl_a2c", "active_inference"]
 
     if agent_filter:
         agent_names = [n for n in agent_filter if n in all_agent_names]
@@ -124,6 +168,36 @@ def load_agents(
             print(f"    {name}: FAILED - {e}")
 
     return agents
+
+
+def save_test_checkpoint(
+    output_dir: Path,
+    completed_results: dict[str, dict[str, TestResult]],
+) -> None:
+    """Save checkpoint of completed test results."""
+    checkpoint_path = output_dir / "test_checkpoint.json"
+    checkpoint_data = {
+        "completed": {
+            test_name: {
+                agent_name: result.to_dict()
+                for agent_name, result in test_results.items()
+            }
+            for test_name, test_results in completed_results.items()
+        },
+        "timestamp": datetime.now().isoformat(),
+    }
+    with open(checkpoint_path, "w") as f:
+        json.dump(checkpoint_data, f, indent=2, default=str)
+
+
+def load_test_checkpoint(output_dir: Path) -> dict[str, dict[str, dict]] | None:
+    """Load checkpoint if exists."""
+    checkpoint_path = output_dir / "test_checkpoint.json"
+    if not checkpoint_path.exists():
+        return None
+    with open(checkpoint_path, "r") as f:
+        data = json.load(f)
+    return data.get("completed", {})
 
 
 def run_single_test_debug(
@@ -263,21 +337,158 @@ def run_single_test_debug(
         return None
 
 
+def result_from_dict(data: dict) -> TestResult:
+    """Reconstruct TestResult from checkpoint dict."""
+    return TestResult(
+        test_name=data["test_name"],
+        agent_name=data["agent_name"],
+        score=data["score"],
+        raw_data=data.get("raw_data", {}),
+        metadata=data.get("metadata", {}),
+    )
+
+
+def get_gpu_temperature() -> float | None:
+    """Get GPU temperature if available. Returns None if not available."""
+    try:
+        # Use nvidia-ml-py directly (pynvml is deprecated wrapper)
+        from pynvml import nvmlInit, nvmlDeviceGetHandleByIndex, nvmlDeviceGetTemperature, nvmlShutdown, NVML_TEMPERATURE_GPU
+        nvmlInit()
+        handle = nvmlDeviceGetHandleByIndex(0)
+        temp = nvmlDeviceGetTemperature(handle, NVML_TEMPERATURE_GPU)
+        nvmlShutdown()
+        return float(temp)
+    except Exception:
+        return None
+
+
+def wait_for_gpu_cooldown(max_temp: float = 80.0, check_interval: float = 30.0) -> None:
+    """Wait for GPU to cool down if temperature is too high."""
+    temp = get_gpu_temperature()
+    if temp is None:
+        return  # No GPU monitoring available
+
+    if temp > max_temp:
+        print(f"\n  GPU temperature: {temp}C (above {max_temp}C threshold)")
+        print("  Waiting for cooldown...")
+        while temp and temp > max_temp - 5:  # Cool to 5 degrees below threshold
+            time.sleep(check_interval)
+            temp = get_gpu_temperature()
+            if temp:
+                print(f"    GPU temperature: {temp}C")
+        print("  GPU cooled down, resuming...")
+
+
+def update_progress_file(
+    output_dir: Path,
+    current_test: str,
+    current_agent: str,
+    tests_completed: int,
+    total_tests: int,
+    agents_completed: int,
+    total_agents: int,
+    start_time: float,
+    completed_results: dict[str, dict[str, TestResult]],
+) -> None:
+    """Update progress file with current status for external monitoring."""
+    progress_path = output_dir / "progress.json"
+
+    elapsed = time.time() - start_time
+    total_agent_tests = total_tests * total_agents
+    completed_agent_tests = sum(len(agents) for agents in completed_results.values())
+
+    # Estimate remaining time based on completed work
+    if completed_agent_tests > 0:
+        avg_time_per_test = elapsed / completed_agent_tests
+        remaining_tests = total_agent_tests - completed_agent_tests
+        estimated_remaining = avg_time_per_test * remaining_tests
+    else:
+        estimated_remaining = None
+
+    progress_data = {
+        "status": "running",
+        "current_test": current_test,
+        "current_agent": current_agent,
+        "progress": {
+            "tests_completed": tests_completed,
+            "total_tests": total_tests,
+            "agents_in_current_test": agents_completed,
+            "total_agents": total_agents,
+            "total_agent_tests_completed": completed_agent_tests,
+            "total_agent_tests": total_agent_tests,
+            "percent_complete": round(100 * completed_agent_tests / total_agent_tests, 1) if total_agent_tests > 0 else 0,
+        },
+        "timing": {
+            "elapsed_seconds": round(elapsed, 1),
+            "elapsed_human": f"{int(elapsed // 3600)}h {int((elapsed % 3600) // 60)}m {int(elapsed % 60)}s",
+            "estimated_remaining_seconds": round(estimated_remaining, 1) if estimated_remaining else None,
+            "estimated_remaining_human": f"{int(estimated_remaining // 3600)}h {int((estimated_remaining % 3600) // 60)}m" if estimated_remaining else "calculating...",
+        },
+        "gpu": {
+            "temperature_c": get_gpu_temperature(),
+        },
+        "last_updated": datetime.now().isoformat(),
+    }
+
+    with open(progress_path, "w") as f:
+        json.dump(progress_data, f, indent=2)
+
+
+def finalize_progress_file(output_dir: Path, start_time: float) -> None:
+    """Mark progress as complete."""
+    progress_path = output_dir / "progress.json"
+    elapsed = time.time() - start_time
+
+    progress_data = {
+        "status": "completed",
+        "timing": {
+            "total_seconds": round(elapsed, 1),
+            "total_human": f"{int(elapsed // 3600)}h {int((elapsed % 3600) // 60)}m {int(elapsed % 60)}s",
+        },
+        "completed_at": datetime.now().isoformat(),
+    }
+
+    with open(progress_path, "w") as f:
+        json.dump(progress_data, f, indent=2)
+
+
 def run_all_tests(
     agents: dict[str, BaseAgent],
     config: Config,
     output_dir: Path,
     test_filter: list[str] | None = None,
     verbose: bool = False,
+    resume_checkpoint: dict[str, dict[str, dict]] | None = None,
+    gpu_cooldown: bool = False,
+    gpu_max_temp: float = 80.0,
+    start_time: float | None = None,
 ) -> dict[str, dict[str, TestResult]]:
-    """Run predicate tests on agents."""
-    all_results = {}
+    """Run predicate tests on agents with checkpoint support."""
+    all_results: dict[str, dict[str, TestResult]] = {}
+
+    if start_time is None:
+        start_time = time.time()
 
     all_tests = ["frustration", "means_end", "extinction", "anticipation", "opportunity_cost", "state_dependent"]
     tests_to_run = test_filter if test_filter else all_tests
+    total_tests = len(tests_to_run)
+    total_agents = len(agents)
+
+    # Test name mappings (short name -> result key)
+    test_name_map = {
+        "frustration": "frustration_intensification",
+        "means_end": "means_end_decoupling",
+        "extinction": "extinction_resistance",
+        "anticipation": "anticipatory_activation",
+        "opportunity_cost": "opportunity_cost_sensitivity",
+        "state_dependent": "state_dependent_valuation",
+    }
+
+    tests_completed = 0
 
     # Test 1: Frustration Intensification
     if "frustration" in tests_to_run:
+        test_key = "frustration_intensification"
         print("\n" + "="*50)
         print("Running Frustration Intensification Test")
         print("="*50)
@@ -294,7 +505,27 @@ def run_all_tests(
         )
 
         fi_results = {}
+        # Restore from checkpoint if available
+        if resume_checkpoint and test_key in resume_checkpoint:
+            for agent_name, result_dict in resume_checkpoint[test_key].items():
+                fi_results[agent_name] = result_from_dict(result_dict)
+                print(f"  Restored {agent_name} from checkpoint (score: {result_dict['score']:.3f})")
+
+        agents_completed = len(fi_results)
         for agent_name, agent in agents.items():
+            if agent_name in fi_results:
+                continue  # Skip already completed
+
+            if gpu_cooldown:
+                wait_for_gpu_cooldown(gpu_max_temp)
+
+            # Update progress file
+            update_progress_file(
+                output_dir, test_key, agent_name,
+                tests_completed, total_tests, agents_completed, total_agents,
+                start_time, all_results,
+            )
+
             print(f"\n  Testing {agent_name}...")
             sys.stdout.flush()
 
@@ -303,12 +534,20 @@ def run_all_tests(
             elapsed = time.time() - start
 
             fi_results[agent_name] = result
+            agents_completed += 1
             print(f"    FI Score: {result.score:.3f} ({elapsed:.1f}s)")
 
-        all_results["frustration_intensification"] = fi_results
+            # Save checkpoint after each agent
+            all_results[test_key] = fi_results
+            save_test_checkpoint(output_dir, all_results)
+            print(f"    Checkpoint saved")
+
+        all_results[test_key] = fi_results
+        tests_completed += 1
 
     # Test 2: Means-End Decoupling
     if "means_end" in tests_to_run:
+        test_key = "means_end_decoupling"
         print("\n" + "="*50)
         print("Running Means-End Decoupling Test")
         print("="*50)
@@ -323,7 +562,27 @@ def run_all_tests(
         )
 
         med_results = {}
+        # Restore from checkpoint if available
+        if resume_checkpoint and test_key in resume_checkpoint:
+            for agent_name, result_dict in resume_checkpoint[test_key].items():
+                med_results[agent_name] = result_from_dict(result_dict)
+                print(f"  Restored {agent_name} from checkpoint (score: {result_dict['score']:.3f})")
+
+        agents_completed = len(med_results)
         for agent_name, agent in agents.items():
+            if agent_name in med_results:
+                continue  # Skip already completed
+
+            if gpu_cooldown:
+                wait_for_gpu_cooldown(gpu_max_temp)
+
+            # Update progress file
+            update_progress_file(
+                output_dir, test_key, agent_name,
+                tests_completed, total_tests, agents_completed, total_agents,
+                start_time, all_results,
+            )
+
             print(f"\n  Testing {agent_name}...")
             sys.stdout.flush()
 
@@ -332,12 +591,20 @@ def run_all_tests(
             elapsed = time.time() - start
 
             med_results[agent_name] = result
+            agents_completed += 1
             print(f"    MED Score: {result.score:.3f} ({elapsed:.1f}s)")
 
-        all_results["means_end_decoupling"] = med_results
+            # Save checkpoint after each agent
+            all_results[test_key] = med_results
+            save_test_checkpoint(output_dir, all_results)
+            print(f"    Checkpoint saved")
+
+        all_results[test_key] = med_results
+        tests_completed += 1
 
     # Test 3: Extinction Resistance
     if "extinction" in tests_to_run:
+        test_key = "extinction_resistance"
         print("\n" + "="*50)
         print("Running Extinction Resistance Test")
         print("="*50)
@@ -352,7 +619,27 @@ def run_all_tests(
         )
 
         er_results = {}
+        # Restore from checkpoint if available
+        if resume_checkpoint and test_key in resume_checkpoint:
+            for agent_name, result_dict in resume_checkpoint[test_key].items():
+                er_results[agent_name] = result_from_dict(result_dict)
+                print(f"  Restored {agent_name} from checkpoint (score: {result_dict['score']:.3f})")
+
+        agents_completed = len(er_results)
         for agent_name, agent in agents.items():
+            if agent_name in er_results:
+                continue  # Skip already completed
+
+            if gpu_cooldown:
+                wait_for_gpu_cooldown(gpu_max_temp)
+
+            # Update progress file
+            update_progress_file(
+                output_dir, test_key, agent_name,
+                tests_completed, total_tests, agents_completed, total_agents,
+                start_time, all_results,
+            )
+
             print(f"\n  Testing {agent_name}...")
             sys.stdout.flush()
 
@@ -361,12 +648,20 @@ def run_all_tests(
             elapsed = time.time() - start
 
             er_results[agent_name] = result
+            agents_completed += 1
             print(f"    ER Score: {result.score:.3f} ({elapsed:.1f}s)")
 
-        all_results["extinction_resistance"] = er_results
+            # Save checkpoint after each agent
+            all_results[test_key] = er_results
+            save_test_checkpoint(output_dir, all_results)
+            print(f"    Checkpoint saved")
+
+        all_results[test_key] = er_results
+        tests_completed += 1
 
     # Test 4: Anticipatory Activation
     if "anticipation" in tests_to_run:
+        test_key = "anticipatory_activation"
         print("\n" + "="*50)
         print("Running Anticipatory Activation Test")
         print("="*50)
@@ -381,7 +676,27 @@ def run_all_tests(
         )
 
         aa_results = {}
+        # Restore from checkpoint if available
+        if resume_checkpoint and test_key in resume_checkpoint:
+            for agent_name, result_dict in resume_checkpoint[test_key].items():
+                aa_results[agent_name] = result_from_dict(result_dict)
+                print(f"  Restored {agent_name} from checkpoint (score: {result_dict['score']:.3f})")
+
+        agents_completed = len(aa_results)
         for agent_name, agent in agents.items():
+            if agent_name in aa_results:
+                continue  # Skip already completed
+
+            if gpu_cooldown:
+                wait_for_gpu_cooldown(gpu_max_temp)
+
+            # Update progress file
+            update_progress_file(
+                output_dir, test_key, agent_name,
+                tests_completed, total_tests, agents_completed, total_agents,
+                start_time, all_results,
+            )
+
             print(f"\n  Testing {agent_name}...")
             sys.stdout.flush()
 
@@ -390,12 +705,20 @@ def run_all_tests(
             elapsed = time.time() - start
 
             aa_results[agent_name] = result
+            agents_completed += 1
             print(f"    AA Score: {result.score:.3f} ({elapsed:.1f}s)")
 
-        all_results["anticipatory_activation"] = aa_results
+            # Save checkpoint after each agent
+            all_results[test_key] = aa_results
+            save_test_checkpoint(output_dir, all_results)
+            print(f"    Checkpoint saved")
+
+        all_results[test_key] = aa_results
+        tests_completed += 1
 
     # Test 5: Opportunity Cost Sensitivity
     if "opportunity_cost" in tests_to_run:
+        test_key = "opportunity_cost_sensitivity"
         print("\n" + "="*50)
         print("Running Opportunity Cost Sensitivity Test")
         print("="*50)
@@ -410,7 +733,27 @@ def run_all_tests(
         )
 
         ocs_results = {}
+        # Restore from checkpoint if available
+        if resume_checkpoint and test_key in resume_checkpoint:
+            for agent_name, result_dict in resume_checkpoint[test_key].items():
+                ocs_results[agent_name] = result_from_dict(result_dict)
+                print(f"  Restored {agent_name} from checkpoint (score: {result_dict['score']:.3f})")
+
+        agents_completed = len(ocs_results)
         for agent_name, agent in agents.items():
+            if agent_name in ocs_results:
+                continue  # Skip already completed
+
+            if gpu_cooldown:
+                wait_for_gpu_cooldown(gpu_max_temp)
+
+            # Update progress file
+            update_progress_file(
+                output_dir, test_key, agent_name,
+                tests_completed, total_tests, agents_completed, total_agents,
+                start_time, all_results,
+            )
+
             print(f"\n  Testing {agent_name}...")
             sys.stdout.flush()
 
@@ -419,12 +762,20 @@ def run_all_tests(
             elapsed = time.time() - start
 
             ocs_results[agent_name] = result
+            agents_completed += 1
             print(f"    OCS Score: {result.score:.3f} ({elapsed:.1f}s)")
 
-        all_results["opportunity_cost_sensitivity"] = ocs_results
+            # Save checkpoint after each agent
+            all_results[test_key] = ocs_results
+            save_test_checkpoint(output_dir, all_results)
+            print(f"    Checkpoint saved")
+
+        all_results[test_key] = ocs_results
+        tests_completed += 1
 
     # Test 6: State-Dependent Valuation
     if "state_dependent" in tests_to_run:
+        test_key = "state_dependent_valuation"
         print("\n" + "="*50)
         print("Running State-Dependent Valuation Test")
         print("="*50)
@@ -439,7 +790,27 @@ def run_all_tests(
         )
 
         sdv_results = {}
+        # Restore from checkpoint if available
+        if resume_checkpoint and test_key in resume_checkpoint:
+            for agent_name, result_dict in resume_checkpoint[test_key].items():
+                sdv_results[agent_name] = result_from_dict(result_dict)
+                print(f"  Restored {agent_name} from checkpoint (score: {result_dict['score']:.3f})")
+
+        agents_completed = len(sdv_results)
         for agent_name, agent in agents.items():
+            if agent_name in sdv_results:
+                continue  # Skip already completed
+
+            if gpu_cooldown:
+                wait_for_gpu_cooldown(gpu_max_temp)
+
+            # Update progress file
+            update_progress_file(
+                output_dir, test_key, agent_name,
+                tests_completed, total_tests, agents_completed, total_agents,
+                start_time, all_results,
+            )
+
             print(f"\n  Testing {agent_name}...")
             sys.stdout.flush()
 
@@ -448,9 +819,19 @@ def run_all_tests(
             elapsed = time.time() - start
 
             sdv_results[agent_name] = result
+            agents_completed += 1
             print(f"    SDV Score: {result.score:.3f} ({elapsed:.1f}s)")
 
-        all_results["state_dependent_valuation"] = sdv_results
+            # Save checkpoint after each agent
+            all_results[test_key] = sdv_results
+            save_test_checkpoint(output_dir, all_results)
+            print(f"    Checkpoint saved")
+
+        all_results[test_key] = sdv_results
+        tests_completed += 1
+
+    # Finalize progress file
+    finalize_progress_file(output_dir, start_time)
 
     return all_results
 
@@ -499,7 +880,7 @@ def main():
         type=str,
         nargs="+",
         default=None,
-        help="Specific agent(s) to test: heuristic, rl_ppo, active_inference",
+        help="Specific agent(s) to test: heuristic, rl_ppo, rl_dqn, rl_a2c, active_inference",
     )
     parser.add_argument(
         "--test",
@@ -529,6 +910,22 @@ def main():
         "--debug",
         action="store_true",
         help="Run in debug mode with minimal episodes",
+    )
+    parser.add_argument(
+        "--resume",
+        action="store_true",
+        help="Resume from checkpoint if exists",
+    )
+    parser.add_argument(
+        "--gpu-cooldown",
+        action="store_true",
+        help="Enable GPU temperature monitoring and cooldown (requires pynvml)",
+    )
+    parser.add_argument(
+        "--gpu-max-temp",
+        type=float,
+        default=80.0,
+        help="Maximum GPU temperature before cooldown (default: 80C)",
     )
     args = parser.parse_args()
 
@@ -561,6 +958,24 @@ def main():
         print("Verbose mode: ON")
     if args.debug:
         print("Debug mode: ON (minimal episodes)")
+    if args.resume:
+        print("Resume mode: ON (will restore from checkpoint if exists)")
+    if args.gpu_cooldown:
+        temp = get_gpu_temperature()
+        if temp is not None:
+            print(f"GPU cooldown: ON (max {args.gpu_max_temp}C, current: {temp}C)")
+        else:
+            print("GPU cooldown: ON (pynvml not available, monitoring disabled)")
+
+    # Load checkpoint if resuming
+    resume_checkpoint = None
+    if args.resume:
+        resume_checkpoint = load_test_checkpoint(output_dir)
+        if resume_checkpoint:
+            completed_count = sum(len(agents) for agents in resume_checkpoint.values())
+            print(f"Loaded checkpoint: {len(resume_checkpoint)} tests, {completed_count} agent results")
+        else:
+            print("No checkpoint found, starting fresh")
 
     # Set random seed
     np.random.seed(config.training.seed)
@@ -590,10 +1005,15 @@ def main():
         return
 
     # Run tests
+    test_start_time = time.time()
     results = run_all_tests(
         agents, config, output_dir,
         test_filter=args.test,
         verbose=args.verbose,
+        resume_checkpoint=resume_checkpoint,
+        gpu_cooldown=args.gpu_cooldown,
+        gpu_max_temp=args.gpu_max_temp,
+        start_time=test_start_time,
     )
 
     if not results:
