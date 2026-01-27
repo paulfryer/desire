@@ -16,20 +16,20 @@
 \usepackage{graphicx}
 \usepackage{subcaption}
 
-\title{Anticipatory Activation Distinguishes Active Inference from Reinforcement Learning Agents}
+\title{Desire-Likeness is Multi-Dimensional: Comparing Behavioral Signatures Across Learning Frameworks}
 
 \author{%
   Paul Fryer
 }
 
-\date{January 24, 2026}
+\date{January 27, 2026}
 
 \begin{document}
 
 \maketitle
 
 \begin{abstract}
-We investigate whether Active Inference agents exhibit behavioral signatures that distinguish them from standard Reinforcement Learning (RL) agents in ways that might indicate ``desire-like'' prospective states. Using a grid-world foraging task, we compare three agent types---a heuristic baseline, a PPO-based RL agent, and an Active Inference agent---across six behavioral predicates. Our key finding is a striking dissociation in \textit{Anticipatory Activation} (AA): both the heuristic and Active Inference agents show elevated internal state activation when approaching goals (AA $\approx 1.0$), while RL agents show none (AA $= 0.0$). This pattern was perfectly consistent across three random seeds ($p = 0.002$). We interpret this as evidence that Active Inference agents develop prospective representations similar to explicitly goal-directed agents, whereas RL agents track rewards without anticipatory activation. While preliminary, these results suggest that the choice of learning framework may have implications for the emergence of goal-directed internal states.
+We investigate whether Active Inference agents exhibit behavioral signatures distinguishing them from Reinforcement Learning agents. Using a grid-world foraging task, we compare five agent types---heuristic, PPO, DQN, A2C, and Active Inference---across six behavioral predicates drawn from the psychology of motivation. Contrary to initial hypotheses, we find no clean dissociation between frameworks. Instead, we discover that ``desire-likeness'' is multi-dimensional: Active Inference and value-based RL (DQN) both show \textit{true anticipatory activation} ($r \approx -0.6$), while actor-critic methods (A2C) show the strongest state-dependent valuation and frustration response. Notably, PPO shows \textit{inverse anticipation}---activation that increases with distance from goals ($r = +0.63$), encoding uncertainty rather than goal proximity. These results suggest that the architecture of learning systems, not merely the framework (RL vs.\ Active Inference), determines which aspects of goal-directed behavior emerge. We propose that future work should measure multiple ``desire signatures'' rather than seeking single dissociating predicates.
 \end{abstract}
 
 \section{Introduction}
@@ -42,15 +42,15 @@ However, behavioral equivalence poses a challenge: any behavior produced by one 
 
 Drawing on the psychological literature on motivation and desire \cite{berridge2009dissecting}, we propose six behavioral predicates:
 \begin{enumerate}
-    \item \textbf{Anticipatory Activation (AA)}: Increased internal state activity when approaching goals
+    \item \textbf{Anticipatory Activation (AA)}: Correlation between internal state activity and proximity to goals
     \item \textbf{Frustration Intensification (FI)}: Activity spike when expected paths are blocked
     \item \textbf{Opportunity Cost Sensitivity (OCS)}: Rational weighing of alternatives
     \item \textbf{Extinction Resistance (ER)}: Persistence of behavior when rewards cease
-    \item \textbf{State-Dependent Valuation (SDV)}: Valuation that varies with internal state
+    \item \textbf{State-Dependent Valuation (SDV)}: Valuation that varies with internal state (e.g., energy level)
     \item \textbf{Means-End Decoupling (MED)}: Flexibility in transferring to new paths
 \end{enumerate}
 
-We find that one predicate---Anticipatory Activation---shows a clean dissociation between agent types that is robust across random seeds. This constitutes our main contribution.
+Our initial hypothesis was that Active Inference would uniquely exhibit anticipatory activation due to its explicit prospective planning. However, our results reveal a more nuanced picture: desire-likeness is multi-dimensional, and different agent architectures exhibit different ``desire signatures.''
 
 \section{Related Work}
 
@@ -58,7 +58,7 @@ We find that one predicate---Anticipatory Activation---shows a clean dissociatio
 
 \paragraph{Behavioral Signatures of Goal-Directedness.} The distinction between goal-directed and habitual behavior has a long history in psychology \cite{dickinson1985actions}. Goal-directed behavior is sensitive to outcome devaluation and contingency degradation, while habitual behavior persists regardless. Recent work has begun applying these concepts to artificial agents \cite{langdon2022model}.
 
-\paragraph{Comparing RL and Active Inference.} Several studies have compared RL and Active Inference agents on specific tasks \cite{millidge2020relationship, tschantz2020reinforcement}. Most find behavioral equivalence under appropriate conditions. Our contribution is to identify a specific predicate where dissociation occurs.
+\paragraph{Comparing RL and Active Inference.} Several studies have compared RL and Active Inference agents on specific tasks \cite{millidge2020relationship, tschantz2020reinforcement}. Most find behavioral equivalence under appropriate conditions. Our contribution is to show that single predicates can mislead, and that a multi-metric profile is needed to characterize ``desire-likeness.''
 
 \section{Methods}
 
@@ -77,6 +77,8 @@ The environment supports multiple modes for different predicates (path blockage,
 
 \subsection{Agents}
 
+We compare five agent types spanning rule-based, model-free RL, and Active Inference frameworks.
+
 \paragraph{Heuristic Agent.} A rule-based agent serving as an explicit goal-directed baseline:
 \begin{enumerate}
     \item If on resource and energy $< 80\%$: consume
@@ -84,128 +86,154 @@ The environment supports multiple modes for different predicates (path blockage,
     \item Otherwise: random walk (with bias toward unexplored areas)
 \end{enumerate}
 
-\paragraph{RL Agent (PPO).} A Proximal Policy Optimization agent \cite{schulman2017proximal} implemented using Stable-Baselines3 \cite{raffin2021stable}. Architecture: CNN for local view processing followed by two 64-unit hidden layers. Training: 500,000 timesteps with reward shaping (+5 for consumption, +0.1 for approaching visible food, $-100$ death penalty).
+\paragraph{RL Agent (PPO).} A Proximal Policy Optimization agent \cite{schulman2017proximal} implemented using Stable-Baselines3 \cite{raffin2021stable}. Architecture: CNN for local view processing followed by two 64-unit hidden layers. Training: 500,000 timesteps with entropy bonus for exploration.
 
-\paragraph{Active Inference Agent.} An agent minimizing expected free energy using the pymdp library \cite{heins2022pymdp}. The state space is factorized into position and energy level. Planning horizon: 3 steps. We use beam search (width 20) for tractable policy evaluation. The preference distribution (C matrix) encodes preference for high energy states.
+\paragraph{RL Agent (DQN).} A Deep Q-Network agent using value-based learning. Same CNN architecture as PPO, with experience replay and target network updates.
+
+\paragraph{RL Agent (A2C).} An Advantage Actor-Critic agent combining policy gradient with value function baseline. Same architecture as PPO but with synchronous updates.
+
+\paragraph{Active Inference Agent.} An agent minimizing expected free energy using the pymdp library \cite{heins2022pymdp}. The state space is factorized into position and energy level. Planning horizon: 3 steps. We use beam search (width 20) for tractable policy evaluation.
 
 \subsection{Behavioral Predicates}
 
-\paragraph{Anticipatory Activation (AA).} We measure the magnitude of internal state activation as a function of distance to the nearest resource. AA score is the ratio of mean activation when near goal ($\leq 3$ cells) to activation when far ($\geq 8$ cells):
+\paragraph{Anticipatory Activation (AA).} We measure the correlation between internal state activation and distance to the nearest resource. For RL agents, internal state is the hidden layer activation vector; for Active Inference, it is the belief state. We compute Pearson correlation $r$ between distance and activation magnitude:
 \begin{equation}
-    \text{AA} = \frac{\mathbb{E}[\|\mathbf{s}\| \mid d \leq 3]}{\mathbb{E}[\|\mathbf{s}\| \mid d \geq 8]}
+    r = \text{corr}(d, \|\mathbf{s}\|)
 \end{equation}
-where $\mathbf{s}$ is the agent's internal state vector and $d$ is distance to nearest resource.
+where $d$ is distance to nearest resource and $\mathbf{s}$ is the internal state vector. Negative $r$ indicates \textit{true anticipation} (activation increases as goal approaches); positive $r$ indicates \textit{inverse anticipation}.
+
+We also compute the AA ratio (activation near vs.\ far from goals) for backward compatibility.
 
 \paragraph{Other Predicates.} Due to space constraints, we briefly summarize: FI measures activity spike after path blockage; OCS measures choice accuracy in safe/risky tradeoffs; ER measures persistence under extinction; SDV measures correlation between energy level and seeking intensity; MED measures transfer efficiency to alternative paths.
 
 \subsection{Statistical Analysis}
 
-We run $n=10$ trials per agent per predicate. Omnibus comparison uses Kruskal-Wallis H-test. For significant results, we report pairwise Mann-Whitney U tests with Bonferroni correction. Robustness is verified across three random seeds (42, 123, 456).
+We run $n=10$ trials per agent per predicate. Omnibus comparison uses Kruskal-Wallis H-test. For significant results, we report pairwise Mann-Whitney U tests. Effect sizes are computed using Cohen's d. Bootstrap confidence intervals (10,000 replicates) are used for difference estimates.
 
 \section{Results}
 
-\subsection{Main Finding: Anticipatory Activation Dissociation}
+\subsection{Main Finding: Desire-Likeness is Multi-Dimensional}
 
-\begin{table}[t]
-\caption{Anticipatory Activation scores across agents and random seeds. The dissociation is perfectly consistent: Active Inference and Heuristic agents show AA $\approx 1.0$, while RL shows AA $= 0.0$.}
-\label{tab:aa_results}
-\centering
-\begin{tabular}{lccccc}
-\toprule
-Agent & Seed 42 & Seed 123 & Seed 456 & Mean & SD \\
-\midrule
-Heuristic & 1.000 & 1.000 & 1.000 & 1.000 & 0.000 \\
-RL (PPO) & 0.000 & 0.000 & 0.000 & 0.000 & 0.000 \\
-Active Inference & 0.981 & 0.964 & 0.977 & 0.974 & 0.007 \\
-\bottomrule
-\end{tabular}
-\end{table}
+\input{figures/table1}
 
-Table~\ref{tab:aa_results} shows our main result. The Anticipatory Activation predicate reveals a striking dissociation:
+Table~\ref{tab:results} presents our main results. Rather than a clean dissociation between frameworks, we find that each agent type exhibits a distinct ``desire profile'' with strengths on different metrics.
+
+\subsubsection{Anticipatory Activation}
+
+The AA predicate reveals unexpected complexity (Figure~\ref{fig:activation_distance}):
+
 \begin{itemize}
-    \item \textbf{Heuristic}: AA $= 1.000$ (SD $= 0.000$) across all seeds
-    \item \textbf{Active Inference}: AA $= 0.974$ (SD $= 0.007$) across seeds
-    \item \textbf{RL (PPO)}: AA $= 0.000$ (SD $= 0.000$) across all seeds
+    \item \textbf{DQN}: True anticipation ($r = -0.65$)---activation increases as agent approaches goals
+    \item \textbf{Active Inference}: True anticipation ($r = -0.59$)---similar pattern to DQN
+    \item \textbf{A2C}: Weak true anticipation ($r = -0.20$)
+    \item \textbf{PPO}: \textit{Inverse} anticipation ($r = +0.63$)---activation \textit{decreases} near goals
+    \item \textbf{Heuristic}: No correlation ($r \approx 0$)---deterministic internal state
 \end{itemize}
 
-The Kruskal-Wallis test confirms significant differences ($H = 12.67$, $p = 0.0018$). The effect is not merely statistical---it represents a qualitative dissociation with perfect separation between groups.
+The statistical comparison between DQN and Active Inference yields: Mann-Whitney $U = 0.0$, $p < 0.001$; Cohen's $d = 8.22$ (large effect). However, both show the same \textit{direction} of anticipation (negative correlation), suggesting similar prospective encoding despite different frameworks.
 
 \begin{figure}[t]
     \centering
-    \includegraphics[width=0.8\linewidth]{figures/aa_boxplot.pdf}
-    \caption{Anticipatory Activation scores. Active Inference agents show anticipatory patterns similar to explicitly goal-directed heuristic agents, while RL agents show none. Horizontal bars indicate mean values across three random seeds.}
-    \label{fig:aa_boxplot}
+    \includegraphics[width=0.95\linewidth]{figures/figure2_activation_distance.pdf}
+    \caption{Internal state activation as a function of distance to nearest resource. DQN and Active Inference show true anticipation (negative slope)---activation increases as goals approach. PPO shows inverse anticipation (positive slope)---activation encodes uncertainty about distant goals. Shaded regions indicate 95\% confidence intervals.}
+    \label{fig:activation_distance}
 \end{figure}
 
-Importantly, this dissociation is \textit{perfectly consistent} across random seeds. In every trial, with every seed, the pattern holds: Heuristic and Active Inference show high AA, while RL shows zero.
+\subsubsection{State-Dependent Valuation}
 
-\subsection{Secondary Findings}
+Unexpectedly, \textbf{A2C shows the highest SDV} (0.73), meaning its resource-seeking behavior is most strongly modulated by energy level. Active Inference shows moderate SDV (0.40), while other agents show zero (insufficient energy variation during testing).
 
-\begin{table}[t]
-\caption{Summary of all predicate scores (mean $\pm$ SD). Bold indicates $p < 0.05$ for omnibus test.}
-\label{tab:all_results}
-\centering
-\small
-\begin{tabular}{lcccc}
-\toprule
-Predicate & Heuristic & RL (PPO) & Active Inf. & $p$-value \\
-\midrule
-\textbf{AA} & $1.00 \pm 0.00$ & $0.00 \pm 0.00$ & $0.97 \pm 0.01$ & \textbf{0.002} \\
-FI & $1.03 \pm 0.06$ & $1.08 \pm 0.06$ & $1.19 \pm 0.04$ & 0.594 \\
-OCS & $1.00 \pm 0.00$ & $0.67 \pm 0.15$ & $0.70 \pm 0.24$ & \textbf{0.011} \\
-ER & $0.93 \pm 0.00$ & $0.93 \pm 0.01$ & $0.86 \pm 0.17$ & 0.389 \\
-SDV & $0.00 \pm 0.00$ & $0.01 \pm 0.02$ & $0.40 \pm 0.05$ & 0.101 \\
-MED & $0.00 \pm 0.00$ & $0.00 \pm 0.00$ & $0.00 \pm 0.00$ & 1.000 \\
-\bottomrule
-\end{tabular}
-\end{table}
+\subsubsection{Frustration Intensification}
 
-Table~\ref{tab:all_results} summarizes all predicates. Beyond AA, only Opportunity Cost Sensitivity (OCS) shows significant differences ($p = 0.011$), with the heuristic achieving perfect rational choice while RL and Active Inference show similar suboptimal performance.
+A2C (0.88) and PPO (0.69) show the strongest frustration responses after path blockage. DQN and Active Inference show minimal frustration intensification.
 
-The remaining predicates show no significant differences:
+\subsubsection{Opportunity Cost Sensitivity}
+
+Heuristic (1.0) and Active Inference (0.91) show high OCS, accurately weighing alternatives. RL agents show lower OCS, with PPO and DQN at zero.
+
+\subsubsection{Extinction Resistance}
+
+All agents show high ER (0.93--0.97), with no significant differentiation.
+
+\subsection{Desire Profile Clustering}
+
+\begin{figure}[t]
+    \centering
+    \begin{subfigure}[b]{0.48\textwidth}
+        \includegraphics[width=\textwidth]{figures/figure1_radar.pdf}
+        \caption{Radar chart of normalized desire profiles}
+        \label{fig:radar}
+    \end{subfigure}
+    \hfill
+    \begin{subfigure}[b]{0.48\textwidth}
+        \includegraphics[width=\textwidth]{figures/figure3_clustering.pdf}
+        \caption{Hierarchical clustering dendrogram}
+        \label{fig:clustering}
+    \end{subfigure}
+    \caption{Multi-metric analysis of desire profiles. (a) Each agent exhibits a distinct pattern across five metrics. (b) Ward clustering reveals that agents do not cluster by framework (RL vs.\ Active Inference) but by architectural properties.}
+    \label{fig:profiles}
+\end{figure}
+
+Figure~\ref{fig:profiles} shows the multi-dimensional desire profiles. Hierarchical clustering reveals that agents do not group by framework:
 \begin{itemize}
-    \item \textbf{Frustration Intensification}: All agents show modest increases ($\sim$1.0--1.2$\times$) after path blockage
-    \item \textbf{Extinction Resistance}: All agents show high persistence ($\sim$0.9)
-    \item \textbf{State-Dependent Valuation}: Active Inference shows a trend toward higher SDV, but not significant
-    \item \textbf{Means-End Decoupling}: No agent successfully transferred to alternative paths in our setup
+    \item DQN and Active Inference cluster together (value-based prospective encoding)
+    \item A2C clusters separately (high SDV and FI)
+    \item PPO is an outlier (inverse anticipation)
+    \item Heuristic clusters with Active Inference on OCS
 \end{itemize}
 
 \section{Discussion}
 
-\subsection{Interpretation of the AA Dissociation}
+\subsection{Summary of Findings}
 
-The Anticipatory Activation dissociation admits several interpretations:
+Our results challenge the hypothesis that Active Inference uniquely produces desire-like behavior. Instead:
+\begin{enumerate}
+    \item Both DQN and Active Inference show true anticipatory activation
+    \item PPO shows \textit{inverse} anticipation, encoding uncertainty about distant goals
+    \item A2C shows the highest state-dependent valuation and frustration response
+    \item No single agent wins on all metrics
+\end{enumerate}
 
-\paragraph{Active Inference develops prospective representations.} The most straightforward interpretation is that Active Inference agents, like explicitly goal-directed heuristic agents, develop internal representations that reflect anticipated future states. The expected free energy computation explicitly involves predicting future observations, which may create anticipatory internal dynamics.
+\subsection{Why Value-Based Methods Show Anticipation}
 
-\paragraph{RL tracks rewards without anticipation.} PPO agents learn to select actions that maximize expected returns, but this learning may not produce internal states that ``light up'' when approaching goals. The value function estimates expected return, but this may be implemented differently than explicit goal representation.
+DQN and Active Inference share a key architectural feature: explicit representation of expected future value. DQN's Q-function estimates cumulative future reward from each state-action pair; Active Inference's expected free energy explicitly computes anticipated outcomes. Both create prospective representations that may drive anticipatory internal dynamics.
 
-\paragraph{Architectural confound.} We cannot rule out that the dissociation reflects differences in how we access ``internal state'' across agents (belief states for Active Inference, hidden layer activations for RL). However, both are reasonable operationalizations of internal state.
+In contrast, PPO's policy gradient optimizes action probabilities directly without explicitly representing future values in the feature space. The positive correlation we observe may reflect uncertainty encoding: distant goals are harder to reach, creating larger policy entropy and higher activation.
+
+\subsection{The A2C Anomaly}
+
+A2C's high SDV and FI scores suggest it develops representations that are more responsive to internal state (energy) and environmental perturbations (path blockage). This may reflect its architecture: the critic provides a baseline that tracks state value, while the actor adjusts behavior in response. The synchronous updates may create more reactive dynamics than PPO's clipped updates.
+
+\subsection{Implications}
+
+\paragraph{For AI alignment.} Our findings suggest that ``desire-likeness'' cannot be assessed by a single behavioral test. Agents may exhibit prospective representations (like anticipatory activation) without being globally goal-directed, or may show strong internal-state sensitivity without anticipation. Alignment research should consider the full profile of goal-directed behaviors.
+
+\paragraph{For cognitive science.} The multi-dimensional nature of desire-like behavior in artificial agents parallels psychological findings that motivation has multiple components (wanting, liking, anticipating) that can dissociate \cite{berridge2009dissecting}.
+
+\paragraph{For Active Inference.} Our results neither confirm nor refute Active Inference's special status. The framework produces anticipatory behavior, but so does value-based RL. The distinguishing feature may not be anticipation per se, but rather the integration of epistemic and pragmatic value---which we did not directly measure.
 
 \subsection{Limitations}
 
-\paragraph{Toy environment.} Our grid-world is far simpler than real-world environments. The dissociation might not hold in more complex settings or might reverse with different task structures.
+\paragraph{Toy environment.} Our grid-world is far simpler than real-world environments. Results may not generalize to complex tasks.
 
-\paragraph{Circular concern.} One might argue that AA is defined in a way that favors agents with explicit goal representations. We designed AA to capture a psychological construct (anticipation), but the operationalization could be refined.
+\paragraph{Internal state operationalization.} We access different representations for different agents (hidden layers vs.\ belief states). A more unified measure would strengthen comparisons.
 
-\paragraph{Limited agent diversity.} We tested one RL algorithm (PPO) and one Active Inference implementation. Other variants might show different patterns.
+\paragraph{Limited training.} Agents may not have converged to optimal policies. Extended training might change the pattern.
 
-\paragraph{No direct comparison of computational cost.} Active Inference with beam search may have different computational properties that affect behavior independently of the framework.
+\paragraph{Measurement artifacts.} The SDV zero scores for some agents may reflect measurement issues (insufficient energy variation) rather than absence of state-dependent valuation.
 
-\subsection{Implications and Future Work}
+\subsection{Future Work}
 
-If the AA dissociation holds more broadly, it suggests that the choice of learning framework affects not just \textit{what} agents learn but \textit{how} they represent goals internally. This could have implications for:
-\begin{itemize}
-    \item \textbf{Interpretability}: Agents with anticipatory activation may be more amenable to goal-based explanation
-    \item \textbf{Alignment}: Understanding whether agents have ``desire-like'' states could inform alignment research
-    \item \textbf{Cognitive modeling}: The dissociation provides a behavioral test for theories of goal-directedness
-\end{itemize}
-
-Future work should test robustness across environments, examine other RL algorithms (especially model-based methods), and develop more refined predicates that avoid circularity concerns.
+\begin{enumerate}
+    \item Test model-based RL agents (e.g., Dreamer, MuZero) to see if explicit planning produces anticipation
+    \item Examine attention mechanisms in transformer-based agents
+    \item Apply to larger-scale models (language models, vision models) to test scalability
+    \item Develop predicates that directly measure epistemic vs.\ pragmatic value integration
+\end{enumerate}
 
 \section{Conclusion}
 
-We identified a behavioral predicate---Anticipatory Activation---that cleanly dissociates Active Inference agents from RL agents. Active Inference agents show anticipatory internal state activation similar to explicitly goal-directed agents, while RL agents show none. This pattern was perfectly consistent across random seeds. While our findings are preliminary and limited to a toy environment, they suggest that the choice of learning framework may matter for the emergence of goal-directed internal states.
+We investigated whether Active Inference agents exhibit unique behavioral signatures of ``desire-likeness.'' Testing five agent types across six predicates, we found that desire-likeness is multi-dimensional: no single framework dominates. Value-based methods (DQN, Active Inference) show true anticipatory activation; actor-critic methods (A2C) show high state-dependent valuation and frustration; PPO shows inverse anticipation. These results suggest that the \textit{architecture} of learning systems---not just the framework---determines which aspects of goal-directed behavior emerge. Future work should embrace multi-metric profiles rather than seeking single dissociating predicates.
 
 \bibliographystyle{plain}
 \begin{thebibliography}{10}
@@ -320,10 +348,26 @@ Expected free energy is computed using:
 
 We use beam search (width 20) to evaluate policies, selecting actions with lowest $G$.
 
+\subsection{Full Statistical Results}
+
+\paragraph{Anticipatory Activation (DQN vs.\ Active Inference).}
+\begin{itemize}
+    \item DQN: $r = -0.652$ (true anticipation)
+    \item Active Inference: $r = -0.593$ (true anticipation)
+    \item Mann-Whitney $U = 0.0$, $p < 0.001$
+    \item Cohen's $d = 8.22$ (large effect)
+    \item Bootstrap 95\% CI for difference: $[0.114, 0.141]$
+\end{itemize}
+
+\paragraph{Kruskal-Wallis omnibus tests.}
+\begin{itemize}
+    \item AA: $H = 48.60$, $p < 0.001$
+    \item OCS: $H = 47.57$, $p < 0.001$
+    \item SDV: $H = 48.50$, $p < 0.001$
+\end{itemize}
+
 \subsection{Raw Data Availability}
 
-Raw trial-level data is available at: \url{https://github.com/paulfryer/desire}
-
-Format: CSV with columns \texttt{agent\_type, trial, predicate, score}
+Raw trial-level data and code are available at: \url{https://github.com/paulfryer/desire}
 
 \end{document}
