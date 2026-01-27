@@ -152,8 +152,21 @@ class AnticipatoryActivationTest(BasePredicateTest):
             distances = np.array([d for d, _ in all_distance_activations])
             activations = np.array([a for _, a in all_distance_activations])
             correlation = float(np.corrcoef(distances, activations)[0, 1])
+            # Handle NaN correlation (constant values)
+            if np.isnan(correlation):
+                correlation = 0.0
         else:
             correlation = 0.0
+
+        # Classify anticipation direction based on correlation
+        # Negative correlation = activation increases as distance decreases (true anticipation)
+        # Positive correlation = activation increases as distance increases (inverse)
+        if correlation < -0.1:
+            anticipation_direction = "true_anticipation"
+        elif correlation > 0.1:
+            anticipation_direction = "inverse_anticipation"
+        else:
+            anticipation_direction = "none"
 
         raw_data = {
             "mean_near_activation": mean_near,
@@ -163,6 +176,8 @@ class AnticipatoryActivationTest(BasePredicateTest):
             "n_near_samples": len(near_activations),
             "n_far_samples": len(far_activations),
             "distance_activation_correlation": correlation,
+            "anticipation_direction": anticipation_direction,
+            "aa_ratio": aa_score,
         }
 
         return aa_score, raw_data

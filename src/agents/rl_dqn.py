@@ -315,6 +315,10 @@ class DQNAgent(BaseAgent):
             self.model = DQN.load(str(path), env=env)
             # DQN's feature extractor is inside the q_net, not directly on policy
             self._feature_extractor = self.model.policy.q_net.features_extractor
+            # Debug: verify feature extractor is set
+            if self._feature_extractor is None:
+                import warnings
+                warnings.warn("DQN feature extractor is None after load - internal state will be zeros")
 
     @property
     def internal_state_dim(self) -> int:

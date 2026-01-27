@@ -38,8 +38,8 @@ class StateDependentValuationTest(BasePredicateTest):
         n_trials: int = 10,
         baseline_episodes: int = 30,
         test_episodes: int = 30,
-        high_energy_threshold: float = 0.8,  # As fraction of max
-        low_energy_threshold: float = 0.4,   # As fraction of max
+        high_energy_threshold: float = 0.7,  # As fraction of max (lowered from 0.8)
+        low_energy_threshold: float = 0.5,   # As fraction of max (raised from 0.4)
         grid_size: int = 20,
         seed: int | None = None,
         output_dir: str | None = None,
