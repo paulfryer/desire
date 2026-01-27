@@ -313,7 +313,8 @@ class DQNAgent(BaseAgent):
         path = Path(path)
         if path.exists():
             self.model = DQN.load(str(path), env=env)
-            self._feature_extractor = self.model.policy.features_extractor
+            # DQN's feature extractor is inside the q_net, not directly on policy
+            self._feature_extractor = self.model.policy.q_net.features_extractor
 
     @property
     def internal_state_dim(self) -> int:
