@@ -16,9 +16,10 @@ This repository contains the code and data for reproducing the experiments in ou
 
 Key insights:
 - **DQN and Active Inference** both show true anticipatory activation (negative correlation)
-- **PPO** shows *inverse* anticipation—activation increases with distance from goals
+- **PPO** shows *inverse* anticipation in shared features, but **true anticipation in policy head** (r=-0.39)
 - **A2C** shows the highest state-dependent valuation and frustration response
 - **Architecture matters more than framework** (RL vs Active Inference)
+- **Robustness verified**: DQN's Q-values confirm hidden activation patterns (r=-0.85)
 
 ## Installation
 
@@ -114,6 +115,7 @@ desire/
 │   ├── train_agents.py           # Train all agent types
 │   ├── run_tests.py              # Run predicate tests with checkpointing
 │   ├── desire_profile_analysis.py # Multi-metric analysis
+│   ├── aa_robustness_analysis.py  # Q-value/value-head robustness check
 │   └── configs/                  # YAML configuration files
 ├── paper/                # LaTeX source and figures
 │   ├── main.tex                  # Paper source

@@ -73,3 +73,19 @@ python experiments/train_agents.py --resume --checkpoint-interval 50000
 - `anticipation` - Anticipatory activation
 - `opportunity_cost` - Opportunity cost sensitivity
 - `state_dependent` - State-dependent valuation
+
+## Additional Analyses
+
+### Robustness Analysis
+Tests whether anticipation patterns hold under different internal state operationalizations:
+```bash
+python experiments/aa_robustness_analysis.py
+```
+
+Key finding: PPO's policy head shows TRUE anticipation (r=-0.39) despite inverse anticipation in shared features. DQN's Q-values confirm hidden activation patterns.
+
+### Desire Profile Analysis
+Multi-metric analysis with radar charts and clustering:
+```bash
+python experiments/desire_profile_analysis.py
+```
