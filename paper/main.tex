@@ -132,6 +132,19 @@ The AA predicate reveals unexpected complexity (Figure~\ref{fig:activation_dista
 
 The statistical comparison between DQN and Active Inference yields: Mann-Whitney $U = 0.0$, $p < 0.001$; Cohen's $d = 8.22$ (large effect). However, both show the same \textit{direction} of anticipation (negative correlation), suggesting similar prospective encoding despite different frameworks.
 
+\paragraph{Robustness Analysis.} To address the measurement confound of comparing hidden activations (RL) to belief states (Active Inference), we tested whether anticipation patterns hold under alternative operationalizations (Table~\ref{tab:robustness}). For DQN, we measured max Q-values directly; for actor-critic methods, we separately analyzed value head outputs $V(s)$ and policy head features.
+
+\input{figures/robustness_table}
+
+The results reveal important nuances:
+\begin{itemize}
+    \item \textbf{DQN}: Q-values show the same pattern as hidden activations ($r = -0.85$ vs.\ $r = -0.83$), confirming that the finding is robust to operationalization choice.
+    \item \textbf{PPO}: Strikingly, while hidden activations show inverse anticipation ($r = +0.49$), the \textit{policy head features} show \textit{true} anticipation ($r = -0.39$). The value head shows weak true anticipation ($r = -0.13$). This suggests anticipatory encoding exists but is localized to specific network components.
+    \item \textbf{A2C}: Weak patterns across all representations, with value head showing no reliable relationship ($r = +0.28$).
+\end{itemize}
+
+These findings suggest that PPO does encode goal proximity, but this information is localized to the policy head rather than shared features. The ``inverse anticipation'' in PPO's hidden layer may reflect the shared feature extractor's optimization for both policy and value objectives, where encoding uncertainty (entropy) in distant states could benefit exploration.
+
 \begin{figure}[t]
     \centering
     \includegraphics[width=0.95\linewidth]{figures/figure2_activation_distance.pdf}
@@ -198,7 +211,7 @@ Our results challenge the hypothesis that Active Inference uniquely produces des
 
 DQN and Active Inference share a key architectural feature: explicit representation of expected future value. DQN's Q-function estimates cumulative future reward from each state-action pair; Active Inference's expected free energy explicitly computes anticipated outcomes. Both create prospective representations that may drive anticipatory internal dynamics.
 
-In contrast, PPO's policy gradient optimizes action probabilities directly without explicitly representing future values in the feature space. The positive correlation we observe may reflect uncertainty encoding: distant goals are harder to reach, creating larger policy entropy and higher activation.
+In contrast, PPO presents a more nuanced picture. While its shared feature layer shows inverse anticipation, our robustness analysis revealed that PPO's \textit{policy head} actually shows true anticipation ($r = -0.39$). This suggests that goal-proximity information exists in PPO, but is localized to the policy-specific pathway rather than the shared features. The shared layer's inverse pattern may reflect the entropy bonus in PPO's objective, which encourages high-entropy (uncertain) policies and may cause shared features to encode uncertainty about distant goals.
 
 \subsection{The A2C Anomaly}
 
@@ -212,7 +225,7 @@ A2C's high SDV and FI scores suggest it develops representations that are more r
 
 \paragraph{For Active Inference.} Our results neither confirm nor refute Active Inference's special status. The framework produces anticipatory behavior, but so does value-based RL. The distinguishing feature may not be anticipation per se, but rather the integration of epistemic and pragmatic value---which we did not directly measure.
 
-\paragraph{For frontier AI systems.} While our findings are limited to a simple grid world, the principle---that architectural choices determine which aspects of goal-directedness emerge---may generalize to larger systems. Large language models fine-tuned with PPO-based RLHF may exhibit similar inverse anticipation patterns, encoding uncertainty rather than goal proximity in their hidden states. This has implications for interpretability research attempting to locate ``goals'' in neural network representations: the same architecture that produces capable behavior may not produce the prospective representations that intuitive notions of ``goal-directedness'' assume.
+\paragraph{For frontier AI systems.} While our findings are limited to a simple grid world, the principle---that architectural choices determine which aspects of goal-directedness emerge---may generalize to larger systems. Our robustness analysis shows that even within a single agent, goal-relevant information may be localized to specific network components (e.g., PPO's policy head vs.\ shared features). For large language models fine-tuned with PPO-based RLHF, this suggests that interpretability research seeking to locate ``goals'' should examine policy-specific pathways, not just residual stream activations. The same architecture may encode goal-proximity in some layers while encoding uncertainty in others.
 
 \subsection{Limitations}
 
