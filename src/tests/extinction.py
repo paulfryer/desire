@@ -144,7 +144,7 @@ class ExtinctionResistanceTest(BasePredicateTest):
             normalized_curve = mean_curve
 
         # ER score = area under curve (normalized by duration)
-        er_score = float(np.trapz(normalized_curve) / len(normalized_curve)) if len(normalized_curve) > 0 else 0.0
+        er_score = float(np.trapezoid(normalized_curve) / len(normalized_curve)) if len(normalized_curve) > 0 else 0.0
 
         # Additional metrics
         raw_data = {

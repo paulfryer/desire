@@ -46,6 +46,13 @@ class BaselineData:
     episodes: list[EpisodeLog] = field(default_factory=list)
 
 
+def _episode_seed(seed: int | None, episode: int, offset: int = 0) -> int | None:
+    """Derive a distinct, reproducible seed for each episode of a trial."""
+    if seed is None:
+        return None
+    return seed * 1_000_003 + offset + episode
+
+
 class BasePredicateTest(ABC):
     """
     Abstract base class for predicate tests.
@@ -131,7 +138,7 @@ class BasePredicateTest(ABC):
         all_raw_data = []
 
         for trial in range(self.n_trials):
-            trial_seed = self.seed + trial if self.seed else None
+            trial_seed = self.seed + trial if self.seed is not None else None
 
             # Phase 1: Collect baseline data
             baseline_data = self._collect_baseline(agent, trial_seed)
@@ -180,8 +187,9 @@ class BasePredicateTest(ABC):
         total_energy = 0.0
         total_path_length = 0.0
 
-        for _ep in range(self.baseline_episodes):
-            episode_data = self._run_episode(env, agent, seed=seed)
+        for ep in range(self.baseline_episodes):
+            # Distinct seed per episode: reusing the trial seed made every episode identical.
+            episode_data = self._run_episode(env, agent, seed=_episode_seed(seed, ep))
             episodes.append(episode_data)
 
             # Aggregate statistics
@@ -202,7 +210,7 @@ class BasePredicateTest(ABC):
         action_distribution = action_counts / action_counts.sum()
 
         return BaselineData(
-            mean_actions_per_step=mean_actions / self.baseline_episodes,
+            mean_actions_per_step=mean_actions,
             std_actions_per_step=0.0,  # Simplified
             mean_energy=total_energy / self.baseline_episodes,
             mean_path_length=total_path_length / self.baseline_episodes,
@@ -219,8 +227,8 @@ class BasePredicateTest(ABC):
         env = self.create_test_env(seed)
         episodes = []
 
-        for _ep in range(self.test_episodes):
-            episode_data = self._run_episode(env, agent, seed=seed)
+        for ep in range(self.test_episodes):
+            episode_data = self._run_episode(env, agent, seed=_episode_seed(seed, ep, offset=500_000))
             episodes.append(episode_data)
 
         return episodes

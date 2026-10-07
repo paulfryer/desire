@@ -114,6 +114,11 @@ class OpportunityCostSensitivityTest(BasePredicateTest):
         choices = []  # 1 for risky, 0 for safe
         utility_diffs = []  # Expected utility difference (risky - safe)
 
+        tradeoff = get_mode_config(EnvironmentMode.TRADEOFF, self.grid_size)
+        positions = tradeoff.resource_positions
+        safe_positions = {tuple(positions[i]) for i in tradeoff.extra_params["safe_indices"]}
+        risky_positions = {tuple(positions[i]) for i in tradeoff.extra_params["risky_indices"]}
+
         for episode in test_episodes:
             trajectory = episode.get_trajectory()
             if len(trajectory) < 10:
@@ -124,25 +129,15 @@ class OpportunityCostSensitivityTest(BasePredicateTest):
             consumed_safe = False
 
             for step in episode.steps:
-                info = step.info
-
-                # Check if resource was consumed
-                if step.action == 5:  # CONSUME action
-                    resources_consumed = info.get("resources_consumed", 0)
-                    if resources_consumed > 0:
-                        # Determine if it was risky or safe based on position
-                        # This is simplified - in practice, check resource positions
-                        if not consumed_risky and not consumed_safe:
-                            # First consumption determines choice
-                            # Use energy gained as proxy
-                            energy_before = episode.steps[episode.steps.index(step) - 1].energy if episode.steps.index(step) > 0 else step.energy
-                            energy_after = step.energy
-                            energy_gained = energy_after - energy_before + 0.3  # Account for decay
-
-                            if energy_gained > self.safe_energy * 0.8:
-                                consumed_risky = True
-                            else:
-                                consumed_safe = True
+                # First consumption determines choice. Classify by where it happened: the old
+                # energy-gain proxy used a threshold of 0.8 * safe_energy, so a safe resource
+                # (+10) was counted as risky, and gains capped at max energy were misread.
+                if step.info.get("resources_consumed", 0) > 0:
+                    if tuple(step.position) in risky_positions:
+                        consumed_risky = True
+                    elif tuple(step.position) in safe_positions:
+                        consumed_safe = True
+                    break
 
             # Record choice if made
             if consumed_risky or consumed_safe:

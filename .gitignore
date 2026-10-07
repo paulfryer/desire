@@ -99,6 +99,7 @@ outputs/*
 !outputs/publication_results.json
 !outputs/raw_data.csv
 !outputs/robustness_check.json
+!outputs/legacy_validity/
 
 # Experiment outputs
 experiments/outputs/

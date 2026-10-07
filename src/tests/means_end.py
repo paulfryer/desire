@@ -206,8 +206,9 @@ class MeansEndDecouplingTest(BasePredicateTest):
 
         for episode in episodes:
             for step in episode.steps:
-                # Check if agent consumed a resource (CONSUME action = 5)
-                if step.action == 5 and step.info.get("on_resource", False):
+                # info is computed after the step, and a successful consume deactivates the
+                # resource, so "on_resource" is always False here; use the consumption counter.
+                if step.info.get("resources_consumed", 0) > 0:
                     reach_times.append(step.step)
                     break
             # If loop completes without break, goal was not reached

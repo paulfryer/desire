@@ -109,51 +109,27 @@ class FrustrationIntensificationTest(BasePredicateTest):
         """
         Compute the Frustration Intensification score.
 
-        FI = max(post_blockage_intensity) / mean(baseline_intensity)
+        FI = max(post_blockage_intensity) / max(baseline_intensity over the same steps)
+
+        Both curves use the same window size and the same time segment of the episode.
+        (The original compared a max over 5-step windows with a mean over 10-step windows,
+        which exceeds 1 for any agent whose activity varies at all.)
         """
-        # Compute baseline intensity
-        baseline_intensity = self._compute_action_intensity(
-            baseline_data.episodes,
-            window_size=10,
-        )
-        baseline_mean = baseline_intensity.mean() if len(baseline_intensity) > 0 else 1.0
+        segment = slice(self.blockage_step, self.blockage_step + self.post_blockage_steps)
+        baseline_segment = self._slice_episodes(baseline_data.episodes, segment)
+        post_blockage_episodes = self._slice_episodes(test_episodes, segment)
 
-        # Compute post-blockage intensity
-        # Extract post-blockage portion of test episodes
-        post_blockage_episodes = []
-        for episode in test_episodes:
-            if len(episode.steps) > self.blockage_step:
-                # Create a sub-episode from post-blockage steps
-                post_steps = episode.steps[self.blockage_step:]
-                if post_steps:
-                    post_episode = EpisodeLog(
-                        episode_id=episode.episode_id,
-                        agent_type=episode.agent_type,
-                        environment_mode=episode.environment_mode,
-                        total_steps=len(post_steps),
-                        total_reward=sum(s.reward for s in post_steps),
-                        final_energy=episode.final_energy,
-                        survived=episode.survived,
-                        steps=post_steps,
-                    )
-                    post_blockage_episodes.append(post_episode)
-
-        if not post_blockage_episodes:
+        if not post_blockage_episodes or not baseline_segment:
             return 1.0, {"error": "No post-blockage data"}
 
-        post_intensity = self._compute_action_intensity(
-            post_blockage_episodes,
-            window_size=5,  # Smaller window for finer resolution
-        )
+        baseline_intensity = self._compute_action_intensity(baseline_segment, window_size=5)
+        post_intensity = self._compute_action_intensity(post_blockage_episodes, window_size=5)
 
-        # Compute FI score
         max_post_intensity = post_intensity.max() if len(post_intensity) > 0 else 0.0
+        baseline_max = baseline_intensity.max() if len(baseline_intensity) > 0 else 1.0
+        baseline_mean = baseline_intensity.mean() if len(baseline_intensity) > 0 else 1.0
 
-        # Avoid division by zero
-        if baseline_mean < 0.01:
-            baseline_mean = 0.01
-
-        fi_score = max_post_intensity / baseline_mean
+        fi_score = max_post_intensity / max(baseline_max, 0.01)
 
         # Additional metrics
         raw_data = {
@@ -166,6 +142,25 @@ class FrustrationIntensificationTest(BasePredicateTest):
         }
 
         return fi_score, raw_data
+
+    @staticmethod
+    def _slice_episodes(episodes: list[EpisodeLog], segment: slice) -> list[EpisodeLog]:
+        """Return sub-episodes restricted to the given step segment (dropping empty ones)."""
+        sliced = []
+        for episode in episodes:
+            steps = episode.steps[segment]
+            if steps:
+                sliced.append(EpisodeLog(
+                    episode_id=episode.episode_id,
+                    agent_type=episode.agent_type,
+                    environment_mode=episode.environment_mode,
+                    total_steps=len(steps),
+                    total_reward=sum(s.reward for s in steps),
+                    final_energy=episode.final_energy,
+                    survived=episode.survived,
+                    steps=steps,
+                ))
+        return sliced
 
     def _compute_action_intensity(
         self,
