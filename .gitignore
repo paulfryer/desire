@@ -123,3 +123,8 @@ experiments/models/
 *.synctex.gz
 *.bbl
 *.blg
+# v2: keep per-seed assay JSON, summaries and figures; ignore models, checkpoints and logs
+!outputs/v2/
+outputs/v2/**/*.zip
+outputs/v2/logs/
+outputs/v2/pilot*/

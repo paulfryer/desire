@@ -66,10 +66,16 @@ class EnvConfig:
     interoception: bool = True    # observe h, or zeros
     episode_steps: int = 200
     probe_steps: int = 25
+    # "reduction": r = 10 (D(h_t) - D(h_t+1)); "penalty": r = -D(h_t+1). With discount gamma the
+    # two have the same optimal policies (the reduction return is D(h_0) - (1-gamma)/gamma times
+    # the penalty return), but the penalty form is far better conditioned for policy gradients.
+    reward: str = "reduction"
 
     def __post_init__(self):
         if self.need_dynamics not in ("free", "clamped"):
             raise ValueError(f"need_dynamics must be 'free' or 'clamped', got {self.need_dynamics!r}")
+        if self.reward not in ("reduction", "penalty"):
+            raise ValueError(f"reward must be 'reduction' or 'penalty', got {self.reward!r}")
 
     @property
     def view(self) -> int:
@@ -173,7 +179,10 @@ class NutrientGrid:
         above = self.h[:, C] > SETPOINT
         self.h[above, C] += C_RELAX * (SETPOINT - self.h[above, C])
         np.clip(self.h, 0.0, 1.0, out=self.h)
-        reward = REWARD_SCALE * (d_before - drive(self.h))
+        if self.cfg.reward == "reduction":
+            reward = REWARD_SCALE * (d_before - drive(self.h))
+        else:
+            reward = -drive(self.h)
 
         if self.cfg.need_dynamics == "clamped" and not self.probe:
             self.h[:] = CLAMP_STATE

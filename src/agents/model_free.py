@@ -4,7 +4,6 @@ Model-free agents: stable-baselines3 PPO and recurrent PPO trained on NutrientGr
 
 import numpy as np
 import torch
-import torch.nn as nn
 from gymnasium import spaces
 from stable_baselines3.common.torch_layers import BaseFeaturesExtractor
 from stable_baselines3.common.vec_env.base_vec_env import VecEnv
@@ -26,6 +25,7 @@ class NutrientVecEnv(VecEnv):
 
     def __init__(self, n_envs: int, config: EnvConfig, seed: int | None = None):
         self.grid_env = NutrientGrid(n_envs, config, seed)
+        self.grid_env.render_mode = None
         super().__init__(n_envs, observation_space(config), spaces.Discrete(N_ACTIONS))
         self._actions = np.zeros(n_envs, dtype=np.int64)
         self._returns = np.zeros(n_envs)
@@ -88,24 +88,16 @@ class NutrientVecEnv(VecEnv):
 
 
 class GridFeatures(BaseFeaturesExtractor):
-    """Small CNN over the egocentric item grid, concatenated with the interoceptive vector."""
+    """Flattened egocentric item grid concatenated with the interoceptive vector (the policy and
+    value MLPs sit on top). An MLP, as specified in the design; a CNN was ~7x slower to train."""
 
-    def __init__(self, observation_space: spaces.Dict, cnn_dim: int = 256):
-        channels, v, _ = observation_space["grid"].shape
+    def __init__(self, observation_space: spaces.Dict):
+        n_grid = int(np.prod(observation_space["grid"].shape))
         n_intero = observation_space["intero"].shape[0]
-        super().__init__(observation_space, features_dim=cnn_dim + n_intero)
-        self.cnn = nn.Sequential(
-            nn.Conv2d(channels, 32, kernel_size=3, padding=1), nn.ReLU(),
-            nn.Conv2d(32, 64, kernel_size=3, stride=2), nn.ReLU(),
-            nn.Conv2d(64, 64, kernel_size=3, stride=2), nn.ReLU(),
-            nn.Flatten(),
-        )
-        with torch.no_grad():
-            n_flat = self.cnn(torch.zeros(1, channels, v, v)).shape[1]
-        self.linear = nn.Sequential(nn.Linear(n_flat, cnn_dim), nn.ReLU())
+        super().__init__(observation_space, features_dim=n_grid + n_intero)
 
     def forward(self, observations):
-        return torch.cat([self.linear(self.cnn(observations["grid"])), observations["intero"]], dim=1)
+        return torch.cat([observations["grid"].flatten(start_dim=1), observations["intero"]], dim=1)
 
 
 class SB3Agent(Agent):
