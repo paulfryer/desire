@@ -1,0 +1,96 @@
+{
+ "agent": "nearest",
+ "seed": 4,
+ "T0": {
+  "mean_drive": 0.4179935358623169,
+  "eaten_per_episode": [
+   23.53125,
+   18.375,
+   0.3125
+  ]
+ },
+ "T1": {
+  "DI": -0.08000000000000007,
+  "conditions": {
+   "satedA": {
+    "n": 200,
+    "choice_rate": 1.0,
+    "p_choose": {
+     "A": 0.53,
+     "B": 0.47,
+     "C": 0.0
+    },
+    "mean_latency": 3.815
+   },
+   "satedB": {
+    "n": 200,
+    "choice_rate": 1.0,
+    "p_choose": {
+     "A": 0.45,
+     "B": 0.55,
+     "C": 0.0
+    },
+    "mean_latency": 3.78
+   },
+   "bothHungry": {
+    "n": 200,
+    "choice_rate": 1.0,
+    "p_choose": {
+     "A": 0.47,
+     "B": 0.53,
+     "C": 0.0
+    },
+    "mean_latency": 3.8
+   }
+  },
+  "choice_rate": 1.0
+ },
+ "T2": {
+  "RI": 0.0,
+  "RI_spec": 0.0,
+  "conditions": {
+   "deprivedC": {
+    "n": 200,
+    "choice_rate": 1.0,
+    "p_choose": {
+     "A": 0.5,
+     "B": 0.5,
+     "C": 0.0
+    },
+    "mean_latency": 3.755
+   },
+   "controlC": {
+    "n": 200,
+    "choice_rate": 1.0,
+    "p_choose": {
+     "A": 0.5,
+     "B": 0.5,
+     "C": 0.0
+    },
+    "mean_latency": 3.685
+   },
+   "deprivedA": {
+    "n": 200,
+    "choice_rate": 1.0,
+    "p_choose": {
+     "A": 0.0,
+     "B": 1.0,
+     "C": 0.0
+    },
+    "mean_latency": 3.795
+   },
+   "deprivedB": {
+    "n": 200,
+    "choice_rate": 1.0,
+    "p_choose": {
+     "A": 1.0,
+     "B": 0.0,
+     "C": 0.0
+    },
+    "mean_latency": 3.78
+   }
+  },
+  "choice_rate": 1.0
+ },
+ "seconds": 5.7
+}

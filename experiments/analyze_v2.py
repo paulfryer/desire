@@ -109,7 +109,7 @@ def comparisons(runs) -> dict:
             for label in raw}
 
 
-def scorecard(s: dict) -> list[tuple[str, str, str]]:
+def scorecard(s: dict, comps: dict) -> list[tuple[str, str, str]]:
     """Evaluate P1-P9 exactly as written in the design doc (with Amendment 2)."""
     def has(*agents):
         return all(a in s for a in agents)
@@ -152,12 +152,14 @@ def scorecard(s: dict) -> list[tuple[str, str, str]]:
                      f"{'supported' if d_ri < 0.15 and d_di < 0.15 else 'not supported'} "
                      f"(ΔRI {d_ri:.2f}, ΔDI {d_di:.2f})"))
     if has("aif", "aif_no_novelty"):
-        more_c = m("aif", "C_exposures") > m("aif_no_novelty", "C_exposures")
+        # "Increases" is tested with the planned permutation test (Holm-corrected), per §7.
+        test = comps.get("aif vs aif_no_novelty: C exposures", {"diff": 0.0, "p_holm": 1.0})
+        more_c = test["diff"] > 0 and test["p_holm"] < 0.05
         same_t2 = abs(m("aif", "RI") - m("aif_no_novelty", "RI")) < 0.15
         rows.append(("P8", "novelty increases C exposures in training but not T2",
                      f"{'supported' if more_c and same_t2 else 'not supported'} "
                      f"(C exposures {m('aif', 'C_exposures'):.0f} vs "
-                     f"{m('aif_no_novelty', 'C_exposures'):.0f})"))
+                     f"{m('aif_no_novelty', 'C_exposures'):.0f}, Holm p = {test['p_holm']:.2f})"))
     rows.append(("P9", "T3 exploratory (no directional prediction)", "see T3 figure"))
     return rows
 
@@ -233,6 +235,7 @@ def figure_indices(s: dict, path: Path):
             ax.scatter([e[key]["mean"]], [yi], s=46, color=color, edgecolors="#fcfcfb",
                        linewidths=1.5, zorder=3)
         ax.set_xlim(-1.08, 1.08)
+        ax.set_xticks([-1, -0.5, 0, 0.5, 1])
         ax.set_title(title, fontsize=9, color=INK, loc="left")
     axes[0].set_yticks(y, [a + ("" if s[a]["competent"] else " ⚠") for a in order],
                        fontsize=8, color=INK)
@@ -291,7 +294,7 @@ def main():
     runs = load(args.root)
     s = summarize(runs)
     comps = comparisons(runs)
-    card = scorecard(s)
+    card = scorecard(s, comps)
     (args.root / "figures").mkdir(parents=True, exist_ok=True)
     (args.root / "summary.json").write_text(json.dumps(
         {"agents": s, "comparisons": comps, "predictions": card}, indent=1))

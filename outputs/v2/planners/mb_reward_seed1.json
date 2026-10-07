@@ -1,0 +1,347 @@
+{
+ "agent": "mb_reward",
+ "seed": 1,
+ "training": [
+  {
+   "round": 0,
+   "mean_drive": 0.19385013699334916,
+   "consumed": [
+    25,
+    25,
+    27
+   ]
+  },
+  {
+   "round": 1,
+   "mean_drive": 0.26468348063198716,
+   "consumed": [
+    25,
+    36,
+    29
+   ]
+  },
+  {
+   "round": 2,
+   "mean_drive": 0.13370340250166265,
+   "consumed": [
+    51,
+    65,
+    56
+   ]
+  },
+  {
+   "round": 3,
+   "mean_drive": 0.12887913918468064,
+   "consumed": [
+    77,
+    98,
+    65
+   ]
+  },
+  {
+   "round": 4,
+   "mean_drive": 0.15611353958751445,
+   "consumed": [
+    92,
+    122,
+    67
+   ]
+  },
+  {
+   "round": 5,
+   "mean_drive": 0.09948486024339243,
+   "consumed": [
+    117,
+    140,
+    87
+   ]
+  },
+  {
+   "round": 6,
+   "mean_drive": 0.22183483796182268,
+   "consumed": [
+    130,
+    151,
+    116
+   ]
+  },
+  {
+   "round": 7,
+   "mean_drive": 0.19572612249962368,
+   "consumed": [
+    146,
+    168,
+    133
+   ]
+  },
+  {
+   "round": 8,
+   "mean_drive": 0.1731199976258985,
+   "consumed": [
+    159,
+    187,
+    149
+   ]
+  },
+  {
+   "round": 9,
+   "mean_drive": 0.1660415507889849,
+   "consumed": [
+    184,
+    201,
+    190
+   ]
+  },
+  {
+   "round": 10,
+   "mean_drive": 0.14444997511328284,
+   "consumed": [
+    212,
+    216,
+    202
+   ]
+  },
+  {
+   "round": 11,
+   "mean_drive": 0.1317097134753178,
+   "consumed": [
+    234,
+    236,
+    224
+   ]
+  },
+  {
+   "round": 12,
+   "mean_drive": 0.13363452858062028,
+   "consumed": [
+    253,
+    256,
+    236
+   ]
+  },
+  {
+   "round": 13,
+   "mean_drive": 0.13389509954903223,
+   "consumed": [
+    273,
+    283,
+    237
+   ]
+  },
+  {
+   "round": 14,
+   "mean_drive": 0.13854521618234517,
+   "consumed": [
+    295,
+    310,
+    251
+   ]
+  },
+  {
+   "round": 15,
+   "mean_drive": 0.14839265287696332,
+   "consumed": [
+    318,
+    323,
+    262
+   ]
+  },
+  {
+   "round": 16,
+   "mean_drive": 0.15691636174508747,
+   "consumed": [
+    341,
+    336,
+    279
+   ]
+  },
+  {
+   "round": 17,
+   "mean_drive": 0.14695023257466047,
+   "consumed": [
+    367,
+    352,
+    289
+   ]
+  },
+  {
+   "round": 18,
+   "mean_drive": 0.14803805689096414,
+   "consumed": [
+    394,
+    366,
+    301
+   ]
+  },
+  {
+   "round": 19,
+   "mean_drive": 0.16659091469274753,
+   "consumed": [
+    413,
+    386,
+    315
+   ]
+  }
+ ],
+ "consumed_in_training": [
+  413,
+  386,
+  315
+ ],
+ "learned_effects": [
+  [
+   0.29999999975931974,
+   1.3646125577256263e-09,
+   -1.5115743972619757e-09
+  ],
+  [
+   -5.340540763392095e-10,
+   0.3000000001297911,
+   3.0883235721204185e-10
+  ],
+  [
+   -5.622371816128219e-10,
+   -1.1772323999602155e-09,
+   0.300000011521663
+  ]
+ ],
+ "T0": {
+  "mean_drive": 0.17980346173022496,
+  "eaten_per_episode": [
+   1.65625,
+   1.6875,
+   0.65625
+  ]
+ },
+ "T1": {
+  "DI": 1.0,
+  "conditions": {
+   "satedA": {
+    "n": 200,
+    "choice_rate": 1.0,
+    "p_choose": {
+     "A": 0.0,
+     "B": 1.0,
+     "C": 0.0
+    },
+    "mean_latency": 3.73
+   },
+   "satedB": {
+    "n": 200,
+    "choice_rate": 1.0,
+    "p_choose": {
+     "A": 1.0,
+     "B": 0.0,
+     "C": 0.0
+    },
+    "mean_latency": 3.72
+   },
+   "bothHungry": {
+    "n": 200,
+    "choice_rate": 1.0,
+    "p_choose": {
+     "A": 0.0,
+     "B": 1.0,
+     "C": 0.0
+    },
+    "mean_latency": 20.865
+   }
+  },
+  "choice_rate": 1.0
+ },
+ "T2": {
+  "RI": 0.0,
+  "RI_spec": 0.0,
+  "conditions": {
+   "deprivedC": {
+    "n": 200,
+    "choice_rate": 1.0,
+    "p_choose": {
+     "A": 0.5,
+     "B": 0.5,
+     "C": 0.0
+    },
+    "mean_latency": 3.92
+   },
+   "controlC": {
+    "n": 200,
+    "choice_rate": 1.0,
+    "p_choose": {
+     "A": 0.5,
+     "B": 0.5,
+     "C": 0.0
+    },
+    "mean_latency": 3.775
+   },
+   "deprivedA": {
+    "n": 200,
+    "choice_rate": 1.0,
+    "p_choose": {
+     "A": 0.0,
+     "B": 1.0,
+     "C": 0.0
+    },
+    "mean_latency": 3.695
+   },
+   "deprivedB": {
+    "n": 200,
+    "choice_rate": 1.0,
+    "p_choose": {
+     "A": 1.0,
+     "B": 0.0,
+     "C": 0.0
+    },
+    "mean_latency": 3.775
+   }
+  },
+  "choice_rate": 1.0
+ },
+ "T2b": {
+  "RI": 0.5,
+  "RI_spec": 0.5,
+  "conditions": {
+   "deprivedC": {
+    "n": 200,
+    "choice_rate": 1.0,
+    "p_choose": {
+     "A": 0.0,
+     "B": 0.5,
+     "C": 0.5
+    },
+    "mean_latency": 3.665
+   },
+   "controlC": {
+    "n": 200,
+    "choice_rate": 1.0,
+    "p_choose": {
+     "A": 0.5,
+     "B": 0.5,
+     "C": 0.0
+    },
+    "mean_latency": 3.835
+   },
+   "deprivedA": {
+    "n": 200,
+    "choice_rate": 1.0,
+    "p_choose": {
+     "A": 0.0,
+     "B": 1.0,
+     "C": 0.0
+    },
+    "mean_latency": 3.815
+   },
+   "deprivedB": {
+    "n": 200,
+    "choice_rate": 1.0,
+    "p_choose": {
+     "A": 1.0,
+     "B": 0.0,
+     "C": 0.0
+    },
+    "mean_latency": 3.74
+   }
+  },
+  "choice_rate": 1.0
+ },
+ "seconds": 81.4
+}

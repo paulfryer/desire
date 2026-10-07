@@ -100,6 +100,23 @@ class GridFeatures(BaseFeaturesExtractor):
         return torch.cat([observations["grid"].flatten(start_dim=1), observations["intero"]], dim=1)
 
 
+class SplitFeatures(BaseFeaturesExtractor):
+    """Two-stream MLP: the exteroceptive grid and the interoceptive vector each get their own
+    hidden layer before being concatenated, so three need inputs are not swamped by 1,156 map
+    inputs. No need-by-item interaction is built in; the policy layers above must learn it."""
+
+    def __init__(self, observation_space: spaces.Dict, grid_dim: int = 256, intero_dim: int = 64):
+        n_grid = int(np.prod(observation_space["grid"].shape))
+        n_intero = observation_space["intero"].shape[0]
+        super().__init__(observation_space, features_dim=grid_dim + intero_dim)
+        self.grid = torch.nn.Sequential(torch.nn.Linear(n_grid, grid_dim), torch.nn.ReLU())
+        self.intero = torch.nn.Sequential(torch.nn.Linear(n_intero, intero_dim), torch.nn.ReLU())
+
+    def forward(self, observations):
+        return torch.cat([self.grid(observations["grid"].flatten(start_dim=1)),
+                          self.intero(observations["intero"])], dim=1)
+
+
 class SB3Agent(Agent):
     """Wraps a trained stable-baselines3 model for batched acting in assays."""
 

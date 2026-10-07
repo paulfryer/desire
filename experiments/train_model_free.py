@@ -20,7 +20,8 @@ from stable_baselines3.common.callbacks import BaseCallback
 
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
-from src.agents.model_free import GridFeatures, NutrientVecEnv  # noqa: E402
+from src.agents.model_free import GridFeatures, NutrientVecEnv, SplitFeatures  # noqa: E402
+from stable_baselines3.common.vec_env import VecNormalize  # noqa: E402
 from src.env import EnvConfig, drive  # noqa: E402
 
 AGENTS = {
@@ -56,7 +57,7 @@ class ProgressCallback(BaseCallback):
 
     def _on_step(self) -> bool:
         # Episode return telescopes to the change in drive, so mean drive is the progress metric.
-        self._drives.append(float(drive(self.training_env.grid_env.h).mean()))
+        self._drives.append(float(drive(grid_env_of(self.training_env).grid_env.h).mean()))
         for info in self.locals["infos"]:
             if "episode" in info:
                 self._returns.append(info["episode"]["r"])
@@ -87,18 +88,25 @@ class ProgressCallback(BaseCallback):
         self.log_rows.append(row)
 
 
-def build_model(name: str, env, seed: int):
+def build_model(name: str, env, seed: int, features: str = "flat", n_steps: int = 128,
+                batch_size: int = 1024):
     algo = AGENTS[name][0]
-    policy_kwargs = {"features_extractor_class": GridFeatures,
+    policy_kwargs = {"features_extractor_class": SplitFeatures if features == "split" else GridFeatures,
                      "net_arch": {"pi": [256, 256], "vf": [256, 256]}}
-    common = dict(learning_rate=3e-4, n_steps=128, n_epochs=4, gamma=0.99, gae_lambda=0.95,
-                  clip_range=0.2, ent_coef=0.01, seed=seed, device="cpu", verbose=0)
+    common = dict(learning_rate=3e-4, n_steps=n_steps, batch_size=batch_size, n_epochs=4,
+                  gamma=0.99, gae_lambda=0.95, clip_range=0.2, ent_coef=0.01, seed=seed,
+                  device="cpu", verbose=0)
     if algo == "ppo":
-        return PPO("MultiInputPolicy", env, batch_size=1024, policy_kwargs=policy_kwargs, **common)
+        return PPO("MultiInputPolicy", env, policy_kwargs=policy_kwargs, **common)
     policy_kwargs.update(lstm_hidden_size=128, n_lstm_layers=1, shared_lstm=False,
                          enable_critic_lstm=True)
-    return RecurrentPPO("MultiInputLstmPolicy", env, batch_size=1024,
-                        policy_kwargs=policy_kwargs, **common)
+    return RecurrentPPO("MultiInputLstmPolicy", env, policy_kwargs=policy_kwargs, **common)
+
+
+def grid_env_of(vec_env) -> NutrientVecEnv:
+    while not isinstance(vec_env, NutrientVecEnv):
+        vec_env = vec_env.venv
+    return vec_env
 
 
 def main():
@@ -109,6 +117,11 @@ def main():
     parser.add_argument("--n-envs", type=int, default=32)
     parser.add_argument("--threads", type=int, default=1)
     parser.add_argument("--reward", choices=["reduction", "penalty"], default="reduction")
+    parser.add_argument("--features", choices=["flat", "split"], default="flat")
+    parser.add_argument("--norm-reward", action="store_true",
+                        help="scale rewards by a running estimate of the return's std (training only)")
+    parser.add_argument("--n-steps", type=int, default=128)
+    parser.add_argument("--batch-size", type=int, default=1024)
     parser.add_argument("--out", type=Path, default=Path("outputs/v2/model_free"))
     args = parser.parse_args()
 
@@ -118,7 +131,9 @@ def main():
     (out_dir / "training_log.csv").unlink(missing_ok=True)
 
     env = NutrientVecEnv(args.n_envs, agent_config(args.agent, args.reward), seed=args.seed)
-    model = build_model(args.agent, env, args.seed)
+    if args.norm_reward:
+        env = VecNormalize(env, norm_obs=False, norm_reward=True, gamma=0.99)
+    model = build_model(args.agent, env, args.seed, args.features, args.n_steps, args.batch_size)
     callback = ProgressCallback(out_dir, checkpoint_schedule(args.steps))
     start = time.time()
     model.learn(total_timesteps=args.steps, callback=callback)
