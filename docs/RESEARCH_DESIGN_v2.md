@@ -32,7 +32,7 @@ Fully observable 9×9 open grid. Items of three types (A, B, C) each restore one
 
 | Quantity | Value |
 |---|---|
-| Internal state | `h ∈ [0,1]^3`, setpoint `h* = 0.7` for every nutrient |
+| Internal state | `h ∈ [0,1]^3`, setpoint `h* = 0.5` for every nutrient (A2) |
 | Drive | `D(h) = Σ_i (h*_i − h_i)²` (quadratic: larger deficits weigh more) |
 | Reward | `r_t = 10·(D(h_t) − D(h_{t+1}))` — drive reduction (homeostatic RL, Keramati & Gutkin 2014) |
 | Consumption | Stepping onto an item consumes it: `h_k += 0.3` (clipped at 1). Overshooting the setpoint *raises* drive → negative reward. Specific satiety therefore devalues an outcome through the same reward function, with no special-casing. |
@@ -43,8 +43,8 @@ Fully observable 9×9 open grid. Items of three types (A, B, C) each restore one
 | Actions | up, down, left, right, stay |
 
 **Training conditions (need dynamics):**
-- `free`: initial `h_A, h_B ~ U[0.05, 1.0]`, depletion as above → the agent experiences many need states.
-- `clamped`: `h` is reset to `[0.4, 0.4, 0.7]` after every step → eating A or B always yields the same reward; equivalent to standard exogenous-reward RL.
+- `free`: initial `h_A, h_B ~ U[0.05, 0.8]` (A2), depletion as above → the agent experiences many need states.
+- `clamped`: `h` is reset to `[0.2, 0.2, 0.5]` (A2) after every step → eating A or B always yields the same reward; equivalent to standard exogenous-reward RL.
 
 **Interoception:** `on` (observe `h`) or `off` (observe zeros). Reward is always computed by the environment from the true `h`.
 
@@ -53,11 +53,11 @@ Fully observable 9×9 open grid. Items of three types (A, B, C) each restore one
 All assays are single **choice probes** run with learning frozen, outcomes withheld (the probe ends at the first item contacted, so no new outcome information is delivered — equivalent to testing in extinction). Each probe: random agent position, two items placed at equal Manhattan distance `d ∈ {3,4,5}` from the agent in different directions, no other items; `h` set by condition; max 25 steps. Policies are sampled stochastically (as trained). 200 probes per condition per trained agent.
 
 - **T0 Competence.** Choice rate (an item is reached within 25 steps) and mean drive during ordinary episodes. Assay results are interpreted only for agents with choice rate ≥ 0.9.
-- **T1 Specific-satiety devaluation.** Items A vs B. Conditions `satedA: h=[0.7,0.3,0.7]`, `satedB: h=[0.3,0.7,0.7]` (counterbalanced), plus `bothHungry: h=[0.3,0.3,0.7]` to measure bias. `DS = mean over the two sated conditions of P(choose the non-sated type)`; **devaluation index `DI = 2·DS − 1` ∈ [−1, 1]**, chance 0. These need states occur during `free` training: T1 is an *in-distribution* test of need-sensitivity.
-- **T2 Zero-shot revaluation.** Items C vs X, X ∈ {A, B} counterbalanced. Conditions `deprivedC: h=[0.5,0.5,0.1]` (never experienced in training) and `controlC: h=[0.5,0.5,0.7]`. **Revaluation index `RI = P(C | deprivedC) − P(C | controlC)`** ∈ [−1, 1], chance 0. Optimal choice flips from X to C.
+- **T1 Specific-satiety devaluation.** Items A vs B. Conditions `satedA: h=[0.5,0.15,0.5]`, `satedB: h=[0.15,0.5,0.5]` (counterbalanced), plus `bothHungry: h=[0.15,0.15,0.5]` to measure bias (A2). `DS = mean over the two sated conditions of P(choose the non-sated type)`; **devaluation index `DI = 2·DS − 1` ∈ [−1, 1]**, chance 0. These need states occur during `free` training: T1 is an *in-distribution* test of need-sensitivity.
+- **T2 Zero-shot revaluation.** Items C vs X, X ∈ {A, B} counterbalanced. Conditions `deprivedC: h=[0.3,0.3,0.05]` (never experienced in training) and `controlC: h=[0.3,0.3,0.5]` (A2). **Revaluation index `RI = P(C | deprivedC) − P(C | controlC)`** ∈ [−1, 1], chance 0. Optimal choice flips from X to C. **Specificity guard (A2):** `deprivedA: h=[0.05,0.3,0.5]` with items C vs B and `deprivedB: h=[0.3,0.05,0.5]` with C vs A; `RI_spec = P(C | deprivedC) − mean P(C | deprivedA, deprivedB)`. An agent that knows what C does avoids it when the strong need is for something else.
 - **T3 Training amount.** T1 and T2 evaluated on checkpoints across training for model-free agents (the "overtraining" manipulation; in animals extended training produces devaluation-insensitive habits).
 
-**Validity requirement (known-groups):** before any learned agent is scored, the oracle control must reach `DI, RI > 0.8` and every no-desire control must have `|DI|, |RI| < 0.1`. An assay failing this is fixed or dropped.
+**Validity requirement (known-groups):** before any learned agent is scored, the oracle control must reach `DI, RI, RI_spec > 0.8` and every no-desire control must have `|DI|, |RI_spec| < 0.1` (and `need_novelty` must show `RI > 0.5` with `RI_spec < 0.1`, demonstrating the guard). An assay failing this is fixed or dropped.
 
 ## 5. Agents
 
@@ -67,6 +67,7 @@ Ground-truth controls (no learning):
 | `random` | uniform random actions — no desire |
 | `nearest` | goes to nearest A/B item, ignores C, ignores `h` — outcome-general habit ("thermostat with a map") |
 | `fixed_habit` | always goes to type A if present, else B — outcome-specific S–R habit |
+| `need_novelty` | (A2) like `nearest`, but heads for C whenever any need is strong — passes RI by novelty-seeking under need, without knowing what C does |
 | `oracle` | homeostatic planner with the true outcome model and true drive — ideal wanting |
 
 Learned agents (each trained with 10 seeds; the seed is the unit of replication):
@@ -121,3 +122,12 @@ Made after the literature review (`docs/LITERATURE.md` §9) and before any v2 ag
 2. **Indices are computed on probes that ended in a choice.** `DS` = P(non-sated type | a choice was made), which makes `DI` equal to the standard outcome-specific index (R_valued − R_devalued)/(R_valued + R_devalued). Choice rate is reported separately (T0).
 3. **Exploratory T2b, incentive-learning control (not pre-registered).** For agents that learn online (`mb_reward`, `homeo`, `aif`), after T2: three forced consumptions of C in the deprived state with learning on, then T2 again. This separates "cannot revalue" from "needs incentive learning" (Balleine 1992), the Dickinson-vs-Berridge split.
 4. **Known limitations added.** T3 uses a multi-item choice environment, and choice training is known to protect goal-directed control in rats (Kosaki & Dickinson 2010), so a null T3 is expected to be uninformative about habit formation in general. The planners' devaluation is set directly in `h`, so no per-seed manipulation check is needed; for learned agents the need state is likewise set directly.
+
+## Amendment 2 — 2026-10-07, after pilots, before the main runs
+
+A pilot (one training seed per planner, not reported as a result) exposed two design problems. Both were fixed before any pre-registered run.
+
+1. **C's effect was unobservable.** With setpoint 0.7 and bite 0.3, eating C (always at or above setpoint in training) hit the ceiling of 1.0, so the increment was censored and no planner could learn what C does. The setpoint is now 0.5 (clamped state `[0.2,0.2,0.5]`, initial `h_A, h_B ~ U[0.05,0.8]`, probe states adjusted to keep the same contrasts). A unit test now asserts that eating C at setpoint is observable and aversive.
+2. **T2 could be passed by ignorance.** In that pilot, `aif` had learned nothing about C (flat Dirichlet prior) yet scored RI = 0.77: under deprivation, its KL-risk term preferred the uncertain option. Any agent that tries the unfamiliar item when needy would pass RI. Added the specificity guard `RI_spec` (§4) and the `need_novelty` control that must fail it.
+
+**Revised T2 pass criterion:** pass requires RI to pass (§6 definition) **and** seed-mean `RI_spec ≥ 0.5` with CI excluding 0. Predictions P1–P9 are otherwise unchanged; P1 now also covers `need_novelty` (passes RI, fails RI_spec).
