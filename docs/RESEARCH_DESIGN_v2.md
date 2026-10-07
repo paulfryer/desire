@@ -112,3 +112,12 @@ What would change our minds: if `ppo_free_intero` passes T2, model-free training
 - Planners act over options with shortest-path execution; model-free agents act over primitive actions. The assays compare *which* outcome is chosen, not latency, so the comparison is fair for choice but not for speed.
 - `D` is given innately to `homeo`, `aif` and `oracle`; the question is what having it buys, not whether it can be learned.
 - A 9×9 grid is a toy; the point is that the ingredients are controlled and the ground truth is known.
+
+## Amendment 1 — 2026-10-06, before any v2 results
+
+Made after the literature review (`docs/LITERATURE.md` §9) and before any v2 agent was trained or tested.
+
+1. **Novelty is zero at test for every active-inference agent.** Learning is frozen during probes, so the expected information gain about model parameters is zero for a correctly specified agent. Leaving it on would push `aif` toward the rarely sampled C in both T2 conditions and confound RI. `aif` and `aif_no_novelty` therefore differ only during training (P8 is unchanged).
+2. **Indices are computed on probes that ended in a choice.** `DS` = P(non-sated type | a choice was made), which makes `DI` equal to the standard outcome-specific index (R_valued − R_devalued)/(R_valued + R_devalued). Choice rate is reported separately (T0).
+3. **Exploratory T2b, incentive-learning control (not pre-registered).** For agents that learn online (`mb_reward`, `homeo`, `aif`), after T2: three forced consumptions of C in the deprived state with learning on, then T2 again. This separates "cannot revalue" from "needs incentive learning" (Balleine 1992), the Dickinson-vs-Berridge split.
+4. **Known limitations added.** T3 uses a multi-item choice environment, and choice training is known to protect goal-directed control in rats (Kosaki & Dickinson 2010), so a null T3 is expected to be uninformative about habit formation in general. The planners' devaluation is set directly in `h`, so no per-seed manipulation check is needed; for learned agents the need state is likewise set directly.
