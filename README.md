@@ -1,180 +1,67 @@
-# Desire-Likeness is Multi-Dimensional: Comparing Behavioral Signatures Across Learning Frameworks
+# Wanting vs. Habit in Artificial Agents
 
-This repository contains the code and data for reproducing the experiments in our paper investigating whether Active Inference agents exhibit "desire-like" behavioral signatures that distinguish them from standard Reinforcement Learning agents.
+Which computational ingredients make an agent *want* an outcome — value it according to what it currently needs — rather than repeat a habit? And can we tell from behavior alone, using tests checked against agents whose answer we already know?
 
-## Key Findings
+This repository borrows two tests from animal-learning research:
 
-**Desire-likeness is multi-dimensional**—no single agent type dominates across all behavioral predicates:
+- **Outcome devaluation** (Dickinson & Balleine): satiate the agent on one outcome, then see whether it switches, without any chance to relearn.
+- **Zero-shot revaluation** (Robinson & Berridge 2013): put the agent in a need state it has never experienced, and see whether it immediately goes for the one item that fixes it.
 
-| Agent | Anticipation (r) | SDV | FI | OCS |
-|-------|------------------|-----|-----|-----|
-| **DQN** | -0.65 (true) | 0.00 | 0.00 | 0.00 |
-| **Active Inference** | -0.59 (true) | 0.40 | 0.05 | 0.91 |
-| **A2C** | -0.20 (weak) | **0.73** | **0.88** | 0.50 |
-| **PPO** | +0.63 (inverse) | 0.00 | 0.69 | 0.00 |
-| **Heuristic** | 0.00 (none) | 0.00 | 0.02 | **1.00** |
+The tests are run on a set of agents built from controlled ingredients:
+- model-free RL, with and without the ability to sense its needs (interoception), and with need levels varied or fixed during training
+- recurrent model-free RL
+- model-based RL with a learned reward model
+- a homeostatic planner
+- active inference
+- ground-truth control agents that each test must correctly sort before it is trusted
 
-Key insights:
-- **DQN and Active Inference** both show true anticipatory activation (negative correlation)
-- **PPO** shows *inverse* anticipation in shared features, but **true anticipation in policy head** (r=-0.39)
-- **A2C** shows the highest state-dependent valuation and frustration response
-- **Architecture matters more than framework** (RL vs Active Inference)
-- **Robustness verified**: DQN's Q-values confirm hidden activation patterns (r=-0.85)
+> **History.** This project began as "do active-inference agents show desire-like signatures that RL agents don't?" (v1, the paper draft in `paper/`). That question was retired in October 2026: its six behavioral predicates turned out to be passed by agents with no desire at all, or to depend on scoring bugs (`docs/LEGACY_VALIDITY.md`). The v1 code remains on `main`; this branch replaces it.
 
-## Installation
+## Documents
 
-Requires Python 3.10+
+| File | Contents |
+|---|---|
+| `docs/RESEARCH_DESIGN_v2.md` | The question, environment, assays, agents and the **pre-registered predictions** (with dated amendments made before the relevant results) |
+| `docs/RESULTS_v2.md` | Results against those predictions |
+| `docs/LITERATURE.md` | Literature review and novelty assessment |
+| `docs/LEGACY_VALIDITY.md` | Why the v1 predicates were retired |
 
-```bash
-# Clone the repository
-git clone https://github.com/paulfryer/desire.git
-cd desire
-
-# Install dependencies
-pip install -e .
-
-# For GPU support (recommended), install PyTorch with CUDA:
-pip install torch --index-url https://download.pytorch.org/whl/cu126
-```
-
-## Quick Start
-
-### Run the full experiment pipeline:
+## Setup
 
 ```bash
-# 1. Train all agents (heuristic, rl_ppo, rl_dqn, rl_a2c, active_inference)
-python experiments/train_agents.py --output-dir outputs/training
-
-# 2. Run behavioral predicate tests with checkpointing
-python experiments/run_tests.py \
-    --model-dir outputs/training \
-    --output-dir outputs/tests \
-    --resume \
-    --gpu-cooldown
-
-# 3. Analyze results and generate figures
-python experiments/desire_profile_analysis.py
+uv venv .venv --python 3.12
+uv pip install --python .venv/bin/python numpy scipy pandas matplotlib gymnasium torch \
+    stable-baselines3 sb3-contrib scikit-learn pytest ruff
+.venv/bin/python -m pytest tests
 ```
 
-### Run a quick test (faster, fewer trials):
+## Reproducing
 
 ```bash
-python experiments/train_agents.py --config experiments/configs/quick_test.yaml
-python experiments/run_tests.py --config experiments/configs/quick_test.yaml
+# Planners and ground-truth controls: train (planners), then run every assay. ~15 min.
+python experiments/run_planners.py --seeds 0-9
+
+# Model-free agents: 4 agents x 10 seeds, then assays on final models and checkpoints.
+python experiments/launch_model_free.py --seeds 0-9 --steps <steps> --parallel 8 [training flags]
+
+# Tables, prediction scorecard and figures -> outputs/v2/
+python experiments/analyze_v2.py
 ```
 
-## Checkpointing and Resuming
+The exact training flags and step budgets used for the reported runs are recorded in each run's `outputs/v2/model_free/<agent>/seed_<n>/run.json` and in `docs/RESULTS_v2.md`.
 
-Both training and testing support checkpointing to prevent losing progress.
-
-### Training Checkpoints
-
-```bash
-# Resume training from latest checkpoint
-python experiments/train_agents.py \
-    --resume latest \
-    --resume-dir outputs/training_XXXXXX
-```
-
-### Test Checkpoints
-
-```bash
-# Resume tests after crash (automatically detects checkpoint)
-python experiments/run_tests.py \
-    --model-dir outputs/training_XXXXXX \
-    --output-dir outputs/tests_XXXXXX \
-    --resume
-```
-
-### GPU Temperature Monitoring
-
-For long test runs, enable GPU cooldown to prevent thermal throttling:
-
-```bash
-python experiments/run_tests.py \
-    --model-dir outputs/training \
-    --gpu-cooldown \
-    --gpu-max-temp 80
-```
-
-## Project Structure
+## Layout
 
 ```
-desire/
-├── src/
-│   ├── agents/           # Agent implementations
-│   │   ├── heuristic.py          # Rule-based baseline
-│   │   ├── rl_ppo.py             # PPO agent (stable-baselines3)
-│   │   ├── rl_dqn.py             # DQN agent (stable-baselines3)
-│   │   ├── rl_a2c.py             # A2C agent (stable-baselines3)
-│   │   └── active_inference.py   # Active Inference agent (pymdp)
-│   ├── environments/     # Grid-world foraging environment
-│   ├── tests/            # Behavioral predicate tests
-│   └── analysis/         # Metrics and visualization
-├── experiments/          # Training and test scripts
-│   ├── train_agents.py           # Train all agent types
-│   ├── run_tests.py              # Run predicate tests with checkpointing
-│   ├── desire_profile_analysis.py # Multi-metric analysis
-│   ├── aa_robustness_analysis.py  # Q-value/value-head robustness check
-│   └── configs/                  # YAML configuration files
-├── paper/                # LaTeX source and figures
-│   ├── main.tex                  # Paper source
-│   ├── main.pdf                  # Compiled paper
-│   └── figures/                  # Publication figures
-├── outputs/              # Experiment results (generated)
-└── docs/                 # Research design documentation
+src/
+  env.py              NutrientGrid: batched homeostatic gridworld (3 nutrients, drive-reduction reward)
+  assays.py           T0 competence, T1 devaluation, T2 zero-shot revaluation (+ specificity guard)
+  stats.py            seed-level bootstrap CIs, permutation tests, Holm, pre-registered verdicts
+  agents/
+    controls.py       random, nearest, fixed_habit, need_novelty
+    planners.py       homeostatic planner / oracle, learned-reward model-based, active inference
+    model_free.py     stable-baselines3 PPO / recurrent PPO adapters
+experiments/          runners, analysis, diagnostics
+tests/                unit tests
+outputs/v2/           per-seed assay results (JSON), summary, tables, figures
 ```
-
-## Behavioral Predicates
-
-We test six behavioral predicates inspired by the psychology of desire:
-
-| Predicate | Description | Key Finding |
-|-----------|-------------|-------------|
-| **AA** (Anticipatory Activation) | Correlation between internal state and goal proximity | DQN & AI show true anticipation; PPO shows inverse |
-| **SDV** (State-Dependent Valuation) | Behavior varies with energy level | A2C highest (0.73) |
-| **FI** (Frustration Intensification) | Activity spike when paths blocked | A2C (0.88), PPO (0.69) highest |
-| **OCS** (Opportunity Cost Sensitivity) | Rational tradeoff decisions | Heuristic & AI highest |
-| **ER** (Extinction Resistance) | Persistence when rewards cease | All agents similar (~0.93) |
-| **MED** (Means-End Decoupling) | Flexible re-routing to goals | Not measured in current run |
-
-## Generating Paper Figures
-
-```bash
-# Generate all publication figures
-cd paper
-python generate_figures.py
-
-# Compile the paper
-pdflatex main.tex && pdflatex main.tex
-```
-
-## Running Unit Tests
-
-```bash
-pytest tests/
-```
-
-## Citation
-
-If you use this code, please cite:
-
-```bibtex
-@article{fryer2026desire,
-  title={Desire-Likeness is Multi-Dimensional: Comparing Behavioral Signatures Across Learning Frameworks},
-  author={Fryer, Paul},
-  journal={arXiv preprint},
-  year={2026}
-}
-```
-
-## License
-
-MIT License
-
-## Acknowledgments
-
-This project uses:
-- [pymdp](https://github.com/infer-actively/pymdp) for Active Inference
-- [stable-baselines3](https://github.com/DLR-RM/stable-baselines3) for RL agents (PPO, DQN, A2C)
-- [Gymnasium](https://gymnasium.farama.org/) for the environment API

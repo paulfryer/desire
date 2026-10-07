@@ -131,3 +131,12 @@ A pilot (one training seed per planner, not reported as a result) exposed two de
 2. **T2 could be passed by ignorance.** In that pilot, `aif` had learned nothing about C (flat Dirichlet prior) yet scored RI = 0.77: under deprivation, its KL-risk term preferred the uncertain option. Any agent that tries the unfamiliar item when needy would pass RI. Added the specificity guard `RI_spec` (§4) and the `need_novelty` control that must fail it.
 
 **Revised T2 pass criterion:** pass requires RI to pass (§6 definition) **and** seed-mean `RI_spec ≥ 0.5` with CI excluding 0. Predictions P1–P9 are otherwise unchanged; P1 now also covers `need_novelty` (passes RI, fails RI_spec).
+
+## Amendment 3 — 2026-10-07, model-free training settings, before the main model-free runs
+
+Fixed on pilot seeds (100–101, never reported) by **foraging competence only** (mean drive during training and probe choice rates). Assay indices were not used to choose between settings.
+
+- **Architecture:** two-stream MLP. The flattened egocentric grid (1,156 inputs) → 256 units, interoception (3) → 64 units, concatenated → policy/value heads [256, 256]. A plain MLP over the concatenated inputs learned more slowly. No need-by-item interaction is built in. A CNN was dropped because it was ~28× slower to train; the design always specified an MLP.
+- **Training:** PPO with reward normalization (training only; no effect on probes), 64 envs × 256 steps per update, minibatch 4,096, 4 epochs, lr 3e-4, γ 0.99, GAE λ 0.95, entropy 0.01. Recurrent PPO adds an LSTM (128). **10M environment steps for every model-free agent**, with 8 log-spaced checkpoints for T3.
+- **Reward:** the pre-registered drive-reduction reward is kept. A drive-penalty form, which has the same optimal policies, did not learn faster in a pilot.
+- **Competence risk, noted in advance:** at 3M pilot steps no setting reached the 0.9 choice-rate criterion (best ≈ 0.88 on T1 probes, ≈ 0.7 on T2 probes). If the 10M agents still miss it, their verdicts are reported as "not interpretable" as pre-registered, and choice-conditional indices are reported as exploratory.

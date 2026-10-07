@@ -3,7 +3,10 @@ Run the main model-free training jobs (agents x seeds) through a small process p
 assays on each finished run. Skips jobs whose final model already exists, so it can be re-run
 after an interruption.
 
-    python experiments/launch_model_free.py --seeds 0-9 --parallel 8
+    python experiments/launch_model_free.py --seeds 0-9 --parallel 8 --steps 10000000 \
+        --features split --norm-reward --n-envs 64 --n-steps 256 --batch-size 4096
+
+Unrecognised flags are passed through to train_model_free.py.
 """
 
 import argparse
@@ -28,7 +31,7 @@ def main():
                         help="training steps: one value, or one per agent in --agents order")
     parser.add_argument("--parallel", type=int, default=8)
     parser.add_argument("--out", type=Path, default=Path("outputs/v2/model_free"))
-    args = parser.parse_args()
+    args, train_flags = parser.parse_known_args()
     steps = dict(zip(args.agents, args.steps * len(args.agents) if len(args.steps) == 1
                      else args.steps, strict=True))
 
@@ -45,7 +48,8 @@ def main():
         while jobs and len(running) < args.parallel:
             agent, seed = jobs.pop(0)
             cmd = [sys.executable, "experiments/train_model_free.py", "--agent", agent,
-                   "--seed", str(seed), "--steps", str(steps[agent]), "--out", str(args.out)]
+                   "--seed", str(seed), "--steps", str(steps[agent]), "--out", str(args.out),
+                   *train_flags]
             log = open(log_dir / f"{agent}_seed{seed}.log", "w")
             running.append((subprocess.Popen(cmd, cwd=ROOT, stdout=log, stderr=log, env=env),
                             f"{agent} seed {seed}"))
