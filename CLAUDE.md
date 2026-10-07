@@ -1,91 +1,48 @@
 # Claude Code Project Context
 
-This is a research codebase for testing desire-like behavior in AI agents using active inference and reinforcement learning.
+Research codebase asking which computational ingredients make an artificial agent *want* an outcome (need-sensitive valuation of a represented outcome) rather than act from habit, measured with outcome-devaluation and zero-shot-revaluation assays validated on ground-truth control agents.
 
-## Project Structure
+**Start here:** `docs/RESEARCH_DESIGN_v2.md` (design and pre-registered predictions, with dated amendments), `docs/RESULTS_v2.md` (results), `docs/LEGACY_VALIDITY.md` (why the v1 "AIF vs RL desire predicates" project was retired). The v1 code lives on `main`; this line of work is on branch `wanting-vs-habit`.
 
-- `src/` - Core library (agents, environments, tests, analysis)
-- `experiments/` - Training and test scripts
-- `outputs/` - Training outputs and test results
-
-## Key Operations
-
-### Running Predicate Tests
-
-**See `experiments/RUNNING_TESTS.md` for detailed instructions.**
-
-Quick start:
-```bash
-# Find latest training output
-ls outputs/ | grep training
-
-# Run tests with checkpoint and GPU protection
-python experiments/run_tests.py \
-    --model-dir outputs/training_YYYYMMDD_HHMMSS \
-    --resume \
-    --gpu-cooldown
-
-# Check progress while running
-cat outputs/tests_*/progress.json
-```
-
-### Resuming Interrupted Tests
+## Environment
 
 ```bash
-# Find existing test output directory
-ls outputs/ | grep tests
-
-# Resume with same output directory
-python experiments/run_tests.py \
-    --model-dir outputs/training_YYYYMMDD_HHMMSS \
-    --output-dir outputs/tests_YYYYMMDD_HHMMSS \
-    --resume \
-    --gpu-cooldown
+.venv/bin/python -m pytest tests          # Python 3.12 venv created with uv
 ```
 
-### Training Agents
+Always set `OMP_NUM_THREADS=1` when running several training processes in parallel.
+
+## Key operations
 
 ```bash
-python experiments/train_agents.py --resume --checkpoint-interval 50000
+# Planners + ground-truth controls (train, then assays). ~15 min for 10 seeds.
+python experiments/run_planners.py --seeds 0-9
+
+# Model-free agents (settings fixed in Amendment 3). Skips finished runs, so it is resumable.
+python experiments/launch_model_free.py --seeds 0-9 --parallel 8 --steps 10000000 \
+    --features split --norm-reward --n-envs 64 --n-steps 256 --batch-size 4096
+tail outputs/v2/logs/launcher.log                       # progress
+tail -n1 outputs/v2/model_free/<agent>/seed_<n>/training_log.csv
+
+# Assays on finished model-free runs (the launcher also runs this at the end)
+python experiments/run_model_free_assays.py
+
+# Tables, prediction scorecard, figures -> outputs/v2/
+python experiments/analyze_v2.py
 ```
 
-## Important Notes
+## Rules for this project
 
-- **Always use `--resume`** when running tests - protects against crashes
-- **Always use `--gpu-cooldown`** for long runs - prevents overheating
-- Tests take several hours (6 tests x 5 agents x 10 trials each)
-- Check `progress.json` to monitor long-running tests
-- Checkpoint saves after each (test, agent) combination completes
+- **Pre-registration:** predictions in the design doc are fixed. Any design change goes in a new dated amendment, made *before* the results it could affect, with the reason. Never tune anything by looking at assay indices (DI, RI, RI_spec); choose settings by competence only (mean drive, choice rate).
+- **Validity first:** a new assay must be passed by `oracle` and failed by the no-desire controls (`random`, `nearest`, `fixed_habit`, `need_novelty`) before any learned agent is scored on it.
+- **Replication unit is the training seed.** Report seed-level bootstrap CIs; never treat probes or episodes from one seed as independent replicates.
+- Pilot runs use seeds ≥ 100 and are never reported.
 
-## Agents
+## Layout
 
-- `heuristic` - Rule-based baseline (no model file needed)
-- `rl_ppo` - PPO agent (stable-baselines3)
-- `rl_dqn` - DQN agent (stable-baselines3)
-- `rl_a2c` - A2C agent (stable-baselines3)
-- `active_inference` - Active inference agent (pymdp)
-
-## Tests
-
-- `frustration` - Frustration intensification
-- `means_end` - Means-end decoupling
-- `extinction` - Extinction resistance
-- `anticipation` - Anticipatory activation
-- `opportunity_cost` - Opportunity cost sensitivity
-- `state_dependent` - State-dependent valuation
-
-## Additional Analyses
-
-### Robustness Analysis
-Tests whether anticipation patterns hold under different internal state operationalizations:
-```bash
-python experiments/aa_robustness_analysis.py
-```
-
-Key finding: PPO's policy head shows TRUE anticipation (r=-0.39) despite inverse anticipation in shared features. DQN's Q-values confirm hidden activation patterns.
-
-### Desire Profile Analysis
-Multi-metric analysis with radar charts and clustering:
-```bash
-python experiments/desire_profile_analysis.py
-```
+- `src/env.py`: NutrientGrid (batched; egocentric observations; free/clamped needs; interoception flag)
+- `src/assays.py`: T0 competence, T1 devaluation (DI), T2 revaluation (RI) + specificity guard (RI_spec)
+- `src/agents/`: `controls.py`, `planners.py` (homeo/oracle, mb_reward, aif), `model_free.py` (SB3 adapters)
+- `src/stats.py`: bootstrap CIs, permutation tests, Holm, verdict rule
+- `experiments/`: runners, launcher, analysis, diagnostics
+- `outputs/v2/`: per-seed JSON results (committed); models, checkpoints and logs are git-ignored
