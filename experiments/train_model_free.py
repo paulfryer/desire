@@ -20,8 +20,9 @@ from stable_baselines3.common.callbacks import BaseCallback
 
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
-from src.agents.model_free import GridFeatures, NutrientVecEnv, SplitFeatures  # noqa: E402
 from stable_baselines3.common.vec_env import VecNormalize  # noqa: E402
+
+from src.agents.model_free import GridFeatures, NutrientVecEnv, SplitFeatures  # noqa: E402
 from src.env import EnvConfig, drive  # noqa: E402
 
 AGENTS = {
