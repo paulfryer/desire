@@ -74,6 +74,13 @@ def summarize(runs) -> dict:
         t2_pass = (verdict(scores["RI"]) == "pass" and entry["RI_spec"]["mean"] >= 0.5
                    and entry["RI_spec"]["ci"][0] > 0)
         entry["competent"] = bool(competent)
+        ok_seeds = np.minimum(scores["choice_T1"], scores["choice_T2"]) >= COMPETENT
+        entry["n_competent_seeds"] = int(ok_seeds.sum())
+        if FAMILY.get(agent) == "model-free" and ok_seeds.sum() >= 5:
+            # Exploratory sensitivity analysis (Amendment 4): competent seeds only.
+            entry["competent_seeds_only"] = {
+                key: dict(zip(("mean", "lo", "hi"), bootstrap_ci(scores[key][ok_seeds]), strict=True))
+                for key in ("DI", "RI", "RI_spec")}
         entry["verdict_T1"] = verdict(scores["DI"])
         entry["verdict_RI"] = verdict(scores["RI"])
         if t2_pass:
@@ -125,15 +132,24 @@ def scorecard(s: dict, comps: dict) -> list[tuple[str, str, str]]:
               and s["need_novelty"]["verdict_RI"] == "pass")
         rows.append(("P1", "oracle passes T1/T2; no-desire controls fail; need_novelty passes RI "
                      "but fails the guard", "supported" if ok else "not supported"))
+    def outcome(ok, *agents):
+        # Assays are interpreted only for competent agents (§4 T0, Amendment 4).
+        weak = [a for a in agents if not s[a]["competent"]]
+        if weak:
+            return f"not interpretable ({', '.join(weak)} below competence criterion)"
+        return "supported" if ok else "not supported"
+
     if has("ppo_free_blind", "ppo_clamped"):
         ok = all(s[a]["verdict_T1"] == "fail" for a in ("ppo_free_blind", "ppo_clamped"))
         rows.append(("P2", "ppo_free_blind and ppo_clamped fail T1",
-                     "supported" if ok else "not supported"))
+                     f"{outcome(ok, 'ppo_free_blind', 'ppo_clamped')} "
+                     f"(T1 {s['ppo_free_blind']['verdict_T1']}, "
+                     f"{s['ppo_clamped']['verdict_T1']})"))
     for pid, agent in (("P3", "ppo_free_intero"), ("P4", "rppo_free_intero")):
         if has(agent):
             ok = s[agent]["verdict_T1"] == "pass" and s[agent]["verdict_T2"].startswith("fail")
             rows.append((pid, f"{agent} passes T1 but fails T2",
-                         f"{'supported' if ok else 'not supported'} "
+                         f"{outcome(ok, agent)} "
                          f"(T1 {s[agent]['verdict_T1']}, T2 {s[agent]['verdict_T2']})"))
     if has("homeo", "aif", "aif_no_novelty"):
         ok = all(s[a]["verdict_T1"] == "pass" and s[a]["verdict_T2"] == "pass"
@@ -184,7 +200,20 @@ def tables_markdown(s: dict, comps: dict, card) -> str:
                      f"{e['drive']['mean']:.3f} | {fmt(e, 'DI')} | {fmt(e, 'RI')} | "
                      f"{fmt(e, 'RI_spec')} | {e['verdict_T1']} | {e['verdict_T2']} |")
     lines += ["", "⚠ = below the competence criterion (choice rate < 0.9); assay verdicts not "
-              "interpretable.", "", "## Pre-registered predictions", "",
+              "interpretable."]
+    sens = [a for a in MODEL_FREE if a in s]
+    if sens:
+        lines += ["", "## Model-free competence by seed (exploratory sensitivity, Amendment 4)", "",
+                  "| Agent | Competent seeds | DI | RI | RI_spec (competent seeds only) |",
+                  "|---|---|---|---|---|"]
+        for a in sens:
+            sub = s[a].get("competent_seeds_only")
+            cells = (["—"] * 3 if sub is None else
+                     [f"{sub[k]['mean']:+.2f} [{sub[k]['lo']:+.2f}, {sub[k]['hi']:+.2f}]"
+                      for k in ("DI", "RI", "RI_spec")])
+            lines.append(f"| `{a}` | {s[a]['n_competent_seeds']}/{s[a]['n_seeds']} | "
+                         + " | ".join(cells) + " |")
+    lines += ["", "## Pre-registered predictions", "",
               "| ID | Prediction | Outcome |", "|---|---|---|"]
     lines += [f"| {pid} | {text} | {outcome} |" for pid, text, outcome in card]
     if comps:

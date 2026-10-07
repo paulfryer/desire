@@ -140,3 +140,11 @@ Fixed on pilot seeds (100–101, never reported) by **foraging competence only**
 - **Training:** PPO with reward normalization (training only; no effect on probes), 64 envs × 256 steps per update, minibatch 4,096, 4 epochs, lr 3e-4, γ 0.99, GAE λ 0.95, entropy 0.01. Recurrent PPO adds an LSTM (128). **10M environment steps for every model-free agent**, with 8 log-spaced checkpoints for T3.
 - **Reward:** the pre-registered drive-reduction reward is kept. A drive-penalty form, which has the same optimal policies, did not learn faster in a pilot.
 - **Competence risk, noted in advance:** at 3M pilot steps no setting reached the 0.9 choice-rate criterion (best ≈ 0.88 on T1 probes, ≈ 0.7 on T2 probes). If the 10M agents still miss it, their verdicts are reported as "not interpretable" as pre-registered, and choice-conditional indices are reported as exploratory.
+
+## Amendment 4 — 2026-10-07, how the competence criterion is applied, during the model-free assays
+
+This writes down a rule that was already in `experiments/analyze_v2.py` (committed in e2e0659, before any v2 result), plus one exploratory analysis. **Disclosure:** it was written after the interim assay output for `rppo_free_intero` seeds 0–1 had been printed (choice rates 0.86/0.85 and 0.95/0.91). No other model-free result had been seen. The rule itself is unchanged.
+
+1. **Competence (§4 T0) is judged per agent type**, on the seed means: an agent type is competent if both its mean T1 choice rate (satedA, satedB) and its mean T2 choice rate (deprivedC, controlC) are ≥ 0.9.
+2. **If an agent type is not competent, its predictions (P2–P4) are scored "not interpretable",** as stated in §4 and Amendment 3. Its indices are still reported, as exploratory.
+3. **Exploratory sensitivity analysis:** indices are also recomputed over only the seeds that individually meet the criterion, when at least 5 seeds do. This does not change any verdict.
