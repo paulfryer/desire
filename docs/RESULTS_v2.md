@@ -1,8 +1,39 @@
 # Wanting vs. Habit — v2 Results
 
-*Status: planners and controls complete (10 seeds each). Model-free agents: **pending** (training in progress); this section is filled in when they finish.*
+*Status: complete except the recurrent model-free agent's 30M extension (training).*
 
-All numbers are means over 10 independently trained seeds, with 95% percentile-bootstrap CIs over seeds. Verdicts follow the pre-registered rules in `docs/RESEARCH_DESIGN_v2.md` §6 and Amendment 2. Generated tables: `outputs/v2/results_tables.md`. Per-seed data: `outputs/v2/planners/*.json`, `outputs/v2/model_free_assays/*.json`.
+All numbers are means over 10 independently trained seeds, with 95% percentile-bootstrap CIs over seeds. Verdicts follow the pre-registered rules in `docs/RESEARCH_DESIGN_v2.md` §6, as amended:
+- Amendment 2: the specificity guard.
+- Amendments 3–4: the competence rule.
+- Amendment 5: the 30M extension.
+
+Generated tables: `outputs/v2/results_tables.md`. Per-seed data: `outputs/v2/planners/`, `outputs/v2/model_free_assays/` (10M) and `outputs/v2/model_free_assays_30M/`.
+
+## Summary
+
+**Question.** What does an artificial agent need in order to *want* an outcome, valuing it by what it currently needs, rather than act from habit? Two tests from animal-learning research were validated on agents whose answer is known in advance:
+- **Devaluation:** satiate one nutrient and see whether the agent switches.
+- **Zero-shot revaluation:** create a need never experienced and see whether the agent immediately seeks the one item that fixes it.
+
+**Findings.**
+
+1. **The tests work, and the zero-shot test needs a guard.** The ideal agent passes both tests and every no-desire control fails them. Without a specificity guard, though, an agent that simply tries the unfamiliar item whenever it is needy passes zero-shot revaluation perfectly. A pilot active-inference agent did exactly that while knowing nothing about the item.
+2. **Zero-shot revaluation appeared only where value is computed at decision time from a learned model of outcomes and an innate need function.** That covers the homeostatic planner and active inference: both pass both tests in every seed, and they are indistinguishable from each other.
+3. **Learned value fails out of distribution, even with the right inputs and a good model.**
+   - The model-based agent with a learned *reward* model passes devaluation and fails revaluation (RI +0.15).
+   - The model-free agent, trained to 30M steps, forages almost as well as the oracle and passes devaluation in every seed (DI +0.87). It never once chooses the remedy for a need it has not experienced (RI 0.00).
+   - Responding to needs in familiar situations is not the same as wanting outcomes.
+4. **What model-free training produces is a satiety veto, not graded wanting.** The model-free agent avoids what it is full of. But it is nearly indifferent between a slightly-needed and a badly-needed nutrient (45% vs the oracle's 100%). An agent trained in a single need state is a pure habit agent (DI 0) despite perfect foraging.
+5. **Framework labels don't matter; ingredients do.** Active inference and the homeostatic planner behave identically, and the novelty term had no measurable effect.
+
+**Implications.**
+- **AI welfare.** Behavioral evidence of "wanting" in an AI system should come from out-of-distribution revaluation tests with specificity controls, not from in-distribution sensitivity to state. The latter is passed by agents whose valuations are learned habits.
+- **Alignment.** These results show the goal-misgeneralization pattern under controlled conditions: competent, need-sensitive-looking behavior that does not track the underlying goal off-distribution.
+
+**What did not go to plan.**
+- The novelty prediction (P8) failed.
+- At the pre-registered 10M budget, the model-free agents fell short of the competence criterion. Their verdicts at 10M are "not interpretable", and one disclosed extension (Amendment 5) was needed.
+- Requiring competence of the blind control was a design error, and it leaves P2 formally uninterpretable.
 
 ## 1. The assays are valid (P1 — supported)
 
@@ -87,7 +118,7 @@ More training made the agent better at everything the assays test *in distributi
 
 The 30M need sweep (`outputs/v2/need_sweep_30M/`) shows what the extra training bought:
 - The agent now almost never picks a sated item (P ≈ 0.0–0.15 at level 0.5).
-- When A is far more depleted than the alternative (0.05 vs 0.3), it still picks A in only about 44% of probes, where the oracle picks it in 100%.
+- When A is far more depleted than the alternative (0.05 vs 0.3), it still picks A in only about 45% of probes, where the oracle picks it in 100%.
 
 It learned something closer to a satiety veto, "don't eat what you are full of", than a graded valuation of outcomes by need. Devaluation (T1) cannot tell these apart; the sweep can.
 
@@ -113,15 +144,19 @@ It learned something closer to a satiety veto, "don't eat what you are full of",
 
 ## 4. Deviations from the original design
 
-All of these were made before the results they could affect, and are recorded with dates in the design doc's amendments.
+All are recorded with dates in the design doc's amendments. Amendments 1–3 were made before the results they could affect. Amendments 4 and 5 were made after some model-free results had been seen, and they say exactly which.
 
-1. Setpoint 0.7 → 0.5, because C's effect was censored at the ceiling and unlearnable (Amendment 2).
-2. Specificity guard `RI_spec` and the `need_novelty` control added (Amendment 2).
-3. Novelty zero at test; indices conditional on a choice; exploratory T2b (Amendment 1).
+1. Novelty zero at test; indices conditional on a choice; exploratory T2b (Amendment 1).
+2. Setpoint 0.7 → 0.5, because C's effect was censored at the ceiling and unlearnable (Amendment 2).
+3. Specificity guard `RI_spec` and the `need_novelty` control added (Amendment 2).
 4. Model-free architecture and training settings fixed on pilot seeds by competence only (Amendment 3).
+5. How the competence criterion is applied: per agent type, on seed means. This matched code committed before any result. It was written down after two interim recurrent-PPO seeds had been seen (Amendment 4).
+6. One extension of the two interoceptive model-free agents from 10M to 30M steps, triggered by the competence shortfall, with a commitment to no further extensions. It was decided after the 10M indices had been seen (Amendment 5). The 10M verdicts ("not interpretable") are reported alongside, not replaced.
 
 ## 5. Things that went wrong and were caught
 
 - **v1 battery** (`docs/LEGACY_VALIDITY.md`): three predicates were passed by no-desire controls, two were artifacts of scoring bugs, and one was never measured.
 - **An active-inference agent "passed" zero-shot revaluation out of ignorance.** In the first pilot, a flat Dirichlet prior over C's (unobservable) effect plus the KL-risk term made the uncertain item look attractive under deprivation (RI 0.77). This is a general validity threat: under deprivation, uncertainty-seeking mimics wanting.
 - **The scorecard initially marked P8 "supported"** on a raw difference of 109 vs 107. It now uses the planned permutation test, as §7 requires.
+- **The blind control was held to the competence criterion.** An agent that cannot sense its needs cannot know which item it needs, so its low choice rate was predictable. The rule made P2 uninterpretable even though the blind agent's DI ≈ 0 is guaranteed by construction. Competence gates should apply only to agents for which competence is achievable.
+- **The 10M training budget was too small for the model-free agents.** Pilot runs at 3M had already shown the risk (Amendment 3). In hindsight, the budget should have been set by a competence target, not by a fixed step count.

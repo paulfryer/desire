@@ -41,14 +41,25 @@ uv pip install --python .venv/bin/python numpy scipy pandas matplotlib gymnasium
 # Planners and ground-truth controls: train (planners), then run every assay. ~15 min.
 python experiments/run_planners.py --seeds 0-9
 
-# Model-free agents: 4 agents x 10 seeds, then assays on final models and checkpoints.
-python experiments/launch_model_free.py --seeds 0-9 --steps <steps> --parallel 8 [training flags]
+# Model-free agents: 4 agents x 10 seeds x 10M steps, then assays on final models and
+# checkpoints (Amendment 3 settings). About 5 hours on a 10-core laptop.
+python experiments/launch_model_free.py --seeds 0-9 --parallel 8 --steps 10000000 \
+    --features split --norm-reward --n-envs 64 --n-steps 256 --batch-size 4096
+
+# Amendment 5 extension: the two interoceptive agents continued to 30M steps.
+python experiments/launch_model_free.py --agents ppo_free_intero rppo_free_intero \
+    --seeds 0-9 --parallel 10 --steps 30000000 --features split --norm-reward --n-envs 64 \
+    --n-steps 256 --batch-size 4096 --resume-from outputs/v2/model_free \
+    --out outputs/v2/model_free_30M --assay-out outputs/v2/model_free_assays_30M
 
 # Tables, prediction scorecard and figures -> outputs/v2/
 python experiments/analyze_v2.py
+
+# Exploratory need-sweep curves -> outputs/v2/need_sweep*/ and figures/need_sweep*.png
+python experiments/need_sweep.py --seeds 0-9 && python experiments/need_sweep.py --plot
 ```
 
-The exact training flags and step budgets used for the reported runs are recorded in each run's `outputs/v2/model_free/<agent>/seed_<n>/run.json` and in `docs/RESULTS_v2.md`.
+Set `OMP_NUM_THREADS=1` when running training jobs in parallel. Each run records its exact settings in `outputs/v2/model_free*/<agent>/seed_<n>/run.json`.
 
 ## Layout
 
