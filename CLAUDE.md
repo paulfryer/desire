@@ -27,6 +27,14 @@ tail -n1 outputs/v2/model_free/<agent>/seed_<n>/training_log.csv
 # Assays on finished model-free runs (the launcher also runs this at the end)
 python experiments/run_model_free_assays.py
 
+# Amendment 5: continue the interoceptive agents to 30M (see README for the full command)
+python experiments/launch_model_free.py --agents ppo_free_intero rppo_free_intero ... \
+    --resume-from outputs/v2/model_free --out outputs/v2/model_free_30M \
+    --assay-out outputs/v2/model_free_assays_30M
+
+# Exploratory need-sweep curves (P(choose target) vs need level)
+python experiments/need_sweep.py --seeds 0-9 && python experiments/need_sweep.py --plot
+
 # Tables, prediction scorecard, figures -> outputs/v2/
 python experiments/analyze_v2.py
 ```
