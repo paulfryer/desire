@@ -30,7 +30,7 @@ def main():
     parser.add_argument("--steps", type=int, required=True)
     parser.add_argument("--parallel", type=int, default=9)
     parser.add_argument("--learning-rate", nargs="*", default=[],
-                        help="architecture=lr pairs, only as recorded in an amendment (§9)")
+                        help="arm=lr pairs, only as recorded in an amendment (§9)")
     args = parser.parse_args()
     lr = dict(pair.split("=") for pair in args.learning_rate)
 
@@ -55,8 +55,8 @@ def main():
             arm, seed = jobs.pop(0)
             cmd = [sys.executable, "experiments/train_heldout.py", "--arm", arm, "--seed", str(seed),
                    "--steps", str(args.steps), "--out", str(out)]
-            if ARMS[arm][0] in lr:
-                cmd += ["--learning-rate", lr[ARMS[arm][0]]]
+            if arm in lr:
+                cmd += ["--learning-rate", lr[arm]]
             log = open(logs / f"{args.what}_{arm}_seed{seed}.log", "w")
             running.append((subprocess.Popen(cmd, cwd=ROOT, stdout=log, stderr=log, env=env),
                             f"{arm} seed {seed}"))

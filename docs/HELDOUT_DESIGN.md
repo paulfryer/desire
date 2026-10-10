@@ -232,3 +232,21 @@ Secondary arms are read the same way. A secondary arm's result never changes the
 **Not adopted:**
 - The `unshared` and `-all` arms: the reviewer showed the former is passable by legitimate elimination and the latter is unmatched. The within-agent RI_T is the matched positive control instead, which the reviewer endorsed.
 - Twenty seeds for secondary arms: compute.
+
+## Amendment 1, 2026-10-10: pilot outcome and the pre-specified learning-rate rule, before any main run
+
+Pilots: seeds 100–101, 10M steps. They were evaluated only with `pilot_heldout.py`, so no held-out probe was computed, and their weights were then deleted.
+
+| Pilot arm | RI_T (seed 100, seed 101) | Mean | Choice rate | Mean drive |
+|---|---|---|---|---|
+| `innate-level-K6` | +0.99, +0.96 | 0.97 | ≈ 1.00 | 0.50–0.55 |
+| `learned-level-K6` | +0.17, +0.33 | 0.25 | ≈ 0.55 | 0.69–0.78 |
+| `mlp-K6` | −0.08, +0.08 | 0.00 | ≈ 0.40 | ≈ 0.72 |
+
+For reference, scripted mean drive in this world is 0.44 for `oracle` and 0.85 for `random`.
+
+**Applying §9 mechanically.** The escape hatch triggers for `learned-level-K6` and `mlp-K6` (pilot mean RI_T below 0.3), so their main runs use lr 1e-4. Every other arm keeps lr 3e-4. I did not test whether 1e-4 is better; the rule names a single alternative and I am applying it as written.
+
+**Implementation note.** The launcher's `--learning-rate` option now takes arm names, so the change applies to exactly these two arms and not to every attention arm.
+
+**Budget.** The budget stays at 30M. Pilot throughput under 6-way contention (7.6k / 6.6k / 19.6k steps/s) puts the main runs at about 10 hours, still under the 14-hour limit.
