@@ -10,6 +10,8 @@ two needs are equal (h_k = 0.3).
 
     python experiments/need_sweep.py --seeds 0-9            # results per (agent, seed)
     python experiments/need_sweep.py --plot                 # figure from saved results
+    python experiments/need_sweep.py --agents ppo_free_intero rppo_free_intero \
+        --runs outputs/v2/model_free_30M --out outputs/v2/need_sweep_30M     # Amendment 5 models
 """
 
 import argparse
@@ -119,10 +121,11 @@ def main():
     parser.add_argument("--runs", type=Path, default=Path("outputs/v2/model_free"))
     parser.add_argument("--out", type=Path, default=Path("outputs/v2/need_sweep"))
     parser.add_argument("--plot", action="store_true")
+    parser.add_argument("--figure", type=Path, default=Path("outputs/v2/figures/need_sweep.png"))
     args = parser.parse_args()
     args.out.mkdir(parents=True, exist_ok=True)
     if args.plot:
-        plot(args.out, Path("outputs/v2/figures/need_sweep.png"))
+        plot(args.out, args.figure)
         return
     import torch
     torch.set_num_threads(1)
