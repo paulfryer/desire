@@ -1,0 +1,130 @@
+{
+ "agent": "random",
+ "seed": 7,
+ "trained": {
+  "RI_T": 0.06648351648351647,
+  "SI_T": 0.06153846153846154,
+  "conditions": {
+   "dep_T": {
+    "n": 200,
+    "choices": 64,
+    "hits": 34,
+    "choice_rate": 0.32,
+    "p_target": 0.5307692307692308
+   },
+   "ctrl_T": {
+    "n": 200,
+    "choices": 69,
+    "hits": 32,
+    "choice_rate": 0.345,
+    "p_target": 0.4642857142857143
+   }
+  }
+ },
+ "heldout": {
+  "RI_H": 0.026666666666666616,
+  "RI_spec_H": -0.09833333333333338,
+  "RI_dir_H": 0.04253968253968249,
+  "SI_H": 0.05333333333333323,
+  "RI_novel": 0.007352941176470562,
+  "SI_novel": 0.0,
+  "sweep": {
+   "0.4": 0.5175438596491229,
+   "0.3": 0.5,
+   "0.2": 0.5493827160493827,
+   "0.1": 0.4928571428571429,
+   "0.05": 0.5338983050847458
+  },
+  "conditions": {
+   "dep_H": {
+    "n": 200,
+    "choices": 74,
+    "hits": 39,
+    "choice_rate": 0.37,
+    "p_target": 0.5266666666666666
+   },
+   "ctrl_H": {
+    "n": 200,
+    "choices": 70,
+    "hits": 35,
+    "choice_rate": 0.35,
+    "p_target": 0.5
+   },
+   "guard_H": {
+    "n": 200,
+    "choices": 67,
+    "hits": 42,
+    "choice_rate": 0.335,
+    "p_target": 0.625
+   },
+   "over_H": {
+    "n": 200,
+    "choices": 62,
+    "hits": 30,
+    "choice_rate": 0.31,
+    "p_target": 0.48412698412698413
+   },
+   "dep_novel": {
+    "n": 200,
+    "choices": 68,
+    "hits": 34,
+    "choice_rate": 0.34,
+    "p_target": 0.5
+   },
+   "ctrl_novel": {
+    "n": 200,
+    "choices": 67,
+    "hits": 33,
+    "choice_rate": 0.335,
+    "p_target": 0.49264705882352944
+   },
+   "sweep_0.4": {
+    "n": 200,
+    "choices": 56,
+    "hits": 29,
+    "choice_rate": 0.28,
+    "p_target": 0.5175438596491229
+   },
+   "sweep_0.3": {
+    "n": 200,
+    "choices": 74,
+    "hits": 37,
+    "choice_rate": 0.37,
+    "p_target": 0.5
+   },
+   "sweep_0.2": {
+    "n": 200,
+    "choices": 80,
+    "hits": 44,
+    "choice_rate": 0.4,
+    "p_target": 0.5493827160493827
+   },
+   "sweep_0.1": {
+    "n": 200,
+    "choices": 69,
+    "hits": 34,
+    "choice_rate": 0.345,
+    "p_target": 0.4928571428571429
+   },
+   "sweep_0.05": {
+    "n": 200,
+    "choices": 58,
+    "hits": 31,
+    "choice_rate": 0.29,
+    "p_target": 0.5338983050847458
+   }
+  }
+ },
+ "competence": {
+  "mean_drive": 0.9009896711638512,
+  "eaten_per_episode": [
+   0.53125,
+   0.5,
+   0.75,
+   0.65625,
+   0.78125,
+   1.03125,
+   0.5625
+  ]
+ }
+}

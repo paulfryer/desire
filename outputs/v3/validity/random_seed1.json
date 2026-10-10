@@ -1,0 +1,130 @@
+{
+ "agent": "random",
+ "seed": 1,
+ "trained": {
+  "RI_T": -0.005827505827505852,
+  "SI_T": -0.0757575757575758,
+  "conditions": {
+   "dep_T": {
+    "n": 200,
+    "choices": 65,
+    "hits": 30,
+    "choice_rate": 0.325,
+    "p_target": 0.4621212121212121
+   },
+   "ctrl_T": {
+    "n": 200,
+    "choices": 77,
+    "hits": 36,
+    "choice_rate": 0.385,
+    "p_target": 0.46794871794871795
+   }
+  }
+ },
+ "heldout": {
+  "RI_H": 0.015384615384615385,
+  "RI_spec_H": -0.0461538461538461,
+  "RI_dir_H": -0.04225352112676062,
+  "SI_H": 0.0,
+  "RI_novel": -0.17454751131221719,
+  "SI_novel": -0.1029411764705882,
+  "sweep": {
+   "0.4": 0.4609375,
+   "0.3": 0.5307692307692308,
+   "0.2": 0.5067567567567568,
+   "0.1": 0.5169491525423728,
+   "0.05": 0.3253968253968254
+  },
+  "conditions": {
+   "dep_H": {
+    "n": 200,
+    "choices": 56,
+    "hits": 28,
+    "choice_rate": 0.28,
+    "p_target": 0.5
+   },
+   "ctrl_H": {
+    "n": 200,
+    "choices": 64,
+    "hits": 31,
+    "choice_rate": 0.32,
+    "p_target": 0.4846153846153846
+   },
+   "guard_H": {
+    "n": 200,
+    "choices": 64,
+    "hits": 35,
+    "choice_rate": 0.32,
+    "p_target": 0.5461538461538461
+   },
+   "over_H": {
+    "n": 200,
+    "choices": 70,
+    "hits": 38,
+    "choice_rate": 0.35,
+    "p_target": 0.5422535211267606
+   },
+   "dep_novel": {
+    "n": 200,
+    "choices": 67,
+    "hits": 30,
+    "choice_rate": 0.335,
+    "p_target": 0.4485294117647059
+   },
+   "ctrl_novel": {
+    "n": 200,
+    "choices": 64,
+    "hits": 40,
+    "choice_rate": 0.32,
+    "p_target": 0.6230769230769231
+   },
+   "sweep_0.4": {
+    "n": 200,
+    "choices": 63,
+    "hits": 29,
+    "choice_rate": 0.315,
+    "p_target": 0.4609375
+   },
+   "sweep_0.3": {
+    "n": 200,
+    "choices": 64,
+    "hits": 34,
+    "choice_rate": 0.32,
+    "p_target": 0.5307692307692308
+   },
+   "sweep_0.2": {
+    "n": 200,
+    "choices": 73,
+    "hits": 37,
+    "choice_rate": 0.365,
+    "p_target": 0.5067567567567568
+   },
+   "sweep_0.1": {
+    "n": 200,
+    "choices": 58,
+    "hits": 30,
+    "choice_rate": 0.29,
+    "p_target": 0.5169491525423728
+   },
+   "sweep_0.05": {
+    "n": 200,
+    "choices": 62,
+    "hits": 20,
+    "choice_rate": 0.31,
+    "p_target": 0.3253968253968254
+   }
+  }
+ },
+ "competence": {
+  "mean_drive": 0.8560887155334005,
+  "eaten_per_episode": [
+   0.65625,
+   0.21875,
+   0.34375,
+   0.28125,
+   0.59375,
+   0.71875,
+   0.59375
+  ]
+ }
+}

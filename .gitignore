@@ -128,3 +128,8 @@ experiments/models/
 outputs/v2/**/*.zip
 outputs/v2/logs/
 outputs/v2/pilot*/
+!outputs/v3/
+outputs/v3/**/*.zip
+outputs/v3/logs/
+outputs/v3/pilot/
+!outputs/v3/COMMANDS.log
