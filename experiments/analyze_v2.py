@@ -35,10 +35,9 @@ INK, INK_2, INK_3, GRID = "#0b0b0b", "#52514e", "#8a8984", "#e4e3df"
 COMPETENT = 0.9
 
 
-def load(out_root: Path) -> dict[str, list[dict]]:
+def load(out_root: Path, dirs=("planners", "model_free_assays")) -> dict[str, list[dict]]:
     runs = defaultdict(list)
-    for path in sorted((out_root / "planners").glob("*.json")) + \
-            sorted((out_root / "model_free_assays").glob("*.json")):
+    for path in [p for d in dirs for p in sorted((out_root / d).glob("*.json"))]:
         result = json.loads(path.read_text())
         runs[result["agent"]].append(result)
     return runs
@@ -280,10 +279,23 @@ def figure_indices(s: dict, path: Path):
     plt.close(fig)
 
 
-def figure_training_amount(runs, path: Path):
+def checkpoint_curve(results: list[dict], test: str, key: str):
+    steps = sorted({int(k) for r in results for k in r["checkpoints"]})
+    means, los, his = [], [], []
+    for step in steps:
+        vals = [r["checkpoints"][str(step)][test][key] for r in results
+                if str(step) in r["checkpoints"]]
+        mean, lo, hi = bootstrap_ci(vals)
+        means.append(mean), los.append(lo), his.append(hi)
+    return steps, means, los, his
+
+
+def figure_training_amount(runs, path: Path, extension=None):
+    """T3 curves over checkpoints; the Amendment 5 extension (if any) continues them, dashed."""
     agents = [a for a in MODEL_FREE if a in runs and runs[a][0].get("checkpoints")]
     if not agents:
         return
+    extension = extension or {}
     fig, axes = plt.subplots(1, 2, figsize=(10, 3.6), facecolor="#fcfcfb")
     for ax, (key, test, title) in zip(axes, [("DI", "T1", "T1 devaluation index (DI)"),
                                              ("RI", "T2", "T2 revaluation index (RI)")],
@@ -291,29 +303,55 @@ def figure_training_amount(runs, path: Path):
         style_axis(ax)
         ax.grid(axis="y", color=GRID, linewidth=0.8)
         ax.axhline(0, color=INK_3, linewidth=1)
+        ends = {}
         for color, agent in zip(SERIES, agents, strict=False):
-            steps = sorted({int(k) for r in runs[agent] for k in r["checkpoints"]})
-            means, los, his = [], [], []
-            for step in steps:
-                vals = [r["checkpoints"][str(step)][test][key] for r in runs[agent]
-                        if str(step) in r["checkpoints"]]
-                mean, lo, hi = bootstrap_ci(vals)
-                means.append(mean), los.append(lo), his.append(hi)
+            steps, means, los, his = checkpoint_curve(runs[agent], test, key)
             ax.fill_between(steps, los, his, color=color, alpha=0.12, linewidth=0)
             ax.plot(steps, means, color=color, linewidth=2, marker="o", markersize=4)
-            ax.annotate(agent, (steps[-1], means[-1]), xytext=(4, 0),
-                        textcoords="offset points", fontsize=7.5, color=INK_2, va="center")
+            end = (steps[-1], means[-1])
+            if agent in extension:
+                ext = checkpoint_curve(extension[agent], test, key)
+                ax.fill_between(ext[0], ext[2], ext[3], color=color, alpha=0.12, linewidth=0)
+                ax.plot([steps[-1], *ext[0]], [means[-1], *ext[1]], color=color, linewidth=2,
+                        linestyle=(0, (3, 2)), marker="o", markersize=4,
+                        markerfacecolor="#fcfcfb")
+                end = (ext[0][-1], ext[1][-1])
+            ends[agent] = end
+        # Direct-label only lines that end clear of all others; the legend names every line.
+        for agent, end in ends.items():
+            if all(abs(end[1] - other[1]) >= 0.1 for a, other in ends.items() if a != agent):
+                ax.annotate(agent, end, xytext=(4, 0), textcoords="offset points",
+                            fontsize=7.5, color=INK_2, va="center")
         ax.set_xscale("log")
         ax.set_ylim(-1.05, 1.05)
         ax.set_xlabel("training steps", fontsize=8, color=INK_2)
         ax.set_title(title, fontsize=9, color=INK, loc="left")
     handles = [plt.Line2D([], [], color=c, linewidth=2, label=a)
                for c, a in zip(SERIES, agents, strict=False)]
-    fig.legend(handles=handles, loc="lower center", ncol=len(agents), frameon=False, fontsize=8,
+    if extension:
+        handles.append(plt.Line2D([], [], color=INK_3, linewidth=2, linestyle=(0, (3, 2)),
+                                  label="continued to 30M (Amendment 5)"))
+    fig.legend(handles=handles, loc="lower center", ncol=len(handles), frameon=False, fontsize=8,
                labelcolor=INK_2)
     fig.tight_layout(rect=(0, 0.08, 0.93, 1))
     fig.savefig(path, dpi=180)
     plt.close(fig)
+
+
+def extension_markdown(s_ext: dict, card) -> str:
+    lines = ["", "## Amendment 5 extension: interoceptive model-free agents continued to 30M steps",
+             "", "| Agent | Seeds | Choice rate T1/T2 | Mean drive | DI (T1) | RI (T2) | RI_spec | "
+             "T1 | T2 |", "|---|---|---|---|---|---|---|---|---|"]
+    for a in [a for a in MODEL_FREE if a in s_ext]:
+        e = s_ext[a]
+        flag = "" if e["competent"] else " ⚠"
+        lines.append(f"| `{a}` | {e['n_seeds']} | {e['choice_T1']['mean']:.2f} / "
+                     f"{e['choice_T2']['mean']:.2f}{flag} | {e['drive']['mean']:.3f} | "
+                     f"{fmt(e, 'DI')} | {fmt(e, 'RI')} | {fmt(e, 'RI_spec')} | "
+                     f"{e['verdict_T1']} | {e['verdict_T2']} |")
+    lines += ["", "| ID | Prediction (30M) | Outcome |", "|---|---|---|"]
+    lines += [f"| {pid} | {text} | {outcome} |" for pid, text, outcome in card]
+    return "\n".join(lines) + "\n"
 
 
 def main():
@@ -324,13 +362,19 @@ def main():
     s = summarize(runs)
     comps = comparisons(runs)
     card = scorecard(s, comps)
+    extension = load(args.root, dirs=("model_free_assays_30M",))
+    s_ext = summarize(extension) if extension else {}
+    card_ext = [row for row in scorecard(s_ext, {}) if row[0] in ("P3", "P4")]
     (args.root / "figures").mkdir(parents=True, exist_ok=True)
     (args.root / "summary.json").write_text(json.dumps(
-        {"agents": s, "comparisons": comps, "predictions": card}, indent=1))
+        {"agents": s, "comparisons": comps, "predictions": card,
+         "extension_30M": {"agents": s_ext, "predictions": card_ext}}, indent=1))
     md = tables_markdown(s, comps, card)
+    if s_ext:
+        md += extension_markdown(s_ext, card_ext)
     (args.root / "results_tables.md").write_text(md)
     figure_indices(s, args.root / "figures" / "assay_indices.png")
-    figure_training_amount(runs, args.root / "figures" / "training_amount.png")
+    figure_training_amount(runs, args.root / "figures" / "training_amount.png", extension)
     print(md)
 
 

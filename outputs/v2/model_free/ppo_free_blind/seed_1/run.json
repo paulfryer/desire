@@ -1,0 +1,33 @@
+{
+  "agent": "ppo_free_blind",
+  "seed": 1,
+  "steps": 10000000,
+  "n_envs": 64,
+  "threads": 1,
+  "reward": "reduction",
+  "features": "split",
+  "norm_reward": true,
+  "n_steps": 256,
+  "batch_size": 4096,
+  "out": "outputs/v2/model_free",
+  "algorithm": "ppo",
+  "env_config": {
+    "grid": 9,
+    "need_dynamics": "free",
+    "interoception": false,
+    "episode_steps": 200,
+    "probe_steps": 25,
+    "reward": "reduction"
+  },
+  "checkpoints": [
+    78125,
+    156249,
+    312499,
+    624999,
+    1249999,
+    2499999,
+    4999999,
+    10000000
+  ],
+  "seconds": 3035.4
+}
