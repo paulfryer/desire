@@ -34,6 +34,9 @@ AGENTS = {
 }
 
 
+RESUME_SEED_OFFSET = 1_000_000
+
+
 def agent_config(name: str, reward: str = "reduction") -> EnvConfig:
     _, dynamics, intero = AGENTS[name]
     return EnvConfig(need_dynamics=dynamics, interoception=intero, reward=reward)
@@ -124,6 +127,9 @@ def main():
     parser.add_argument("--n-steps", type=int, default=128)
     parser.add_argument("--batch-size", type=int, default=1024)
     parser.add_argument("--out", type=Path, default=Path("outputs/v2/model_free"))
+    parser.add_argument("--resume-from", type=Path,
+                        help="continue a saved model up to --steps total (Amendment 5); the "
+                             "environment stream is reseeded and reward-normalization restarts")
     args = parser.parse_args()
 
     torch.set_num_threads(args.threads)
@@ -131,19 +137,29 @@ def main():
     (out_dir / "checkpoints").mkdir(parents=True, exist_ok=True)
     (out_dir / "training_log.csv").unlink(missing_ok=True)
 
-    env = NutrientVecEnv(args.n_envs, agent_config(args.agent, args.reward), seed=args.seed)
+    env_seed = args.seed + (RESUME_SEED_OFFSET if args.resume_from else 0)
+    env = NutrientVecEnv(args.n_envs, agent_config(args.agent, args.reward), seed=env_seed)
     if args.norm_reward:
         env = VecNormalize(env, norm_obs=False, norm_reward=True, gamma=0.99)
-    model = build_model(args.agent, env, args.seed, args.features, args.n_steps, args.batch_size)
-    callback = ProgressCallback(out_dir, checkpoint_schedule(args.steps))
+    if args.resume_from:
+        cls = PPO if AGENTS[args.agent][0] == "ppo" else RecurrentPPO
+        model = cls.load(args.resume_from, env=env, device="cpu")
+        model.set_random_seed(env_seed)
+        checkpoints = [c for c in checkpoint_schedule(args.steps, n=3) if c > model.num_timesteps]
+    else:
+        model = build_model(args.agent, env, args.seed, args.features, args.n_steps,
+                            args.batch_size)
+        checkpoints = checkpoint_schedule(args.steps)
+    callback = ProgressCallback(out_dir, checkpoints)
     start = time.time()
-    model.learn(total_timesteps=args.steps, callback=callback)
+    model.learn(total_timesteps=args.steps - model.num_timesteps, callback=callback,
+                reset_num_timesteps=False)
     model.save(out_dir / "final")
     (out_dir / "run.json").write_text(json.dumps({
         **{k: (str(v) if isinstance(v, Path) else v) for k, v in vars(args).items()},
         "algorithm": AGENTS[args.agent][0],
         "env_config": agent_config(args.agent, args.reward).__dict__,
-        "checkpoints": checkpoint_schedule(args.steps),
+        "checkpoints": checkpoints,
         "seconds": round(time.time() - start, 1),
     }, indent=2))
     print(f"{args.agent} seed {args.seed}: {args.steps} steps in {time.time() - start:.0f}s")

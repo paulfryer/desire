@@ -148,3 +148,18 @@ This writes down a rule that was already in `experiments/analyze_v2.py` (committ
 1. **Competence (§4 T0) is judged per agent type**, on the seed means: an agent type is competent if both its mean T1 choice rate (satedA, satedB) and its mean T2 choice rate (deprivedC, controlC) are ≥ 0.9.
 2. **If an agent type is not competent, its predictions (P2–P4) are scored "not interpretable",** as stated in §4 and Amendment 3. Its indices are still reported, as exploratory.
 3. **Exploratory sensitivity analysis:** indices are also recomputed over only the seeds that individually meet the criterion, when at least 5 seeds do. This does not change any verdict.
+
+## Amendment 5 — 2026-10-10, one competence-driven extension, after the 10M model-free results and before any extended training
+
+**What had been seen.** All 10M model-free results, including their indices. Agent-level choice rates (T1/T2): `ppo_free_intero` 0.91/0.80, `rppo_free_intero` 0.91/0.87, `ppo_free_blind` 0.45/0.34, `ppo_clamped` 1.00/1.00. So under §4 and Amendment 4, P2–P4 are **not interpretable**, and that stands as the 10M result. Indices seen: `ppo_free_intero` DI +0.63, RI +0.02; `rppo_free_intero` DI +0.54, RI +0.00. Over the checkpoints, the two interoceptive agents' choice rates were still rising at 10M (rppo T2 0.80 → 0.87 from 5M to 10M; ppo T1 0.88 → 0.92), and so was DI. The blind agent's choice rate had been flat at 0.42–0.45 since about 1M steps.
+
+**Extension.** `ppo_free_intero` and `rppo_free_intero`, all 10 seeds, are continued from their 10M models to **30M total steps**. Settings are identical, with two unavoidable differences:
+- the reward-normalization statistics were not saved at 10M, so they restart;
+- the environment's random stream is reseeded (seed + 1,000,000).
+
+Checkpoints are saved at 15M and 30M. Assays, predictions (P3, P4), the competence rule and the verdict rules are unchanged. The 30M results are reported alongside the 10M results, not in place of them.
+
+**Commitments.**
+- This is the only extension. If either agent still misses competence at 30M, its prediction stays "not interpretable".
+- The trigger is competence, which Amendment 3 anticipated as a risk, not the indices. But the 10M indices were seen before this decision, so the follow-up is not blind to them.
+- The blind and clamped agents are not extended. The blind agent's choice rate has plateaued, and it cannot tell which item it needs. The clamped agent is already competent. P2 therefore stays "not interpretable".

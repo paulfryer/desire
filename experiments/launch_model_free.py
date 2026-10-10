@@ -6,7 +6,13 @@ after an interruption.
     python experiments/launch_model_free.py --seeds 0-9 --parallel 8 --steps 10000000 \
         --features split --norm-reward --n-envs 64 --n-steps 256 --batch-size 4096
 
-Unrecognised flags are passed through to train_model_free.py.
+Unrecognised flags are passed through to train_model_free.py. The Amendment 5 extension
+continues the 10M runs to 30M in a separate directory:
+
+    python experiments/launch_model_free.py --agents ppo_free_intero rppo_free_intero \
+        --seeds 0-9 --parallel 10 --steps 30000000 --features split --norm-reward --n-envs 64 \
+        --n-steps 256 --batch-size 4096 --resume-from outputs/v2/model_free \
+        --out outputs/v2/model_free_30M --assay-out outputs/v2/model_free_assays_30M
 """
 
 import argparse
@@ -31,6 +37,9 @@ def main():
                         help="training steps: one value, or one per agent in --agents order")
     parser.add_argument("--parallel", type=int, default=8)
     parser.add_argument("--out", type=Path, default=Path("outputs/v2/model_free"))
+    parser.add_argument("--assay-out", type=Path, default=Path("outputs/v2/model_free_assays"))
+    parser.add_argument("--resume-from", type=Path,
+                        help="runs directory to continue from (<dir>/<agent>/seed_<n>/final.zip)")
     args, train_flags = parser.parse_known_args()
     steps = dict(zip(args.agents, args.steps * len(args.agents) if len(args.steps) == 1
                      else args.steps, strict=True))
@@ -50,6 +59,9 @@ def main():
             cmd = [sys.executable, "experiments/train_model_free.py", "--agent", agent,
                    "--seed", str(seed), "--steps", str(steps[agent]), "--out", str(args.out),
                    *train_flags]
+            if args.resume_from:
+                cmd += ["--resume-from",
+                        str(args.resume_from / agent / f"seed_{seed}" / "final.zip")]
             log = open(log_dir / f"{agent}_seed{seed}.log", "w")
             running.append((subprocess.Popen(cmd, cwd=ROOT, stdout=log, stderr=log, env=env),
                             f"{agent} seed {seed}"))
@@ -61,7 +73,8 @@ def main():
                       f"{len(jobs)} queued, {len(running)} running", flush=True)
 
     subprocess.run([sys.executable, "experiments/run_model_free_assays.py", "--runs",
-                    str(args.out), "--agents", *args.agents], cwd=ROOT, env=env, check=True)
+                    str(args.out), "--out", str(args.assay_out), "--agents", *args.agents],
+                   cwd=ROOT, env=env, check=True)
 
 
 if __name__ == "__main__":
