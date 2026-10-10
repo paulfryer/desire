@@ -314,7 +314,7 @@ def figure_training_amount(runs, path: Path, extension=None):
                 ax.fill_between(ext[0], ext[2], ext[3], color=color, alpha=0.12, linewidth=0)
                 ax.plot([steps[-1], *ext[0]], [means[-1], *ext[1]], color=color, linewidth=2,
                         linestyle=(0, (3, 2)), marker="o", markersize=4,
-                        markerfacecolor="#fcfcfb")
+                        markerfacecolor="#fcfcfb", markevery=list(range(1, len(ext[0]) + 1)))
                 end = (ext[0][-1], ext[1][-1])
             ends[agent] = end
         # Direct-label only lines that end clear of all others; the legend names every line.

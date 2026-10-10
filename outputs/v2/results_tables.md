@@ -68,7 +68,9 @@
 | Agent | Seeds | Choice rate T1/T2 | Mean drive | DI (T1) | RI (T2) | RI_spec | T1 | T2 |
 |---|---|---|---|---|---|---|---|---|
 | `ppo_free_intero` | 10 | 0.97 / 0.99 | 0.108 | +0.87 [+0.83, +0.91] | -0.00 [-0.00, +0.00] | -0.00 [-0.01, +0.00] | pass | fail |
+| `rppo_free_intero` | 10 | 1.00 / 0.99 | 0.103 | +1.00 [+0.99, +1.00] | +0.00 [+0.00, +0.00] | -0.00 [-0.00, +0.00] | pass | fail |
 
 | ID | Prediction (30M) | Outcome |
 |---|---|---|
 | P3 | ppo_free_intero passes T1 but fails T2 | supported (T1 pass, T2 fail) |
+| P4 | rppo_free_intero passes T1 but fails T2 | supported (T1 pass, T2 fail) |

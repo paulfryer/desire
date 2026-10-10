@@ -1,6 +1,6 @@
 # Wanting vs. Habit — v2 Results
 
-*Status: complete except the recurrent model-free agent's 30M extension (training).*
+*Status: complete (2026-10-10).*
 
 All numbers are means over 10 independently trained seeds, with 95% percentile-bootstrap CIs over seeds. Verdicts follow the pre-registered rules in `docs/RESEARCH_DESIGN_v2.md` §6, as amended:
 - Amendment 2: the specificity guard.
@@ -21,9 +21,9 @@ Generated tables: `outputs/v2/results_tables.md`. Per-seed data: `outputs/v2/pla
 2. **Zero-shot revaluation appeared only where value is computed at decision time from a learned model of outcomes and an innate need function.** That covers the homeostatic planner and active inference: both pass both tests in every seed, and they are indistinguishable from each other.
 3. **Learned value fails out of distribution, even with the right inputs and a good model.**
    - The model-based agent with a learned *reward* model passes devaluation and fails revaluation (RI +0.15).
-   - The model-free agent, trained to 30M steps, forages almost as well as the oracle and passes devaluation in every seed (DI +0.87). It never once chooses the remedy for a need it has not experienced (RI 0.00).
-   - Responding to needs in familiar situations is not the same as wanting outcomes.
-4. **What model-free training produces is a satiety veto, not graded wanting.** The model-free agent avoids what it is full of. But it is nearly indifferent between a slightly-needed and a badly-needed nutrient (45% vs the oracle's 100%). An agent trained in a single need state is a pure habit agent (DI 0) despite perfect foraging.
+   - Model-free agents trained to 30M steps forage as well as the oracle and pass devaluation in every seed. The recurrent agent is at ceiling (DI +1.00), with graded, near-oracle sensitivity to familiar needs. Neither ever chooses the remedy for a need it has not experienced (RI 0.00, P(C) = 0.0% when deprived of C).
+   - Responding to needs, even in a graded way, in familiar need states is not the same as wanting outcomes.
+4. **Devaluation alone cannot separate these.** Feedforward PPO passes devaluation with a satiety veto: it avoids what it is full of but is nearly indifferent between slightly- and badly-needed nutrients (45% vs the oracle's 100%). Recurrent PPO passes with graded need sensitivity. Both fail revaluation identically. An agent trained in a single need state is a pure habit agent (DI 0) despite perfect foraging.
 5. **Framework labels don't matter; ingredients do.** Active inference and the homeostatic planner behave identically, and the novelty term had no measurable effect.
 
 **Implications.**
@@ -107,22 +107,24 @@ Both interoceptive agents were continued from their 10M models to 30M, with ever
 | Agent | Choice rate T1/T2 | DI (T1) | RI (T2) | RI_spec | Mean drive | Verdict |
 |---|---|---|---|---|---|---|
 | `ppo_free_intero` | 0.97 / 0.99 | **+0.87** [+0.83, +0.91] | **−0.00** [−0.00, +0.00] | −0.00 [−0.01, +0.00] | 0.108 | **P3 supported** |
-| `rppo_free_intero` | *training* | | | | | |
+| `rppo_free_intero` | 1.00 / 0.99 | **+1.00** [+0.99, +1.00] | **+0.00** [+0.00, +0.00] | −0.00 [−0.00, +0.00] | 0.103 | **P4 supported** |
 
-**P3 is supported.**
-- At 30M, `ppo_free_intero` meets the competence criterion in every seed and forages almost as well as the oracle (mean drive 0.108 vs 0.100).
-- It passes devaluation in every seed: DI 0.75–0.96, with the sated item chosen 6% of the time.
-- It never revalues. When deprived of C it chooses C in 0.0% of probes, while making a choice on 98% of them.
+**P3 and P4 are both supported.** At 30M both agents:
+- meet the competence criterion in every seed;
+- forage about as well as the oracle (mean drive 0.108 and 0.103 vs 0.100; some recurrent seeds beat it, at 0.086, because the oracle plans only 20 steps ahead);
+- pass devaluation in every seed. The recurrent agent is at ceiling: DI 0.98–1.00, with the sated item chosen in 0.2% of probes.
 
-More training made the agent better at everything the assays test *in distribution*, and left zero-shot revaluation exactly where it started.
+Neither ever revalues. When deprived of C, `ppo_free_intero` chooses C in 0.0% of probes and `rppo_free_intero` in 0.0%, while making a choice on 98% and 99% of them. Tripling training made both agents better at everything the assays test *in distribution* and left zero-shot revaluation exactly where it started (`outputs/v2/figures/training_amount.png`).
 
-The 30M need sweep (`outputs/v2/need_sweep_30M/`) shows what the extra training bought:
-- The agent now almost never picks a sated item (P ≈ 0.0–0.15 at level 0.5).
-- When A is far more depleted than the alternative (0.05 vs 0.3), it still picks A in only about 45% of probes, where the oracle picks it in 100%.
+The 30M need sweep (`outputs/v2/figures/need_sweep_30M.png`) shows that the two architectures learned different things about A:
+- **Feedforward PPO learned a satiety veto.** It almost never picks a sated item (P(A) = 0.05 at level 0.5). But when A is far more depleted than the alternative (0.05 vs 0.3), it still picks A in only 45% of probes, where the oracle picks it in 100%. "Don't eat what you are full of" passes devaluation without graded valuation, and T1 cannot tell the two apart.
+- **Recurrent PPO learned graded need sensitivity.** P(A) goes 0.00 → 0.14 → 0.55 (at equal need) → 0.74 → 0.81 → 0.84 as A is depleted, close to the oracle's step function. Its C curve is flat at 0.00.
 
-It learned something closer to a satiety veto, "don't eat what you are full of", than a graded valuation of outcomes by need. Devaluation (T1) cannot tell these apart; the sweep can.
+The recurrent agent is therefore the strongest test of the central hypothesis. On the nutrients it was trained with, its behavior is close to indistinguishable from an ideal wanting agent. On a need it has not experienced, it is a pure habit agent.
 
 ### 3.3 What the model-free agents learned (exploratory)
+
+*This subsection describes the 10M agents; §3.2 covers 30M.*
 
 **Need sensitivity in distribution, none out of distribution.** The interoceptive agents switch away from a sated nutrient (DI ≈ +0.6) but do not seek C when deprived of it. P(choose C) is 0.10 when deprived of C and 0.08 when not (`ppo_free_intero`), and 0.03 and 0.03 (`rppo_free_intero`). The choice-rate shortfall is not specific to C deprivation: choice rates are similar in all four T2 conditions (0.77–0.82 for `ppo_free_intero`). So the near-zero RI is not explained by the agents freezing when deprived of C.
 

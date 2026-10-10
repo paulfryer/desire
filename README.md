@@ -17,6 +17,16 @@ The tests are run on a set of agents built from controlled ingredients:
 
 > **History.** This project began as "do active-inference agents show desire-like signatures that RL agents don't?" (v1, the paper draft in `paper/`). That question was retired in October 2026: its six behavioral predicates turned out to be passed by agents with no desire at all, or to depend on scoring bugs (`docs/LEGACY_VALIDITY.md`). The v1 code remains on `main`; this branch replaces it.
 
+## Main result
+
+Agents that compute an outcome's value at decision time, from a learned model of what each item does and an innate need function, pass both tests. That holds whether the agent is a homeostatic planner or active inference; the two are indistinguishable.
+
+Agents whose valuations are learned fail zero-shot revaluation:
+- **Model-based agent with a learned reward model:** RI +0.15.
+- **Recurrent model-free agent, trained to 30M steps:** forages as well as the oracle, passes devaluation perfectly (DI +1.00) and shows graded sensitivity to familiar needs. It still never once seeks the remedy for an unfamiliar need (RI 0.00).
+
+In-distribution need sensitivity is not wanting. Details: `docs/RESULTS_v2.md`.
+
 ## Documents
 
 | File | Contents |

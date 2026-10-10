@@ -77,7 +77,7 @@ def plot(root: Path, path: Path):
     cols = 3
     rows = int(np.ceil(len(agents) / cols))
     fig, axes = plt.subplots(rows, cols, figsize=(10, 2.6 * rows + 0.6), sharex=True,
-                             sharey=True, facecolor="#fcfcfb")
+                             sharey=True, squeeze=False, facecolor="#fcfcfb")
     labels = {"A": "A: need varied in training", "C": "C: never deprived in training"}
     x = np.array(LEVELS)
     for ax in axes.flat[len(agents):]:
