@@ -97,9 +97,9 @@ def build_model(name: str, env, seed: int, features: str = "flat", n_steps: int 
     algo = AGENTS[name][0]
     policy_kwargs = {"features_extractor_class": SplitFeatures if features == "split" else GridFeatures,
                      "net_arch": {"pi": [256, 256], "vf": [256, 256]}}
-    common = dict(learning_rate=3e-4, n_steps=n_steps, batch_size=batch_size, n_epochs=4,
-                  gamma=0.99, gae_lambda=0.95, clip_range=0.2, ent_coef=0.01, seed=seed,
-                  device="cpu", verbose=0)
+    common = {"learning_rate": 3e-4, "n_steps": n_steps, "batch_size": batch_size, "n_epochs": 4,
+              "gamma": 0.99, "gae_lambda": 0.95, "clip_range": 0.2, "ent_coef": 0.01,
+              "seed": seed, "device": "cpu", "verbose": 0}
     if algo == "ppo":
         return PPO("MultiInputPolicy", env, policy_kwargs=policy_kwargs, **common)
     policy_kwargs.update(lstm_hidden_size=128, n_lstm_layers=1, shared_lstm=False,
