@@ -2,7 +2,7 @@
 
 Research codebase asking which computational ingredients make an artificial agent *want* an outcome (need-sensitive valuation of a represented outcome) rather than act from habit, measured with outcome-devaluation and zero-shot-revaluation assays validated on ground-truth control agents.
 
-**Start here:** `docs/RESEARCH_DESIGN_v2.md` (design and pre-registered predictions, with dated amendments), `docs/RESULTS_v2.md` (results), `docs/LEGACY_VALIDITY.md` (why the v1 "AIF vs RL desire predicates" project was retired). The v1 code lives on `main`; this line of work is on branch `wanting-vs-habit`.
+**Start here:** `docs/RESEARCH_DESIGN_v2.md` (design and pre-registered predictions, with dated amendments), `docs/RESULTS_v2.md` (results), `docs/HELDOUT_DESIGN.md` + `docs/RESULTS_HELDOUT.md` (v3 held-out-need experiment), `docs/LEGACY_VALIDITY.md` (why the v1 "AIF vs RL desire predicates" project was retired). The v1 code lives on `main`; this line of work is on branch `wanting-vs-habit`.
 
 ## Environment
 
@@ -37,6 +37,12 @@ python experiments/need_sweep.py --seeds 0-9 && python experiments/need_sweep.py
 
 # Tables, prediction scorecard, figures -> outputs/v2/
 python experiments/analyze_v2.py
+
+# v3 held-out need (design frozen; analysis frozen in analyze_v3.py; plot_v3.py is exploratory)
+python experiments/launch_heldout.py main --steps 30000000 --parallel 9 \
+    --learning-rate learned-level-K6=1e-4 mlp-K6=1e-4
+python experiments/run_heldout.py learned --shard 0/8       # one of 8 workers; refuses until all runs finish
+python experiments/analyze_v3.py && python experiments/plot_v3.py
 ```
 
 ## Rules for this project

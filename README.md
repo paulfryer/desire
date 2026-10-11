@@ -27,12 +27,28 @@ Agents whose valuations are learned fail zero-shot revaluation:
 
 In-distribution need sensitivity is not wanting. Details: `docs/RESULTS_v2.md`.
 
+**Follow-up (v3, held-out need).** That v2 failure was close to guaranteed by construction: nothing linked an item to its nutrient. So v3 gave model-free learners a fairer test. They had object-based inputs, seven nutrients, and a held-out nutrient they experienced but never needed. Everything was pre-registered with numeric priors and one scoring rule.
+
+The primary, best-shot arm (a built-in item-need match, 20 seeds) came out **inconclusive** by the frozen rule:
+- Held-out revaluation was +0.28 [+0.13, +0.44], against +0.96 on trained needs.
+- On average the deprived agent still preferred a less-needed familiar item: SI_H −0.43 [−0.74, −0.12].
+- Seeds split: by the pre-registered per-seed criterion, 4 of 20 transferred (interval 6–44%), while 11 had held-out revaluation ≤ 0.13.
+
+None of the other arms transferred:
+- With a learned match, or with only two trained needs, held-out revaluation was negligible.
+- With a code-dependent read-out, or with H held constant in training, the verdict was inconclusive.
+- The MLP never learned the task, so it tested nothing.
+
+My pre-registered prior scored worse than a uniform guess (Brier 1.01). Details: `docs/RESULTS_HELDOUT.md`.
+
 ## Documents
 
 | File | Contents |
 |---|---|
 | `docs/RESEARCH_DESIGN_v2.md` | The question, environment, assays, agents and the **pre-registered predictions** (with dated amendments made before the relevant results) |
 | `docs/RESULTS_v2.md` | Results against those predictions |
+| `docs/HELDOUT_DESIGN.md` | v3 held-out-need experiment: frozen pre-registration, numeric priors, one scoring rule |
+| `docs/RESULTS_HELDOUT.md` | v3 results, the prior scorecard, and every deviation |
 | `docs/LITERATURE.md` | Literature review and novelty assessment |
 | `docs/LEGACY_VALIDITY.md` | Why the v1 predicates were retired |
 
@@ -69,6 +85,16 @@ python experiments/analyze_v2.py
 python experiments/need_sweep.py --seeds 0-9 && python experiments/need_sweep.py --plot
 ```
 
+v3, held-out need:
+
+```bash
+python experiments/run_heldout.py validity                     # scripted controls vs the scoring rule
+python experiments/launch_heldout.py main --steps 30000000 --parallel 9 \
+    --learning-rate learned-level-K6=1e-4 mlp-K6=1e-4         # 70 runs, ~17 h on a 10-core laptop
+for k in 0 1 2 3 4 5 6 7; do python experiments/run_heldout.py learned --shard $k/8 & done; wait
+python experiments/analyze_v3.py && python experiments/plot_v3.py   # -> outputs/v3/
+```
+
 Set `OMP_NUM_THREADS=1` when running training jobs in parallel. Each run records its exact settings in `outputs/v2/model_free*/<agent>/seed_<n>/run.json`.
 
 ## Layout
@@ -85,4 +111,6 @@ src/
 experiments/          runners, analysis, diagnostics
 tests/                unit tests
 outputs/v2/           per-seed assay results (JSON), summary, tables, figures
+src/env_n.py, src/assays_n.py, src/scoring_v3.py, src/agents/multi.py   v3 world, assays, rule, agents
+outputs/v3/           v3 per-seed assays, training logs, validity, summary, tables, figures
 ```
