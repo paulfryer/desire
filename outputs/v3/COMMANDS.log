@@ -1,1 +1,3 @@
 2026-10-10 07:01:01 run_heldout.py validity
+2026-10-10 07:11:46 launch_heldout.py pilot --steps 10000000 --parallel 6 (6 jobs)
+2026-10-10 07:38:18 launch_heldout.py main --steps 30000000 --parallel 9 --learning-rate learned-level-K6=1e-4 mlp-K6=1e-4 (70 jobs)

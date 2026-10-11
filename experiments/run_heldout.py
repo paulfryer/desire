@@ -3,6 +3,7 @@ Main evaluation for the held-out-need experiment (docs/HELDOUT_DESIGN.md §5, §
 
     python experiments/run_heldout.py validity     # scripted controls, seeds 0-9
     python experiments/run_heldout.py learned      # main runs; refuses until ALL have finished
+    python experiments/run_heldout.py learned --shard 0/8   # one of 8 parallel workers
 
 Writes one JSON per (agent, seed) to outputs/v3/validity/ or outputs/v3/assays/: the final
 model's assays and, for learned agents, the assays at each checkpoint (exploratory curves).
@@ -60,7 +61,7 @@ def load(path: Path, arm: str) -> SB3Agent:
     return SB3Agent(PPO.load(path, device="cpu"), arm, interoception=True)
 
 
-def learned(runs: Path):
+def learned(runs: Path, shard: tuple[int, int] = (0, 1)):
     missing = [f"{arm}/seed_{s}" for arm in ARMS for s in SEEDS[arm]
                if not (runs / arm / f"seed_{s}" / "final.zip").exists()]
     if missing:
@@ -69,29 +70,31 @@ def learned(runs: Path):
     torch.set_num_threads(1)
     out = ROOT / "assays"
     out.mkdir(parents=True, exist_ok=True)
-    for arm in ARMS:
-        for seed in SEEDS[arm]:
-            run_dir = runs / arm / f"seed_{seed}"
-            path = out / f"{arm}_seed{seed}.json"
-            if path.exists():
-                continue
-            world = world_of(arm, seed)
-            result = {"arm": arm, "seed": seed, **evaluate(load(run_dir / "final.zip", arm), world, seed),
-                      "checkpoints": {}}
-            for ckpt in sorted((run_dir / "checkpoints").glob("step_*.zip")):
-                result["checkpoints"][int(ckpt.stem.split("_")[1])] = evaluate(
-                    load(ckpt, arm), world, seed, with_competence=False)
-            path.write_text(json.dumps(result, indent=1))
-            h = result["heldout"]
-            print(f"{arm:21s} seed {seed}: RI_T={result['trained']['RI_T']:+.2f} RI_H={h['RI_H']:+.2f} "
-                  f"RI_spec_H={h['RI_spec_H']:+.2f} RI_dir_H={h['RI_dir_H']:+.2f} SI_H={h['SI_H']:+.2f}",
-                  flush=True)
+    k, n = shard
+    jobs = [(arm, seed) for arm in ARMS for seed in SEEDS[arm]][k::n]   # every evaluation seeds itself
+    for arm, seed in jobs:
+        run_dir = runs / arm / f"seed_{seed}"
+        path = out / f"{arm}_seed{seed}.json"
+        if path.exists():
+            continue
+        world = world_of(arm, seed)
+        result = {"arm": arm, "seed": seed, **evaluate(load(run_dir / "final.zip", arm), world, seed),
+                  "checkpoints": {}}
+        for ckpt in sorted((run_dir / "checkpoints").glob("step_*.zip")):
+            result["checkpoints"][int(ckpt.stem.split("_")[1])] = evaluate(
+                load(ckpt, arm), world, seed, with_competence=False)
+        path.write_text(json.dumps(result, indent=1))
+        h = result["heldout"]
+        print(f"{arm:21s} seed {seed}: RI_T={result['trained']['RI_T']:+.2f} RI_H={h['RI_H']:+.2f} "
+              f"RI_spec_H={h['RI_spec_H']:+.2f} RI_dir_H={h['RI_dir_H']:+.2f} SI_H={h['SI_H']:+.2f}",
+              flush=True)
 
 
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("what", choices=["validity", "learned"])
     parser.add_argument("--runs", type=Path, default=ROOT / "runs")
+    parser.add_argument("--shard", default="0/1", help="k/n: evaluate every n-th run starting at k")
     args = parser.parse_args()
     ROOT.mkdir(parents=True, exist_ok=True)
     with open(ROOT / "COMMANDS.log", "a") as f:
@@ -99,7 +102,7 @@ def main():
     if args.what == "validity":
         validity(range(10))
     else:
-        learned(args.runs)
+        learned(args.runs, tuple(int(x) for x in args.shard.split("/")))
 
 
 if __name__ == "__main__":
