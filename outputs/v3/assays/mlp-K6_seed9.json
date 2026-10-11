@@ -1,0 +1,828 @@
+{
+ "arm": "mlp-K6",
+ "seed": 9,
+ "trained": {
+  "RI_T": -0.05182035609885727,
+  "SI_T": -0.028169014084507005,
+  "conditions": {
+   "dep_T": {
+    "n": 200,
+    "choices": 70,
+    "hits": 34,
+    "choice_rate": 0.35,
+    "p_target": 0.4859154929577465
+   },
+   "ctrl_T": {
+    "n": 200,
+    "choices": 52,
+    "hits": 28,
+    "choice_rate": 0.26,
+    "p_target": 0.5377358490566038
+   }
+  }
+ },
+ "heldout": {
+  "RI_H": 0.044642857142857095,
+  "RI_spec_H": 0.15062111801242234,
+  "RI_dir_H": 0.33082706766917286,
+  "SI_H": 0.2142857142857142,
+  "RI_novel": -0.09440559440559437,
+  "SI_novel": 0.03846153846153855,
+  "sweep": {
+   "0.4": 0.7222222222222222,
+   "0.3": 0.4166666666666667,
+   "0.2": 0.43333333333333335,
+   "0.1": 0.6111111111111112,
+   "0.05": 0.6875
+  },
+  "conditions": {
+   "dep_H": {
+    "n": 200,
+    "choices": 13,
+    "hits": 8,
+    "choice_rate": 0.065,
+    "p_target": 0.6071428571428571
+   },
+   "ctrl_H": {
+    "n": 200,
+    "choices": 7,
+    "hits": 4,
+    "choice_rate": 0.035,
+    "p_target": 0.5625
+   },
+   "guard_H": {
+    "n": 200,
+    "choices": 22,
+    "hits": 10,
+    "choice_rate": 0.11,
+    "p_target": 0.45652173913043476
+   },
+   "over_H": {
+    "n": 200,
+    "choices": 37,
+    "hits": 10,
+    "choice_rate": 0.185,
+    "p_target": 0.27631578947368424
+   },
+   "dep_novel": {
+    "n": 200,
+    "choices": 25,
+    "hits": 13,
+    "choice_rate": 0.125,
+    "p_target": 0.5192307692307693
+   },
+   "ctrl_novel": {
+    "n": 200,
+    "choices": 21,
+    "hits": 13,
+    "choice_rate": 0.105,
+    "p_target": 0.6136363636363636
+   },
+   "sweep_0.4": {
+    "n": 200,
+    "choices": 8,
+    "hits": 6,
+    "choice_rate": 0.04,
+    "p_target": 0.7222222222222222
+   },
+   "sweep_0.3": {
+    "n": 200,
+    "choices": 5,
+    "hits": 2,
+    "choice_rate": 0.025,
+    "p_target": 0.4166666666666667
+   },
+   "sweep_0.2": {
+    "n": 200,
+    "choices": 14,
+    "hits": 6,
+    "choice_rate": 0.07,
+    "p_target": 0.43333333333333335
+   },
+   "sweep_0.1": {
+    "n": 200,
+    "choices": 8,
+    "hits": 5,
+    "choice_rate": 0.04,
+    "p_target": 0.6111111111111112
+   },
+   "sweep_0.05": {
+    "n": 200,
+    "choices": 7,
+    "hits": 5,
+    "choice_rate": 0.035,
+    "p_target": 0.6875
+   }
+  }
+ },
+ "competence": {
+  "mean_drive": 0.692868860571466,
+  "eaten_per_episode": [
+   1.5,
+   1.65625,
+   1.5625,
+   2.15625,
+   1.84375,
+   2.0,
+   1.625
+  ]
+ },
+ "checkpoints": {
+  "937500": {
+   "trained": {
+    "RI_T": 0.05657748049052397,
+    "SI_T": -0.08974358974358976,
+    "conditions": {
+     "dep_T": {
+      "n": 200,
+      "choices": 77,
+      "hits": 35,
+      "choice_rate": 0.385,
+      "p_target": 0.4551282051282051
+     },
+     "ctrl_T": {
+      "n": 200,
+      "choices": 68,
+      "hits": 27,
+      "choice_rate": 0.34,
+      "p_target": 0.39855072463768115
+     }
+    }
+   },
+   "heldout": {
+    "RI_H": -0.04468864468864464,
+    "RI_spec_H": 0.04841269841269835,
+    "RI_dir_H": 0.024512987012986986,
+    "SI_H": 0.12857142857142856,
+    "RI_novel": -0.04694570135746606,
+    "SI_novel": -0.13235294117647056,
+    "sweep": {
+     "0.4": 0.577922077922078,
+     "0.3": 0.5845070422535211,
+     "0.2": 0.4930555555555556,
+     "0.1": 0.43333333333333335,
+     "0.05": 0.5234375
+    },
+    "conditions": {
+     "dep_H": {
+      "n": 200,
+      "choices": 69,
+      "hits": 39,
+      "choice_rate": 0.345,
+      "p_target": 0.5642857142857143
+     },
+     "ctrl_H": {
+      "n": 200,
+      "choices": 77,
+      "hits": 47,
+      "choice_rate": 0.385,
+      "p_target": 0.6089743589743589
+     },
+     "guard_H": {
+      "n": 200,
+      "choices": 62,
+      "hits": 32,
+      "choice_rate": 0.31,
+      "p_target": 0.5158730158730159
+     },
+     "over_H": {
+      "n": 200,
+      "choices": 87,
+      "hits": 47,
+      "choice_rate": 0.435,
+      "p_target": 0.5397727272727273
+     },
+     "dep_novel": {
+      "n": 200,
+      "choices": 67,
+      "hits": 29,
+      "choice_rate": 0.335,
+      "p_target": 0.4338235294117647
+     },
+     "ctrl_novel": {
+      "n": 200,
+      "choices": 77,
+      "hits": 37,
+      "choice_rate": 0.385,
+      "p_target": 0.4807692307692308
+     },
+     "sweep_0.4": {
+      "n": 200,
+      "choices": 76,
+      "hits": 44,
+      "choice_rate": 0.38,
+      "p_target": 0.577922077922078
+     },
+     "sweep_0.3": {
+      "n": 200,
+      "choices": 70,
+      "hits": 41,
+      "choice_rate": 0.35,
+      "p_target": 0.5845070422535211
+     },
+     "sweep_0.2": {
+      "n": 200,
+      "choices": 71,
+      "hits": 35,
+      "choice_rate": 0.355,
+      "p_target": 0.4930555555555556
+     },
+     "sweep_0.1": {
+      "n": 200,
+      "choices": 74,
+      "hits": 32,
+      "choice_rate": 0.37,
+      "p_target": 0.43333333333333335
+     },
+     "sweep_0.05": {
+      "n": 200,
+      "choices": 63,
+      "hits": 33,
+      "choice_rate": 0.315,
+      "p_target": 0.5234375
+     }
+    }
+   }
+  },
+  "1874999": {
+   "trained": {
+    "RI_T": 0.06361063950198076,
+    "SI_T": 0.043010752688172005,
+    "conditions": {
+     "dep_T": {
+      "n": 200,
+      "choices": 92,
+      "hits": 48,
+      "choice_rate": 0.46,
+      "p_target": 0.521505376344086
+     },
+     "ctrl_T": {
+      "n": 200,
+      "choices": 94,
+      "hits": 43,
+      "choice_rate": 0.47,
+      "p_target": 0.45789473684210524
+     }
+    }
+   },
+   "heldout": {
+    "RI_H": 0.00463598901098905,
+    "RI_spec_H": 0.038613505747126464,
+    "RI_dir_H": -0.028492647058823484,
+    "SI_H": 0.03125,
+    "RI_novel": 0.12418831168831174,
+    "SI_novel": 0.03409090909090917,
+    "sweep": {
+     "0.4": 0.5659340659340659,
+     "0.3": 0.5054347826086957,
+     "0.2": 0.47701149425287354,
+     "0.1": 0.5,
+     "0.05": 0.4797979797979798
+    },
+    "conditions": {
+     "dep_H": {
+      "n": 200,
+      "choices": 95,
+      "hits": 49,
+      "choice_rate": 0.475,
+      "p_target": 0.515625
+     },
+     "ctrl_H": {
+      "n": 200,
+      "choices": 90,
+      "hits": 46,
+      "choice_rate": 0.45,
+      "p_target": 0.510989010989011
+     },
+     "guard_H": {
+      "n": 200,
+      "choices": 86,
+      "hits": 41,
+      "choice_rate": 0.43,
+      "p_target": 0.47701149425287354
+     },
+     "over_H": {
+      "n": 200,
+      "choices": 101,
+      "hits": 55,
+      "choice_rate": 0.505,
+      "p_target": 0.5441176470588235
+     },
+     "dep_novel": {
+      "n": 200,
+      "choices": 87,
+      "hits": 45,
+      "choice_rate": 0.435,
+      "p_target": 0.5170454545454546
+     },
+     "ctrl_novel": {
+      "n": 200,
+      "choices": 97,
+      "hits": 38,
+      "choice_rate": 0.485,
+      "p_target": 0.39285714285714285
+     },
+     "sweep_0.4": {
+      "n": 200,
+      "choices": 90,
+      "hits": 51,
+      "choice_rate": 0.45,
+      "p_target": 0.5659340659340659
+     },
+     "sweep_0.3": {
+      "n": 200,
+      "choices": 91,
+      "hits": 46,
+      "choice_rate": 0.455,
+      "p_target": 0.5054347826086957
+     },
+     "sweep_0.2": {
+      "n": 200,
+      "choices": 86,
+      "hits": 41,
+      "choice_rate": 0.43,
+      "p_target": 0.47701149425287354
+     },
+     "sweep_0.1": {
+      "n": 200,
+      "choices": 90,
+      "hits": 45,
+      "choice_rate": 0.45,
+      "p_target": 0.5
+     },
+     "sweep_0.05": {
+      "n": 200,
+      "choices": 98,
+      "hits": 47,
+      "choice_rate": 0.49,
+      "p_target": 0.4797979797979798
+     }
+    }
+   }
+  },
+  "3750000": {
+   "trained": {
+    "RI_T": 0.019781611014401013,
+    "SI_T": -0.0449438202247191,
+    "conditions": {
+     "dep_T": {
+      "n": 200,
+      "choices": 88,
+      "hits": 42,
+      "choice_rate": 0.44,
+      "p_target": 0.47752808988764045
+     },
+     "ctrl_T": {
+      "n": 200,
+      "choices": 70,
+      "hits": 32,
+      "choice_rate": 0.35,
+      "p_target": 0.45774647887323944
+     }
+    }
+   },
+   "heldout": {
+    "RI_H": -0.06347402597402602,
+    "RI_spec_H": 0.049404761904761896,
+    "RI_dir_H": 0.015581232492997199,
+    "SI_H": -0.017857142857142905,
+    "RI_novel": 0.014084507042253502,
+    "SI_novel": 0.028169014084507005,
+    "sweep": {
+     "0.4": 0.5175438596491229,
+     "0.3": 0.4453125,
+     "0.2": 0.5491803278688525,
+     "0.1": 0.4296875,
+     "0.05": 0.4855072463768116
+    },
+    "conditions": {
+     "dep_H": {
+      "n": 200,
+      "choices": 55,
+      "hits": 27,
+      "choice_rate": 0.275,
+      "p_target": 0.49107142857142855
+     },
+     "ctrl_H": {
+      "n": 200,
+      "choices": 54,
+      "hits": 30,
+      "choice_rate": 0.27,
+      "p_target": 0.5545454545454546
+     },
+     "guard_H": {
+      "n": 200,
+      "choices": 59,
+      "hits": 26,
+      "choice_rate": 0.295,
+      "p_target": 0.44166666666666665
+     },
+     "over_H": {
+      "n": 200,
+      "choices": 101,
+      "hits": 48,
+      "choice_rate": 0.505,
+      "p_target": 0.47549019607843135
+     },
+     "dep_novel": {
+      "n": 200,
+      "choices": 70,
+      "hits": 36,
+      "choice_rate": 0.35,
+      "p_target": 0.5140845070422535
+     },
+     "ctrl_novel": {
+      "n": 200,
+      "choices": 64,
+      "hits": 32,
+      "choice_rate": 0.32,
+      "p_target": 0.5
+     },
+     "sweep_0.4": {
+      "n": 200,
+      "choices": 56,
+      "hits": 29,
+      "choice_rate": 0.28,
+      "p_target": 0.5175438596491229
+     },
+     "sweep_0.3": {
+      "n": 200,
+      "choices": 63,
+      "hits": 28,
+      "choice_rate": 0.315,
+      "p_target": 0.4453125
+     },
+     "sweep_0.2": {
+      "n": 200,
+      "choices": 60,
+      "hits": 33,
+      "choice_rate": 0.3,
+      "p_target": 0.5491803278688525
+     },
+     "sweep_0.1": {
+      "n": 200,
+      "choices": 63,
+      "hits": 27,
+      "choice_rate": 0.315,
+      "p_target": 0.4296875
+     },
+     "sweep_0.05": {
+      "n": 200,
+      "choices": 68,
+      "hits": 33,
+      "choice_rate": 0.34,
+      "p_target": 0.4855072463768116
+     }
+    }
+   }
+  },
+  "7500000": {
+   "trained": {
+    "RI_T": -0.0551114341085272,
+    "SI_T": -0.05208333333333337,
+    "conditions": {
+     "dep_T": {
+      "n": 200,
+      "choices": 95,
+      "hits": 45,
+      "choice_rate": 0.475,
+      "p_target": 0.4739583333333333
+     },
+     "ctrl_T": {
+      "n": 200,
+      "choices": 85,
+      "hits": 45,
+      "choice_rate": 0.425,
+      "p_target": 0.5290697674418605
+     }
+    }
+   },
+   "heldout": {
+    "RI_H": -0.03397212543554007,
+    "RI_spec_H": -0.01942355889724312,
+    "RI_dir_H": 0.10181236673773986,
+    "SI_H": -0.2142857142857143,
+    "RI_novel": 0.1172813036020583,
+    "SI_novel": 0.07547169811320753,
+    "sweep": {
+     "0.4": 0.5357142857142857,
+     "0.3": 0.5,
+     "0.2": 0.4411764705882353,
+     "0.1": 0.4880952380952381,
+     "0.05": 0.42045454545454547
+    },
+    "conditions": {
+     "dep_H": {
+      "n": 200,
+      "choices": 41,
+      "hits": 16,
+      "choice_rate": 0.205,
+      "p_target": 0.39285714285714285
+     },
+     "ctrl_H": {
+      "n": 200,
+      "choices": 40,
+      "hits": 17,
+      "choice_rate": 0.2,
+      "p_target": 0.4268292682926829
+     },
+     "guard_H": {
+      "n": 200,
+      "choices": 56,
+      "hits": 23,
+      "choice_rate": 0.28,
+      "p_target": 0.41228070175438597
+     },
+     "over_H": {
+      "n": 200,
+      "choices": 66,
+      "hits": 19,
+      "choice_rate": 0.33,
+      "p_target": 0.291044776119403
+     },
+     "dep_novel": {
+      "n": 200,
+      "choices": 52,
+      "hits": 28,
+      "choice_rate": 0.26,
+      "p_target": 0.5377358490566038
+     },
+     "ctrl_novel": {
+      "n": 200,
+      "choices": 43,
+      "hits": 18,
+      "choice_rate": 0.215,
+      "p_target": 0.42045454545454547
+     },
+     "sweep_0.4": {
+      "n": 200,
+      "choices": 41,
+      "hits": 22,
+      "choice_rate": 0.205,
+      "p_target": 0.5357142857142857
+     },
+     "sweep_0.3": {
+      "n": 200,
+      "choices": 50,
+      "hits": 25,
+      "choice_rate": 0.25,
+      "p_target": 0.5
+     },
+     "sweep_0.2": {
+      "n": 200,
+      "choices": 50,
+      "hits": 22,
+      "choice_rate": 0.25,
+      "p_target": 0.4411764705882353
+     },
+     "sweep_0.1": {
+      "n": 200,
+      "choices": 41,
+      "hits": 20,
+      "choice_rate": 0.205,
+      "p_target": 0.4880952380952381
+     },
+     "sweep_0.05": {
+      "n": 200,
+      "choices": 43,
+      "hits": 18,
+      "choice_rate": 0.215,
+      "p_target": 0.42045454545454547
+     }
+    }
+   }
+  },
+  "15000000": {
+   "trained": {
+    "RI_T": -0.04839506172839508,
+    "SI_T": -0.12345679012345678,
+    "conditions": {
+     "dep_T": {
+      "n": 200,
+      "choices": 80,
+      "hits": 35,
+      "choice_rate": 0.4,
+      "p_target": 0.4382716049382716
+     },
+     "ctrl_T": {
+      "n": 200,
+      "choices": 74,
+      "hits": 36,
+      "choice_rate": 0.37,
+      "p_target": 0.4866666666666667
+     }
+    }
+   },
+   "heldout": {
+    "RI_H": -0.05416666666666664,
+    "RI_spec_H": 0.03830645161290325,
+    "RI_dir_H": 0.048986486486486513,
+    "SI_H": -0.375,
+    "RI_novel": 0.04878048780487809,
+    "SI_novel": 0.09756097560975618,
+    "sweep": {
+     "0.4": 0.7222222222222222,
+     "0.3": 0.08333333333333333,
+     "0.2": 0.4230769230769231,
+     "0.1": 0.4166666666666667,
+     "0.05": 0.4375
+    },
+    "conditions": {
+     "dep_H": {
+      "n": 200,
+      "choices": 7,
+      "hits": 2,
+      "choice_rate": 0.035,
+      "p_target": 0.3125
+     },
+     "ctrl_H": {
+      "n": 200,
+      "choices": 14,
+      "hits": 5,
+      "choice_rate": 0.07,
+      "p_target": 0.36666666666666664
+     },
+     "guard_H": {
+      "n": 200,
+      "choices": 30,
+      "hits": 8,
+      "choice_rate": 0.15,
+      "p_target": 0.27419354838709675
+     },
+     "over_H": {
+      "n": 200,
+      "choices": 73,
+      "hits": 19,
+      "choice_rate": 0.365,
+      "p_target": 0.2635135135135135
+     },
+     "dep_novel": {
+      "n": 200,
+      "choices": 40,
+      "hits": 22,
+      "choice_rate": 0.2,
+      "p_target": 0.5487804878048781
+     },
+     "ctrl_novel": {
+      "n": 200,
+      "choices": 22,
+      "hits": 11,
+      "choice_rate": 0.11,
+      "p_target": 0.5
+     },
+     "sweep_0.4": {
+      "n": 200,
+      "choices": 8,
+      "hits": 6,
+      "choice_rate": 0.04,
+      "p_target": 0.7222222222222222
+     },
+     "sweep_0.3": {
+      "n": 200,
+      "choices": 5,
+      "hits": 0,
+      "choice_rate": 0.025,
+      "p_target": 0.08333333333333333
+     },
+     "sweep_0.2": {
+      "n": 200,
+      "choices": 12,
+      "hits": 5,
+      "choice_rate": 0.06,
+      "p_target": 0.4230769230769231
+     },
+     "sweep_0.1": {
+      "n": 200,
+      "choices": 5,
+      "hits": 2,
+      "choice_rate": 0.025,
+      "p_target": 0.4166666666666667
+     },
+     "sweep_0.05": {
+      "n": 200,
+      "choices": 7,
+      "hits": 3,
+      "choice_rate": 0.035,
+      "p_target": 0.4375
+     }
+    }
+   }
+  },
+  "30000000": {
+   "trained": {
+    "RI_T": -0.10265640516385299,
+    "SI_T": -0.09210526315789469,
+    "conditions": {
+     "dep_T": {
+      "n": 200,
+      "choices": 75,
+      "hits": 34,
+      "choice_rate": 0.375,
+      "p_target": 0.45394736842105265
+     },
+     "ctrl_T": {
+      "n": 200,
+      "choices": 52,
+      "hits": 29,
+      "choice_rate": 0.26,
+      "p_target": 0.5566037735849056
+     }
+    }
+   },
+   "heldout": {
+    "RI_H": 0.08333333333333331,
+    "RI_spec_H": 0.09523809523809523,
+    "RI_dir_H": 0.3088235294117647,
+    "SI_H": 0.0,
+    "RI_novel": -0.029904306220095767,
+    "SI_novel": 0.045454545454545414,
+    "sweep": {
+     "0.4": 0.6875,
+     "0.3": 0.5,
+     "0.2": 0.5357142857142857,
+     "0.1": 0.5833333333333334,
+     "0.05": 0.75
+    },
+    "conditions": {
+     "dep_H": {
+      "n": 200,
+      "choices": 8,
+      "hits": 4,
+      "choice_rate": 0.04,
+      "p_target": 0.5
+     },
+     "ctrl_H": {
+      "n": 200,
+      "choices": 5,
+      "hits": 2,
+      "choice_rate": 0.025,
+      "p_target": 0.4166666666666667
+     },
+     "guard_H": {
+      "n": 200,
+      "choices": 20,
+      "hits": 8,
+      "choice_rate": 0.1,
+      "p_target": 0.40476190476190477
+     },
+     "over_H": {
+      "n": 200,
+      "choices": 33,
+      "hits": 6,
+      "choice_rate": 0.165,
+      "p_target": 0.19117647058823528
+     },
+     "dep_novel": {
+      "n": 200,
+      "choices": 21,
+      "hits": 11,
+      "choice_rate": 0.105,
+      "p_target": 0.5227272727272727
+     },
+     "ctrl_novel": {
+      "n": 200,
+      "choices": 18,
+      "hits": 10,
+      "choice_rate": 0.09,
+      "p_target": 0.5526315789473685
+     },
+     "sweep_0.4": {
+      "n": 200,
+      "choices": 7,
+      "hits": 5,
+      "choice_rate": 0.035,
+      "p_target": 0.6875
+     },
+     "sweep_0.3": {
+      "n": 200,
+      "choices": 4,
+      "hits": 2,
+      "choice_rate": 0.02,
+      "p_target": 0.5
+     },
+     "sweep_0.2": {
+      "n": 200,
+      "choices": 13,
+      "hits": 7,
+      "choice_rate": 0.065,
+      "p_target": 0.5357142857142857
+     },
+     "sweep_0.1": {
+      "n": 200,
+      "choices": 5,
+      "hits": 3,
+      "choice_rate": 0.025,
+      "p_target": 0.5833333333333334
+     },
+     "sweep_0.05": {
+      "n": 200,
+      "choices": 5,
+      "hits": 4,
+      "choice_rate": 0.025,
+      "p_target": 0.75
+     }
+    }
+   }
+  }
+ }
+}

@@ -164,7 +164,8 @@ def tables(summary: dict) -> str:
               for k, v in summary["comparisons"].items()]
     if "prior_brier" in summary:
         lines += ["", f"Brier score of the pre-registered prior on the primary verdict: "
-                  f"{summary['prior_brier']:.3f} (0 = certain and right; 0.5 = uniform over 4)."]
+                  f"{summary['prior_brier']:.3f} (0 = certain and right; a uniform prior over the four "
+                  f"categories scores 0.75; 2 = certain and wrong)."]
     return "\n".join(lines) + "\n"
 
 

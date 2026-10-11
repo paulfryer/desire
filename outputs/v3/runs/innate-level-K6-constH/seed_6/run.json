@@ -1,0 +1,32 @@
+{
+  "arm": "innate-level-K6-constH",
+  "seed": 6,
+  "steps": 30000000,
+  "architecture": "attn",
+  "binding": "innate",
+  "readout": "level",
+  "n_nutrients": 7,
+  "n_depleting": 6,
+  "held_out_constant": true,
+  "held_out": 6,
+  "ppo": {
+    "learning_rate": 0.0003,
+    "n_steps": 256,
+    "batch_size": 4096,
+    "n_epochs": 4,
+    "gamma": 0.99,
+    "gae_lambda": 0.95,
+    "clip_range": 0.2,
+    "ent_coef": 0.01
+  },
+  "n_envs": 64,
+  "checkpoints": [
+    937500,
+    1874999,
+    3750000,
+    7500000,
+    15000000,
+    30000000
+  ],
+  "seconds": 7606.0
+}
