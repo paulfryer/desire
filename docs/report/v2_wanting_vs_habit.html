@@ -1,0 +1,682 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Wanting vs. Habit</title>
+<style>
+:root {
+  color-scheme: light;
+  --bg: #f4f3f0; --surface: #fcfcfb; --surface-2: #f0efec; --hover: rgba(0,0,0,.045);
+  --text: #0b0b0b; --text-2: #52514e; --text-3: #7d7c77;
+  --grid: #e4e3df; --axis: #a3a29c; --border: #e4e3df;
+  --s1: #2a78d6; --s2: #eb6834; --s3: #1baf7a; --s4: #eda100;
+  --good: #0ca30c; --warning: #fab219; --serious: #ec835a; --critical: #d03b3b;
+  --mono: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    color-scheme: dark;
+    --bg: #121211; --surface: #1a1a19; --surface-2: #222220; --hover: rgba(255,255,255,.05);
+    --text: #ffffff; --text-2: #c3c2b7; --text-3: #8f8e86;
+    --grid: #2e2e2c; --axis: #6a6964; --border: #2e2e2c;
+    --s1: #3987e5; --s2: #d95926; --s3: #199e70; --s4: #c98500;
+  }
+}
+:root[data-theme="dark"] {
+  color-scheme: dark;
+  --bg: #121211; --surface: #1a1a19; --surface-2: #222220; --hover: rgba(255,255,255,.05);
+  --text: #ffffff; --text-2: #c3c2b7; --text-3: #8f8e86;
+  --grid: #2e2e2c; --axis: #6a6964; --border: #2e2e2c;
+  --s1: #3987e5; --s2: #d95926; --s3: #199e70; --s4: #c98500;
+}
+* { box-sizing: border-box; }
+html, body { margin: 0; }
+body {
+  background: var(--bg); color: var(--text);
+  font: 15px/1.55 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  -webkit-font-smoothing: antialiased;
+}
+.wrap { max-width: 1120px; margin: 0 auto; padding: 32px 16px 64px; }
+header { display: flex; justify-content: space-between; align-items: flex-start; gap: 16px; }
+h1 { font-size: clamp(26px, 4vw, 36px); line-height: 1.15; margin: 0 0 6px; letter-spacing: -0.01em; }
+h2 { font-size: 21px; margin: 0 0 4px; letter-spacing: -0.005em; }
+h3 { font-size: 16px; margin: 0 0 6px; }
+p { margin: 0 0 10px; }
+.lede { color: var(--text-2); max-width: 760px; margin: 0; }
+.muted { color: var(--text-3); }
+.mono { font-family: var(--mono); font-size: .92em; }
+section { margin-top: 44px; }
+.section-sub { color: var(--text-2); margin: 0 0 16px; max-width: 820px; }
+.card { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 18px; }
+button.theme {
+  background: var(--surface); color: var(--text-2); border: 1px solid var(--border);
+  border-radius: 999px; padding: 6px 12px; font: inherit; font-size: 13px; cursor: pointer; white-space: nowrap;
+}
+button.theme:hover { color: var(--text); }
+
+/* Hero */
+.hero { margin-top: 24px; display: grid; gap: 16px; grid-template-columns: 1.1fr 1fr; align-items: stretch; }
+.hero .claim { font-size: clamp(19px, 2.4vw, 24px); line-height: 1.35; font-weight: 600; margin: 0 0 12px; }
+.hero .claim em { font-style: normal; color: var(--text); background: linear-gradient(transparent 62%, color-mix(in srgb, var(--s2) 30%, transparent) 62%); }
+.versus { width: 100%; border-collapse: collapse; font-size: 14px; }
+.versus th, .versus td { padding: 9px 8px; border-bottom: 1px solid var(--border); text-align: right; vertical-align: top; }
+.versus th:first-child, .versus td:first-child { text-align: left; color: var(--text-2); }
+.versus thead th { font-size: 12px; color: var(--text-2); font-weight: 600; }
+.versus td.big { font-size: 20px; font-weight: 650; font-variant-numeric: tabular-nums; }
+.versus tr.key td { background: var(--surface-2); }
+.versus tr:last-child td { border-bottom: 0; }
+.dotkey { display: inline-block; width: 9px; height: 9px; border-radius: 50%; margin-right: 6px; vertical-align: 1px; }
+
+/* Tests */
+.tests { display: grid; gap: 16px; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); }
+.gauges { margin: 12px 0; display: grid; gap: 6px; }
+.gauge { display: grid; grid-template-columns: 74px 1fr 92px; gap: 8px; align-items: center; font-size: 13px; }
+.gauge .bar { position: relative; height: 10px; background: var(--surface-2); border-radius: 5px; }
+.gauge .fill { position: absolute; left: 0; top: 0; bottom: 0; border-radius: 5px; background: var(--axis); }
+.gauge .fill.need { background: var(--text-2); }
+.gauge .set { position: absolute; left: 50%; top: -3px; bottom: -3px; width: 2px; background: var(--text); opacity: .55; }
+.gauge .state { color: var(--text-2); }
+.offer { font-size: 13px; color: var(--text-2); margin-bottom: 8px; }
+.answer { font-size: 14px; border-left: 3px solid var(--border); padding-left: 10px; color: var(--text-2); }
+.answer b { color: var(--text); }
+
+/* Timeline */
+.timeline { list-style: none; margin: 0; padding: 0; position: relative; }
+.timeline::before { content: ""; position: absolute; left: 7px; top: 6px; bottom: 6px; width: 2px; background: var(--border); }
+.timeline li { position: relative; padding: 0 0 18px 32px; }
+.timeline li::before {
+  content: ""; position: absolute; left: 1px; top: 5px; width: 14px; height: 14px; border-radius: 50%;
+  background: var(--surface); border: 2px solid var(--axis);
+}
+.timeline li.result::before { border-color: var(--good); background: var(--good); }
+.timeline li.caught::before { border-color: var(--serious); }
+.timeline li.setback::before { border-color: var(--warning); background: var(--warning); }
+.timeline .when { font-size: 12px; color: var(--text-3); font-variant-numeric: tabular-nums; }
+.timeline .what { font-weight: 650; }
+.tag { display: inline-block; font-size: 11px; font-weight: 600; border-radius: 999px; padding: 1px 8px; margin-left: 6px;
+  border: 1px solid var(--border); color: var(--text-2); vertical-align: 1px; }
+.timeline p { color: var(--text-2); margin: 2px 0 0; max-width: 820px; }
+
+/* Dot plot */
+.seg { display: inline-flex; border: 1px solid var(--border); border-radius: 8px; overflow: hidden; margin-bottom: 12px; }
+.seg button { background: var(--surface); color: var(--text-2); border: 0; padding: 6px 12px; font: inherit; font-size: 13px; cursor: pointer; }
+.seg button + button { border-left: 1px solid var(--border); }
+.seg button[aria-pressed="true"] { background: var(--surface-2); color: var(--text); font-weight: 600; }
+.dotplot { display: grid; column-gap: 14px; }
+.dot-labels > div, .dot-col > .dot-head { overflow: hidden; }
+.dot-head { display: flex; flex-direction: column; justify-content: flex-end; padding-bottom: 6px; font-size: 13px; }
+.dot-head small { color: var(--text-3); font-size: 12px; line-height: 1.3; }
+.dot-group { display: flex; align-items: center; font-size: 12px; font-weight: 650; color: var(--text-2);
+  background: var(--surface-2); padding: 0 8px; border-radius: 6px 0 0 6px; white-space: nowrap; text-overflow: ellipsis; }
+.dot-label { display: flex; flex-direction: column; justify-content: center; padding-left: 8px; line-height: 1.25; }
+.dot-label small { color: var(--text-3); font-size: 11.5px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.warn-tag { font-size: 11px; color: var(--text-2); white-space: nowrap; }
+.legend { display: flex; flex-wrap: wrap; gap: 6px 18px; font-size: 13px; color: var(--text-2); margin: 4px 0 12px; }
+.legend span { display: inline-flex; align-items: center; gap: 6px; }
+.sw { width: 10px; height: 10px; border-radius: 50%; display: inline-block; }
+.sw.hollow { background: transparent !important; border: 2px solid var(--text-2); }
+.sw.line { width: 18px; height: 3px; border-radius: 2px; }
+.sw.dash { width: 18px; height: 0; border-top: 3px dashed var(--text-3); border-radius: 0; }
+svg text.tick { font-size: 11px; fill: var(--text-3); font-variant-numeric: tabular-nums; }
+svg text.note { font-size: 11px; fill: var(--text-2); }
+details { margin-top: 14px; }
+summary { cursor: pointer; color: var(--text-2); font-size: 14px; }
+.tbl-wrap { overflow-x: auto; margin-top: 10px; }
+table.data { border-collapse: collapse; font-size: 13px; width: 100%; font-variant-numeric: tabular-nums; }
+table.data th, table.data td { padding: 6px 8px; border-bottom: 1px solid var(--border); text-align: right; white-space: nowrap; }
+table.data th:first-child, table.data td:first-child { text-align: left; }
+table.data th { color: var(--text-2); font-weight: 600; }
+
+/* Small multiples */
+.minis { display: grid; gap: 14px; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); }
+.minis.t3 { grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); }
+figure.mini { margin: 0; background: var(--surface); border: 1px solid var(--border); border-radius: 10px; padding: 12px 12px 6px; min-width: 0; }
+figure.mini figcaption { font-size: 13px; line-height: 1.3; margin-bottom: 6px; min-height: 34px; }
+#sweep figure.mini figcaption { min-height: 50px; }
+figure.mini figcaption small { display: block; color: var(--text-3); font-size: 11.5px; }
+.pill { font-size: 11px; border: 1px solid var(--border); border-radius: 999px; padding: 0 6px; color: var(--text-2); }
+
+/* Predictions */
+table.preds { border-collapse: collapse; width: 100%; font-size: 14px; }
+table.preds td, table.preds th { padding: 10px 8px; border-bottom: 1px solid var(--border); vertical-align: top; text-align: left; }
+table.preds th { font-size: 12px; color: var(--text-2); }
+table.preds td.id { font-family: var(--mono); color: var(--text-2); white-space: nowrap; }
+table.preds td.detail { color: var(--text-3); font-size: 12.5px; }
+.badge { display: inline-flex; align-items: center; gap: 6px; font-size: 13px; font-weight: 600; white-space: nowrap; color: var(--text); }
+.badge i { font-style: normal; width: 18px; height: 18px; border-radius: 50%; display: inline-grid; place-items: center;
+  font-size: 11px; color: #fff; }
+.badge.good i { background: var(--good); }
+.badge.bad i { background: var(--critical); }
+.badge.warn i { background: var(--warning); color: #0b0b0b; }
+.badge.info i { background: var(--axis); }
+.stack { display: grid; gap: 4px; }
+
+/* Lessons */
+.lessons { display: grid; gap: 12px; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); }
+.lessons .card h3 { font-size: 15px; }
+.lessons .card p { color: var(--text-2); font-size: 14px; margin: 0; }
+footer { margin-top: 48px; color: var(--text-3); font-size: 13px; }
+footer code { font-family: var(--mono); font-size: 12px; color: var(--text-2); }
+
+#tip {
+  position: fixed; z-index: 10; pointer-events: none; max-width: 300px;
+  background: var(--surface); color: var(--text); border: 1px solid var(--border); border-radius: 8px;
+  padding: 8px 10px; font-size: 12.5px; line-height: 1.45; box-shadow: 0 6px 24px rgba(0,0,0,.14);
+}
+@media (max-width: 760px) {
+  .hero { grid-template-columns: 1fr; }
+  header { flex-direction: column; }
+}
+@media (max-width: 520px) {
+  .wrap { padding-top: 20px; }
+  .gauge { grid-template-columns: 64px 1fr 78px; }
+  table.preds td.detail { display: none; }
+}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<header>
+  <div>
+    <div class="muted" style="font-size:13px">Research run · Oct 6–10, 2026 · branch <span class="mono">wanting-vs-habit</span></div>
+    <h1>Wanting vs. Habit: what happened</h1>
+    <p class="lede">The question: what does an artificial agent need in order to <b>want</b> an outcome, valuing it by what it currently needs, rather than repeat a habit? Two tests from animal-learning research were checked against agents whose answer is known, then run on 13 kinds of agent, 10 independently trained copies each.</p>
+  </div>
+  <button class="theme" id="themeBtn" type="button" aria-label="Toggle light or dark theme">◐ Theme</button>
+</header>
+
+<div class="card" style="margin-top:20px;border-color:var(--s2);font-size:14px"><b>Postscript (Oct 20, 2026).</b> This page records the v2 results as scored. The follow-up v3 experiment showed the learners' failure here was close to guaranteed by construction (nothing linked an item to its nutrient). Given a built-in item↔need link, model-free RL revalued a never-needed nutrient in 4 of 20 seeds, though not on average. The claim "every agent whose valuations were learned failed" holds for v2's agents only. Current position: <span class="mono">docs/CLAIMS.md</span>; v3 report: <span class="mono">docs/report/v3_heldout_need.html</span>.</div>
+
+<div class="hero">
+  <div class="card">
+    <p class="claim">An agent can look like an ideal “wanter” on needs it has trained on, <em>and still behave like a pure habit machine on a need it has never had.</em></p>
+    <p class="muted" style="margin:0">Zero-shot revaluation appeared only where value was computed at decision time, from a learned model of what each item does and a built-in need function. That held for both the homeostatic planner and active inference. Every agent whose valuations were learned failed, even with the right inputs.</p>
+  </div>
+  <div class="card">
+    <table class="versus" id="versus" aria-label="Ideal agent versus recurrent model-free agent"></table>
+  </div>
+</div>
+
+<section>
+  <h2>The two tests</h2>
+  <p class="section-sub">Each test is a choice probe. The agent starts equally far from two items, its internal need levels are set directly, and the first item it eats is recorded. There is no reward feedback during probes, so it can't learn the answer on the spot. Bars show nutrient levels; the tick marks the healthy set point.</p>
+  <div class="tests">
+    <div class="card">
+      <h3>1 · Devaluation</h3>
+      <p class="muted" style="font-size:14px">Fill the agent up on one nutrient. Does it switch?</p>
+      <div class="gauges" id="g1"></div>
+      <div class="offer">Offered: <b>A</b> vs <b>B</b></div>
+      <p class="answer">A wanting agent goes for <b>B</b>. A habit keeps going for whatever it usually goes for. Score: <b>DI</b>, from −1 to +1.</p>
+    </div>
+    <div class="card">
+      <h3>2 · Zero-shot revaluation</h3>
+      <p class="muted" style="font-size:14px">Create a need the agent has <b>never</b> had: C never ran low during training.</p>
+      <div class="gauges" id="g2"></div>
+      <div class="offer">Offered: <b>C</b> vs <b>A</b> (or B)</div>
+      <p class="answer">A wanting agent goes for <b>C</b> straight away. Score: <b>RI</b>. Guard (<b>RI_spec</b>): when deprived of A instead, it must <i>avoid</i> C. Otherwise it is just trying the unfamiliar item.</p>
+    </div>
+  </div>
+</section>
+
+<section>
+  <h2>What happened</h2>
+  <p class="section-sub">Every design change was written into the design document as a dated amendment before the results it could affect. The two later amendments disclose exactly what had already been seen.</p>
+  <ol class="timeline" id="timeline"></ol>
+</section>
+
+<section>
+  <h2>Scoreboard</h2>
+  <p class="section-sub">Mean over 10 trained copies (large dot), 95% bootstrap interval (bar), and each copy (small dots). Passing means a mean of at least 0.5 (dashed line) with the interval excluding 0. A hollow dot means the agent was below the pre-registered competence bar (it chose an item on fewer than 90% of probes), so its verdict doesn't count. Hover for details.</p>
+  <div class="legend">
+    <span><i class="sw" style="background:var(--s1)"></i>known-answer control</span>
+    <span><i class="sw" style="background:var(--s2)"></i>planner</span>
+    <span><i class="sw" style="background:var(--s3)"></i>model-free</span>
+    <span><i class="sw hollow"></i>below competence bar</span>
+  </div>
+  <div class="seg" id="metricSeg" role="group" aria-label="Metric"></div>
+  <div class="card" style="padding:14px 14px 8px"><div class="dotplot" id="dotplot"></div></div>
+  <details><summary>Show the numbers as a table</summary><div class="tbl-wrap"><table class="data" id="dotTable"></table></div></details>
+</section>
+
+<section>
+  <h2>Looking inside: choice as need grows <span class="pill" style="vertical-align:3px">exploratory</span></h2>
+  <p class="section-sub">One nutrient is lowered from full (0.5) to badly depleted (0.05) while the alternative item's nutrient stays at 0.3. The curves show how often the agent picks the target item. The vertical line marks equal need, where an ideal agent switches.</p>
+  <div class="legend">
+    <span><i class="sw line" style="background:var(--s1)"></i>A: its need varied during training</span>
+    <span><i class="sw line" style="background:var(--s2)"></i>C: never needed during training</span>
+    <span class="muted">thin lines = individual copies</span>
+  </div>
+  <div class="minis" id="sweep"></div>
+  <p class="section-sub" style="margin-top:14px">
+    <b>Planners</b> switch sharply for A and for never-needed C. <b>Learned-reward</b> (<span class="mono">mb_reward</span>) is exact for A but erratic for C. <b>Feedforward model-free</b> learned a satiety veto: it avoids what it is full of, but picks badly needed A only 45% of the time. <b>Recurrent model-free</b> learned a graded, near-ideal curve for A. For both model-free agents, the C curve is flat at zero.</p>
+</section>
+
+<section>
+  <h2>More training made them better at everything except revaluation</h2>
+  <p class="section-sub">Scores at each saved checkpoint. Solid lines run to the pre-registered 10M-step budget; dashed lines are the disclosed extension to 30M. The right panel shows why the extension was needed: at 10M, the two need-sensing agents were still under the 0.9 competence bar.</p>
+  <div class="legend" id="t3legend"></div>
+  <div class="minis t3" id="t3"></div>
+</section>
+
+<section>
+  <h2>Pre-registered predictions</h2>
+  <p class="section-sub">Written before any results; scored by fixed rules.</p>
+  <div class="card" style="padding:4px 14px"><table class="preds" id="preds"></table></div>
+</section>
+
+<section>
+  <h2>What went wrong, and what it taught</h2>
+  <div class="lessons">
+    <div class="card"><h3>Uncertainty-seeking mimics wanting</h3><p>A pilot active-inference agent passed zero-shot revaluation (0.77) while knowing nothing about C: under need, its objective favored the unknown option. Any test like this needs a specificity guard and a control agent that must fail it.</p></div>
+    <div class="card"><h3>Devaluation can be passed without graded wanting</h3><p>“Don't eat what you're full of” scores well on devaluation. Only the need sweep showed that feedforward PPO is nearly indifferent between slightly and badly needed nutrients.</p></div>
+    <div class="card"><h3>Fixed training budgets can void a result</h3><p>At 10M steps, the central predictions were formally uninterpretable. Training should run to a competence target, not a fixed step count. The fix here was one extension, disclosed in advance, with a commitment to no further extensions.</p></div>
+    <div class="card"><h3>Don't hold controls to impossible standards</h3><p>The blind control can't know which item it needs, so its low choice rate was predictable. Gating it on competence left P2 formally uninterpretable, even though its result was never in doubt.</p></div>
+    <div class="card"><h3>The first scoring of P8 was wrong</h3><p>The novelty prediction was first marked “supported” on a raw difference (109 vs 107 exposures). Scored with the planned test it is not supported (Holm p = 1.0).</p></div>
+    <div class="card"><h3>The original project's measures didn't measure desire</h3><p>Of the six v1 measures, three were passed by agents with no desire at all, two depended on scoring bugs, and one was never computed. That audit is why the project was reframed.</p></div>
+  </div>
+</section>
+
+<footer>
+  Generated by <code>experiments/build_report_v2.py</code> from <code>outputs/v2/</code> on branch <code>wanting-vs-habit</code>. Full write-up: <code>docs/RESULTS_v2.md</code>. Design and amendments: <code>docs/RESEARCH_DESIGN_v2.md</code>. This page is self-contained and makes no network requests.
+</footer>
+</div>
+<div id="tip" hidden></div>
+
+<script>
+const D = {"dot":[{"group":"Known-answer controls: the tests must sort these correctly","rows":[{"id":"oracle","family":"control","budget":null,"desc":"ideal wanting agent (true item effects)","DI":{"mean":1.0,"lo":1.0,"hi":1.0,"seeds":[1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0]},"RI":{"mean":1.0,"lo":1.0,"hi":1.0,"seeds":[1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0]},"RI_spec":{"mean":1.0,"lo":1.0,"hi":1.0,"seeds":[1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0]},"choice":[1.0,1.0],"drive":0.10047065567364925,"competent":true,"vT1":"pass","vT2":"pass","n":10},{"id":"need_novelty","family":"control","budget":null,"desc":"tries the unfamiliar item when needy","DI":{"mean":0.009499999999999998,"lo":-0.03199999999999995,"hi":0.049499999999999975,"seeds":[0.08999999999999986,-0.015000000000000013,-0.04499999999999993,0.030000000000000027,0.0,0.08499999999999996,-0.10999999999999999,-0.06499999999999995,0.08999999999999986,0.03500000000000014]},"RI":{"mean":1.0,"lo":1.0,"hi":1.0,"seeds":[1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0]},"RI_spec":{"mean":0.0,"lo":0.0,"hi":0.0,"seeds":[0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0]},"choice":[1.0,1.0],"drive":0.4408264213331953,"competent":true,"vT1":"fail","vT2":"fail (guard)","n":10},{"id":"nearest","family":"control","budget":null,"desc":"habit: nearest A or B item","DI":{"mean":0.014500000000000035,"lo":-0.015499999999999991,"hi":0.04050000000000005,"seeds":[0.03500000000000014,0.03500000000000014,0.06000000000000005,0.02499999999999991,-0.08000000000000007,0.06000000000000005,-0.03499999999999992,0.050000000000000044,-0.03500000000000003,0.030000000000000027]},"RI":{"mean":0.0,"lo":0.0,"hi":0.0,"seeds":[0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0]},"RI_spec":{"mean":0.0,"lo":0.0,"hi":0.0,"seeds":[0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0]},"choice":[1.0,1.0],"drive":0.39803005499543476,"competent":true,"vT1":"fail","vT2":"fail","n":10},{"id":"fixed_habit","family":"control","budget":null,"desc":"habit: always A, else B","DI":{"mean":0.0,"lo":0.0,"hi":0.0,"seeds":[0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0]},"RI":{"mean":0.0,"lo":0.0,"hi":0.0,"seeds":[0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0]},"RI_spec":{"mean":0.0,"lo":0.0,"hi":0.0,"seeds":[0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0]},"choice":[1.0,1.0],"drive":0.38372776848819623,"competent":true,"vT1":"fail","vT2":"fail","n":10},{"id":"random","family":"control","budget":null,"desc":"random actions","DI":{"mean":0.069542212562027,"lo":0.001771634160608818,"hi":0.1447936914143653,"seeds":[-0.006846846846846777,0.07346326836581696,0.14232765011119364,0.05555555555555558,-0.12457912457912457,-0.02182539682539686,0.1384615384615384,0.334703947368421,0.07534246575342474,0.02881906825568792]},"RI":{"mean":-0.050727028377242946,"lo":-0.08294060186978171,"hi":-0.016853378067890567,"seeds":[-0.008109261630388387,-0.05568797399783321,-0.06060606060606055,-0.009549071618037197,-0.13764510779436157,-0.057644110275689275,-0.11473880597014924,-0.08198051948051943,-0.042903575297941476,0.061594202898550776]},"RI_spec":{"mean":-0.02100065680511627,"lo":-0.06789442774370959,"hi":0.025993915509273605,"seeds":[-0.01253816605929281,-0.03868392541483723,0.06293995859213253,-0.012718291496042866,-0.07597067111992484,0.0858547452265005,-0.04871767920958586,-0.1584847944880019,-0.09502107741544358,0.08333333333333337]},"choice":[0.34175,0.333],"drive":0.25947677605929076,"competent":false,"vT1":"fail","vT2":"fail","n":10}]},{"group":"Planners: value computed at decision time","rows":[{"id":"homeo","family":"planner","budget":null,"desc":"learned item model \u00d7 innate need","DI":{"mean":1.0,"lo":1.0,"hi":1.0,"seeds":[1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0]},"RI":{"mean":1.0,"lo":1.0,"hi":1.0,"seeds":[1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0]},"RI_spec":{"mean":1.0,"lo":1.0,"hi":1.0,"seeds":[1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0]},"choice":[1.0,1.0],"drive":0.10047458243179466,"competent":true,"vT1":"pass","vT2":"pass","n":10},{"id":"aif","family":"planner","budget":null,"desc":"active inference","DI":{"mean":1.0,"lo":1.0,"hi":1.0,"seeds":[1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0]},"RI":{"mean":1.0,"lo":1.0,"hi":1.0,"seeds":[1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0]},"RI_spec":{"mean":1.0,"lo":1.0,"hi":1.0,"seeds":[1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0]},"choice":[1.0,1.0],"drive":0.1009628103347863,"competent":true,"vT1":"pass","vT2":"pass","n":10},{"id":"aif_no_novelty","family":"planner","budget":null,"desc":"active inference, no novelty term","DI":{"mean":1.0,"lo":1.0,"hi":1.0,"seeds":[1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0]},"RI":{"mean":1.0,"lo":1.0,"hi":1.0,"seeds":[1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0]},"RI_spec":{"mean":1.0,"lo":1.0,"hi":1.0,"seeds":[1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0]},"choice":[1.0,1.0],"drive":0.10095498932972988,"competent":true,"vT1":"pass","vT2":"pass","n":10},{"id":"mb_reward","family":"planner","budget":null,"desc":"learned item model \u00d7 learned reward","DI":{"mean":1.0,"lo":1.0,"hi":1.0,"seeds":[1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0]},"RI":{"mean":0.15,"lo":0.0,"hi":0.3,"seeds":[0.5,0.0,0.5,0.5,0.0,0.0,0.0,0.0,0.0,0.0]},"RI_spec":{"mean":0.15,"lo":0.0,"hi":0.3,"seeds":[0.5,0.0,0.5,0.5,0.0,0.0,0.0,0.0,0.0,0.0]},"choice":[1.0,0.925],"drive":0.1386342776444898,"competent":true,"vT1":"pass","vT2":"fail","n":10}]},{"group":"Model-free after the 30M extension (Amendment 5)","rows":[{"id":"rppo_free_intero","family":"model-free","budget":"30M steps","desc":"model-free, recurrent, senses needs \u00b7 30M steps","DI":{"mean":0.9964999999999999,"lo":0.992,"hi":1.0,"seeds":[1.0,1.0,1.0,1.0,1.0,0.98,0.9950000000000001,1.0,1.0,0.99]},"RI":{"mean":0.0,"lo":0.0,"hi":0.0,"seeds":[0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0]},"RI_spec":{"mean":-0.0005376344086021505,"lo":-0.0016129032258064516,"hi":0.0,"seeds":[0.0,0.0,0.0,0.0,0.0,-0.005376344086021506,0.0,0.0,0.0,0.0]},"choice":[0.998,0.9949999999999999],"drive":0.10302946169569627,"competent":true,"vT1":"pass","vT2":"fail","n":10},{"id":"ppo_free_intero","family":"model-free","budget":"30M steps","desc":"model-free, feedforward, senses needs \u00b7 30M steps","DI":{"mean":0.8733006717149288,"lo":0.8332270997667728,"hi":0.9105821329162384,"seeds":[0.8228238341968912,0.8238520333741759,0.9267015706806283,0.7451828447114885,0.9037433155080214,0.875,0.8410256410256411,0.9435897435897436,0.9644897959183674,0.8865979381443299]},"RI":{"mean":-0.0015050508915391704,"lo":-0.004540456602862541,"hi":0.002025252525252525,"seeds":[-0.005025125628140704,0.0101010101010101,0.0,-0.010050251256281407,-0.005076142131979695,0.0,-0.005050505050505051,0.0,-0.005,0.005050505050505051]},"RI_spec":{"mean":-0.0015831393530882833,"lo":-0.005437242903861712,"hi":0.00148348733251225,"seeds":[-0.005,0.007379494426126551,0.0,-0.0025906735751295338,0.0,0.0,-0.015607136210151286,-0.002551020408163265,0.0,0.002537942236434699]},"choice":[0.9737499999999999,0.9884999999999999],"drive":0.10765207680315236,"competent":true,"vT1":"pass","vT2":"fail","n":10}]},{"group":"Model-free at the pre-registered 10M budget","rows":[{"id":"rppo_free_intero","family":"model-free","budget":"10M steps","desc":"model-free, recurrent, senses needs \u00b7 10M steps","DI":{"mean":0.5371416036925918,"lo":0.4701527380179366,"hi":0.6254446675321372,"seeds":[0.5162504276428328,0.6846347883307744,0.48589552456955776,0.47981366459627317,0.42819148936170226,0.5140824271714324,0.4926045832539834,0.8726203807390818,0.4488286438835889,0.44849410737669126]},"RI":{"mean":0.0018252916998812406,"lo":-0.007049389383082936,"hi":0.012881608116812266,"seeds":[0.00017203413157170378,0.00030212393123659354,9.852216748768364e-05,0.04353778751369113,-0.0001407182258246105,0.017900552486187847,-0.015401777681816553,-0.004932934264493958,-0.010557053009883195,-0.01272562004934424]},"RI_spec":{"mean":-0.017871185573414834,"lo":-0.03576314746344616,"hi":-0.005302953505255374,"seeds":[0.0029583689763330477,-0.0025778470670314475,-0.021468298109010013,0.0025883523334867264,-0.003795110148701309,-0.008258160586229864,-0.016187389288810153,-0.016105349277822888,-0.02790427433931352,-0.0879621482270489]},"choice":[0.9119999999999999,0.8685],"drive":0.12801401567532664,"competent":false,"vT1":"pass","vT2":"fail","n":10},{"id":"ppo_free_intero","family":"model-free","budget":"10M steps","desc":"model-free, feedforward, senses needs \u00b7 10M steps","DI":{"mean":0.6348610436562175,"lo":0.5086361437035054,"hi":0.712630123492375,"seeds":[0.7196360034666336,0.11479289940828385,0.7156627203519843,0.668560606060606,0.5864176570458404,0.7077968020376397,0.7180854197349043,0.7313302128944588,0.6523356758991319,0.7339924396626927]},"RI":{"mean":0.021376634819552806,"lo":0.0036137717148403336,"hi":0.041077839946809025,"seeds":[0.05487012987012986,0.011956521739130435,-0.025666016894087068,0.08373186350004053,0.016685845799769852,0.03794058796367554,-0.0033205619412515763,-0.0058968926553672335,0.03475303164744159,0.008711839166046148]},"RI_spec":{"mean":0.008803452632339321,"lo":-0.011044283264717247,"hi":0.029470640275110944,"seeds":[0.01830258954754921,0.03370601384727233,-0.03997025137587387,0.07786467974824138,0.0021629265064058018,0.01760916585686969,0.011692540508819016,-0.032897592738752944,0.020013802622498286,-0.020449348199635675]},"choice":[0.913,0.7967500000000001],"drive":0.13956489038810227,"competent":false,"vT1":"pass","vT2":"fail","n":10},{"id":"ppo_clamped","family":"model-free","budget":"10M steps","desc":"model-free, needs fixed in training \u00b7 10M steps","DI":{"mean":-0.012,"lo":-0.032000000000000015,"hi":0.006000000000000038,"seeds":[-0.06000000000000005,0.02499999999999991,0.015000000000000124,-0.010000000000000009,-0.03499999999999992,0.0,0.020000000000000018,-0.07000000000000006,0.0,-0.0050000000000000044]},"RI":{"mean":0.0,"lo":0.0,"hi":0.0,"seeds":[0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0]},"RI_spec":{"mean":0.0,"lo":0.0,"hi":0.0,"seeds":[0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0]},"choice":[1.0,1.0],"drive":0.18,"competent":true,"vT1":"fail","vT2":"fail","n":10},{"id":"ppo_free_blind","family":"model-free","budget":"10M steps","desc":"model-free, cannot sense its needs \u00b7 10M steps","DI":{"mean":0.022646858255869373,"lo":-0.022328233173105932,"hi":0.06656470740070722,"seeds":[-0.12113467927421417,0.02941176470588225,0.01576747720364735,0.11752893928655794,0.13711990820424558,-0.0177748518762344,-0.0003129890453834605,-0.027715355805243425,0.015779507679360316,0.07779886148007575]},"RI":{"mean":0.0005107034518720577,"lo":-0.013169245780783531,"hi":0.014936408763935915,"seeds":[0.02764015645371578,-0.0163372327551432,-0.04054054054054054,-0.00947061680427392,0.0,-0.0005557099194220608,0.015151515151515152,0.006594932315168344,-0.019628990509059537,0.04225352112676056]},"RI_spec":{"mean":-0.00047461009677686114,"lo":-0.010848964138045336,"hi":0.010626411096690647,"seeds":[-0.007579185520361992,-0.003727865796831313,-0.02347781217750258,-0.0166447839579852,-0.006944444444444444,0.01639344262295082,0.008741258741258742,0.011100746268656717,-0.01828203046184887,0.03567457375833951]},"choice":[0.45100000000000007,0.3445000000000001],"drive":0.23953314821962382,"competent":false,"vT1":"fail","vT2":"fail","n":10}]}],"levels":[0.5,0.4,0.3,0.2,0.1,0.05],"sweep":[{"id":"oracle","budget":null,"desc":"ideal wanting agent (true item effects)","n":10,"A":[0.0,0.0,0.5130000000000001,1.0,1.0,1.0],"A_seeds":[[0.0,0.0,0.54,1.0,1.0,1.0],[0.0,0.0,0.47,1.0,1.0,1.0],[0.0,0.0,0.59,1.0,1.0,1.0],[0.0,0.0,0.43,1.0,1.0,1.0],[0.0,0.0,0.49,1.0,1.0,1.0],[0.0,0.0,0.54,1.0,1.0,1.0],[0.0,0.0,0.57,1.0,1.0,1.0],[0.0,0.0,0.48,1.0,1.0,1.0],[0.0,0.0,0.54,1.0,1.0,1.0],[0.0,0.0,0.48,1.0,1.0,1.0]],"C":[0.0,0.0,0.0,1.0,1.0,1.0],"C_seeds":[[0.0,0.0,0.0,1.0,1.0,1.0],[0.0,0.0,0.0,1.0,1.0,1.0],[0.0,0.0,0.0,1.0,1.0,1.0],[0.0,0.0,0.0,1.0,1.0,1.0],[0.0,0.0,0.0,1.0,1.0,1.0],[0.0,0.0,0.0,1.0,1.0,1.0],[0.0,0.0,0.0,1.0,1.0,1.0],[0.0,0.0,0.0,1.0,1.0,1.0],[0.0,0.0,0.0,1.0,1.0,1.0],[0.0,0.0,0.0,1.0,1.0,1.0]]},{"id":"homeo","budget":null,"desc":"learned item model \u00d7 innate need","n":10,"A":[0.0,0.0,0.591,1.0,1.0,1.0],"A_seeds":[[0.0,0.0,1.0,1.0,1.0,1.0],[0.0,0.0,1.0,1.0,1.0,1.0],[0.0,0.0,1.0,1.0,1.0,1.0],[0.0,0.0,0.0,1.0,1.0,1.0],[0.0,0.0,0.43,1.0,1.0,1.0],[0.0,0.0,1.0,1.0,1.0,1.0],[0.0,0.0,0.0,1.0,1.0,1.0],[0.0,0.0,0.0,1.0,1.0,1.0],[0.0,0.0,0.48,1.0,1.0,1.0],[0.0,0.0,1.0,1.0,1.0,1.0]],"C":[0.0,0.0,0.0,1.0,1.0,1.0],"C_seeds":[[0.0,0.0,0.0,1.0,1.0,1.0],[0.0,0.0,0.0,1.0,1.0,1.0],[0.0,0.0,0.0,1.0,1.0,1.0],[0.0,0.0,0.0,1.0,1.0,1.0],[0.0,0.0,0.0,1.0,1.0,1.0],[0.0,0.0,0.0,1.0,1.0,1.0],[0.0,0.0,0.0,1.0,1.0,1.0],[0.0,0.0,0.0,1.0,1.0,1.0],[0.0,0.0,0.0,1.0,1.0,1.0],[0.0,0.0,0.0,1.0,1.0,1.0]]},{"id":"aif","budget":null,"desc":"active inference","n":10,"A":[0.0,0.0,0.4789999999999999,1.0,1.0,1.0],"A_seeds":[[0.0,0.0,0.34,1.0,1.0,1.0],[0.0,0.0,0.48,1.0,1.0,1.0],[0.0,0.0,0.45,1.0,1.0,1.0],[0.0,0.0,0.45,1.0,1.0,1.0],[0.0,0.0,0.57,1.0,1.0,1.0],[0.0,0.0,0.44,1.0,1.0,1.0],[0.0,0.0,0.36,1.0,1.0,1.0],[0.0,0.0,0.6,1.0,1.0,1.0],[0.0,0.0,0.58,1.0,1.0,1.0],[0.0,0.0,0.52,1.0,1.0,1.0]],"C":[0.0,0.0,0.0,1.0,1.0,1.0],"C_seeds":[[0.0,0.0,0.0,1.0,1.0,1.0],[0.0,0.0,0.0,1.0,1.0,1.0],[0.0,0.0,0.0,1.0,1.0,1.0],[0.0,0.0,0.0,1.0,1.0,1.0],[0.0,0.0,0.0,1.0,1.0,1.0],[0.0,0.0,0.0,1.0,1.0,1.0],[0.0,0.0,0.0,1.0,1.0,1.0],[0.0,0.0,0.0,1.0,1.0,1.0],[0.0,0.0,0.0,1.0,1.0,1.0],[0.0,0.0,0.0,1.0,1.0,1.0]]},{"id":"mb_reward","budget":null,"desc":"learned item model \u00d7 learned reward","n":10,"A":[0.0,0.0,0.3333333333333333,1.0,1.0,1.0],"A_seeds":[[0.0,0.0,0.0,1.0,1.0,1.0],[0.0,0.0,null,1.0,1.0,1.0],[0.0,0.0,0.0,1.0,1.0,1.0],[0.0,0.0,0.0,1.0,1.0,1.0],[0.0,0.0,1.0,1.0,1.0,1.0],[0.0,0.0,1.0,1.0,1.0,1.0],[0.0,0.0,0.0,1.0,1.0,1.0],[0.0,0.0,1.0,1.0,1.0,1.0],[0.0,0.0,0.0,1.0,1.0,1.0],[0.0,0.0,0.0,1.0,1.0,1.0]],"C":[0.0,0.1,0.284,0.391,0.25,0.15],"C_seeds":[[0.0,1.0,1.0,1.0,1.0,0.5],[0.0,0.0,0.0,0.0,0.0,0.0],[0.0,0.0,0.22,0.91,0.5,0.5],[0.0,0.0,0.42,1.0,1.0,0.5],[0.0,0.0,0.0,0.0,0.0,0.0],[0.0,0.0,0.0,0.0,0.0,0.0],[0.0,0.0,0.7,0.0,0.0,0.0],[0.0,0.0,0.0,0.0,0.0,0.0],[0.0,0.0,0.5,0.0,0.0,0.0],[0.0,0.0,0.0,1.0,0.0,0.0]]},{"id":"need_novelty","budget":null,"desc":"tries the unfamiliar item when needy","n":10,"A":[0.509,0.5159999999999999,0.5229999999999999,0.522,0.4900000000000001,0.487],"A_seeds":[[0.52,0.45,0.58,0.48,0.51,0.45],[0.46,0.56,0.55,0.63,0.51,0.53],[0.54,0.45,0.59,0.5,0.49,0.53],[0.42,0.4,0.56,0.52,0.4,0.51],[0.54,0.53,0.42,0.53,0.58,0.4],[0.48,0.54,0.53,0.55,0.44,0.47],[0.56,0.56,0.51,0.5,0.51,0.46],[0.44,0.56,0.5,0.52,0.45,0.56],[0.54,0.6,0.46,0.52,0.4,0.47],[0.59,0.51,0.53,0.47,0.61,0.49]],"C":[0.0,0.0,0.0,0.0,1.0,1.0],"C_seeds":[[0.0,0.0,0.0,0.0,1.0,1.0],[0.0,0.0,0.0,0.0,1.0,1.0],[0.0,0.0,0.0,0.0,1.0,1.0],[0.0,0.0,0.0,0.0,1.0,1.0],[0.0,0.0,0.0,0.0,1.0,1.0],[0.0,0.0,0.0,0.0,1.0,1.0],[0.0,0.0,0.0,0.0,1.0,1.0],[0.0,0.0,0.0,0.0,1.0,1.0],[0.0,0.0,0.0,0.0,1.0,1.0],[0.0,0.0,0.0,0.0,1.0,1.0]]},{"id":"ppo_clamped","budget":"10M","desc":"model-free, needs fixed in training","n":10,"A":[0.5069999999999999,0.508,0.5299999999999999,0.521,0.515,0.518],"A_seeds":[[0.47,0.38,0.56,0.45,0.46,0.54],[0.5,0.55,0.5,0.52,0.5,0.47],[0.49,0.54,0.57,0.58,0.51,0.42],[0.54,0.5,0.55,0.47,0.5,0.62],[0.46,0.48,0.5,0.53,0.56,0.49],[0.52,0.52,0.51,0.54,0.6,0.63],[0.48,0.44,0.54,0.54,0.47,0.52],[0.54,0.51,0.51,0.61,0.53,0.49],[0.6,0.58,0.48,0.43,0.5,0.46],[0.47,0.58,0.58,0.54,0.52,0.54]],"C":[0.0,0.0,0.0,0.0,0.0,0.0],"C_seeds":[[0.0,0.0,0.0,0.0,0.0,0.0],[0.0,0.0,0.0,0.0,0.0,0.0],[0.0,0.0,0.0,0.0,0.0,0.0],[0.0,0.0,0.0,0.0,0.0,0.0],[0.0,0.0,0.0,0.0,0.0,0.0],[0.0,0.0,0.0,0.0,0.0,0.0],[0.0,0.0,0.0,0.0,0.0,0.0],[0.0,0.0,0.0,0.0,0.0,0.0],[0.0,0.0,0.0,0.0,0.0,0.0],[0.0,0.0,0.0,0.0,0.0,0.0]]},{"id":"ppo_free_intero","budget":"30M","desc":"model-free, feedforward, senses needs","n":10,"A":[0.04794370061508807,0.23717338592638834,0.4901787260358689,0.47866501752216034,0.46047227375798805,0.4541911922663802],"A_seeds":[[0.11956521739130435,0.20430107526881722,0.6363636363636364,0.5510204081632653,0.54,0.40816326530612246],[0.14606741573033707,0.47368421052631576,0.68,0.82,0.7551020408163265,0.71],[0.04040404040404041,0.28,0.55,0.59,0.53,0.57],[0.020202020202020204,0.2222222222222222,0.37,0.25,0.32323232323232326,0.32],[0.04081632653061224,0.14432989690721648,0.3979591836734694,0.48484848484848486,0.35714285714285715,0.3979591836734694],[0.04,0.25252525252525254,0.4489795918367347,0.3434343434343434,0.3939393939393939,0.35],[0.061855670103092786,0.33,0.62,0.67,0.58,0.63],[0.0,0.2222222222222222,0.3838383838383838,0.34,0.4,0.34],[0.010526315789473684,0.12,0.35,0.37,0.46,0.5],[0.0,0.12244897959183673,0.46464646464646464,0.3673469387755102,0.2653061224489796,0.3157894736842105]],"C":[0.002,0.00202020202020202,0.002061855670103093,0.001,0.002061855670103093,0.0],"C_seeds":[[0.01,0.0,0.0,0.0,0.0,0.0],[0.0,0.020202020202020204,0.010309278350515464,0.0,0.010309278350515464,0.0],[0.0,0.0,0.0,0.0,0.0,0.0],[0.0,0.0,0.0,0.0,0.0,0.0],[0.0,0.0,0.0,0.0,0.0,0.0],[0.0,0.0,0.0,0.0,0.0,0.0],[0.0,0.0,0.010309278350515464,0.0,0.010309278350515464,0.0],[0.0,0.0,0.0,0.0,0.0,0.0],[0.0,0.0,0.0,0.0,0.0,0.0],[0.01,0.0,0.0,0.01,0.0,0.0]]},{"id":"rppo_free_intero","budget":"30M","desc":"model-free, recurrent, senses needs","n":10,"A":[0.001,0.1375858585858586,0.5457575757575758,0.7396969696969699,0.813,0.8389999999999999],"A_seeds":[[0.0,0.16,0.46,0.75,0.79,0.84],[0.0,0.07,0.44,0.71,0.78,0.75],[0.0,0.13,0.51,0.69,0.87,0.84],[0.01,0.06,0.62,0.8,0.84,0.86],[0.0,0.06,0.54,0.81,0.84,0.92],[0.0,0.5858585858585859,0.7575757575757576,0.76,0.73,0.77],[0.0,0.17,0.45,0.62,0.64,0.68],[0.0,0.04,0.46,0.74,0.87,0.85],[0.0,0.08,0.68,0.82,0.88,0.97],[0.0,0.02,0.54,0.696969696969697,0.89,0.91]],"C":[0.0,0.0,0.0010416666666666667,0.0010309278350515464,0.00101010101010101,0.0010416666666666667],"C_seeds":[[0.0,0.0,0.0,0.0,0.0,0.0],[0.0,0.0,0.0,0.0,0.0,0.0],[0.0,0.0,0.0,0.0,0.0,0.0],[0.0,0.0,0.0,0.0,0.0,0.0],[0.0,0.0,0.0,0.0,0.0,0.0],[0.0,0.0,0.010416666666666666,0.0,0.010101010101010102,0.0],[0.0,0.0,0.0,0.010309278350515464,0.0,0.010416666666666666],[0.0,0.0,0.0,0.0,0.0,0.0],[0.0,0.0,0.0,0.0,0.0,0.0],[0.0,0.0,0.0,0.0,0.0,0.0]]}],"t3":[{"id":"ppo_free_intero","points":[{"step":78125,"ext":false,"DI":-0.010863805538129035,"DI_lo":-0.0429651731848526,"DI_hi":0.01875329378406934,"RI":0.04132479137773028,"RI_lo":-0.011767378107764986,"RI_hi":0.09179018411654129,"choice":0.32925,"choice_lo":0.31475,"choice_hi":0.34124999999999994},{"step":156249,"ext":false,"DI":-0.01908801317488954,"DI_lo":-0.053855946497586724,"DI_hi":0.02357962463640855,"RI":0.0432243834522257,"RI_lo":-0.012782808894250956,"RI_hi":0.10151238917306828,"choice":0.34425,"choice_lo":0.33475,"choice_hi":0.35425},{"step":312499,"ext":false,"DI":0.028638932795297712,"DI_lo":-0.0021479287085473956,"DI_hi":0.06575247426229422,"RI":-0.0055064931959442785,"RI_lo":-0.05522128480437531,"RI_hi":0.04515646180334309,"choice":0.34299999999999997,"choice_lo":0.329,"choice_hi":0.356},{"step":624999,"ext":false,"DI":0.015015231300267839,"DI_lo":-0.03155034821849449,"DI_hi":0.058861959190129334,"RI":-0.00028542425924920066,"RI_lo":-0.04010342101743458,"RI_hi":0.03742450851020455,"choice":0.4265,"choice_lo":0.40650000000000003,"choice_hi":0.4445},{"step":1249999,"ext":false,"DI":-0.0033884483516712803,"DI_lo":-0.0334308042394605,"DI_hi":0.02006359814037865,"RI":0.007040472239909751,"RI_lo":-0.029289712332688473,"RI_hi":0.036554018007462344,"choice":0.533,"choice_lo":0.50075,"choice_hi":0.56675},{"step":2499999,"ext":false,"DI":0.04869816605195616,"DI_lo":0.011583942969095103,"DI_hi":0.08375484200037081,"RI":-0.017346312766492678,"RI_lo":-0.04339837385465035,"RI_hi":0.010430966987011205,"choice":0.6975,"choice_lo":0.664,"choice_hi":0.7287500000000001},{"step":4999999,"ext":false,"DI":0.26268129403932794,"DI_lo":0.16545096780997948,"DI_hi":0.3568953742462407,"RI":0.010590656221299555,"RI_lo":-0.008074360022912947,"RI_hi":0.027850468823598915,"choice":0.79125,"choice_lo":0.7715,"choice_hi":0.8099999999999999},{"step":10000000,"ext":false,"DI":0.634478100495946,"DI_lo":0.5069312539425339,"DI_hi":0.7117800151178526,"RI":0.011324708755386827,"RI_lo":-0.00907879604094862,"RI_hi":0.030989472655891057,"choice":0.7945,"choice_lo":0.77125,"choice_hi":0.81425},{"step":15000000,"ext":true,"DI":0.723734583943995,"DI_lo":0.6856208443170249,"DI_hi":0.7508434754066927,"RI":0.008027925587998329,"RI_lo":-0.004644083265637204,"RI_hi":0.020505154537502884,"choice":0.8565000000000002,"choice_lo":0.82675,"choice_hi":0.88825},{"step":30000000,"ext":true,"DI":0.8732545350701193,"DI_lo":0.8356494520860921,"DI_hi":0.9092121319290507,"RI":0.001017766755121039,"RI_lo":-0.0030101010101010106,"RI_hi":0.0055531722087853,"choice":0.9882500000000001,"choice_lo":0.9834999999999999,"choice_hi":0.9925}]},{"id":"rppo_free_intero","points":[{"step":78125,"ext":false,"DI":-0.01610119897207025,"DI_lo":-0.06513539737105938,"DI_hi":0.03270470421068442,"RI":-0.023286836172650642,"RI_lo":-0.07540674254821317,"RI_hi":0.03698410876435041,"choice":0.3415,"choice_lo":0.3295,"choice_hi":0.354},{"step":156249,"ext":false,"DI":-0.01525574383182513,"DI_lo":-0.08006156507539242,"DI_hi":0.04723064867675523,"RI":-0.021759878810767592,"RI_lo":-0.07824898097443703,"RI_hi":0.041314284456611367,"choice":0.34450000000000003,"choice_lo":0.3245,"choice_hi":0.36425},{"step":312499,"ext":false,"DI":-0.02111584491482692,"DI_lo":-0.05847791557752711,"DI_hi":0.015381826616790691,"RI":-0.029480879583696367,"RI_lo":-0.08965089501188703,"RI_hi":0.03243677880274962,"choice":0.34225,"choice_lo":0.3215,"choice_hi":0.36350000000000005},{"step":624999,"ext":false,"DI":0.012042581604016788,"DI_lo":-0.029795529713326326,"DI_hi":0.05716480523430051,"RI":0.002378604047475813,"RI_lo":-0.03418024630670358,"RI_hi":0.04577473108307968,"choice":0.38025000000000003,"choice_lo":0.35575,"choice_hi":0.40425000000000005},{"step":1249999,"ext":false,"DI":0.0005893645986399743,"DI_lo":-0.048008867131685604,"DI_hi":0.04363526937398385,"RI":-0.050234733460269985,"RI_lo":-0.0699923735722298,"RI_hi":-0.03059128024806958,"choice":0.41274999999999995,"choice_lo":0.38425000000000004,"choice_hi":0.4405},{"step":2499999,"ext":false,"DI":0.01734334553643152,"DI_lo":-0.012145421988586383,"DI_hi":0.04574937836621404,"RI":0.0018983828462489916,"RI_lo":-0.020460626609393868,"RI_hi":0.026635856200289482,"choice":0.69325,"choice_lo":0.6447499999999999,"choice_hi":0.7372500000000001},{"step":4999999,"ext":false,"DI":0.1516282268378642,"DI_lo":0.06904887722414893,"DI_hi":0.23631751068956725,"RI":0.015275247799361607,"RI_lo":-0.003859473973916374,"RI_hi":0.034982580501677296,"choice":0.8032499999999999,"choice_lo":0.7697499999999999,"choice_hi":0.8334999999999999},{"step":10000000,"ext":false,"DI":0.5239476005733925,"DI_lo":0.4466146448086339,"DI_hi":0.6221943597936622,"RI":0.006400134937643303,"RI_lo":-0.003645680664253218,"RI_hi":0.02025683260954438,"choice":0.86675,"choice_lo":0.83125,"choice_hi":0.8997499999999998},{"step":15000000,"ext":true,"DI":0.8028260416497417,"DI_lo":0.7366470553793959,"DI_hi":0.8669167002654912,"RI":-0.000829478612193253,"RI_lo":-0.003072916003269391,"RI_hi":0.001774041631153873,"choice":0.96175,"choice_lo":0.9377437499999998,"choice_hi":0.98225},{"step":30000000,"ext":true,"DI":0.9964999999999999,"DI_lo":0.991,"DI_hi":1.0,"RI":0.0,"RI_lo":0.0,"RI_hi":0.0,"choice":0.9949999999999999,"choice_lo":0.99,"choice_hi":0.999}]},{"id":"ppo_clamped","points":[{"step":78125,"ext":false,"DI":0.03511702729187185,"DI_lo":-0.012996978507820793,"DI_hi":0.08477496780987467,"RI":0.01686593233552623,"RI_lo":-0.03997547564952422,"RI_hi":0.07328050866864876,"choice":0.34375000000000006,"choice_lo":0.33149999999999996,"choice_hi":0.35675},{"step":156249,"ext":false,"DI":0.009651489628939736,"DI_lo":-0.04375608930267063,"DI_hi":0.06006609624107988,"RI":-0.0009794787245573089,"RI_lo":-0.050349694463256864,"RI_hi":0.04841902035962147,"choice":0.34925,"choice_lo":0.33125,"choice_hi":0.36500000000000005},{"step":312499,"ext":false,"DI":-0.007877650918584778,"DI_lo":-0.05805870805566157,"DI_hi":0.04262565050223492,"RI":0.02639290962478074,"RI_lo":-0.011567193002778043,"RI_hi":0.06353248104545167,"choice":0.43075,"choice_lo":0.39375,"choice_hi":0.47750624999999997},{"step":624999,"ext":false,"DI":-0.009604170360985608,"DI_lo":-0.0464250745844249,"DI_hi":0.0246469328709099,"RI":0.004124689905123416,"RI_lo":0.0005059498180956544,"RI_hi":0.007731453961574458,"choice":0.9675,"choice_lo":0.9535,"choice_hi":0.9807499999999999},{"step":1249999,"ext":false,"DI":0.012999999999999956,"DI_lo":-0.019000000000000027,"DI_hi":0.04299999999999994,"RI":-0.0010471204188481676,"RI_lo":-0.003141361256544503,"RI_hi":0.0,"choice":0.9960000000000001,"choice_lo":0.9884999999999999,"choice_hi":1.0},{"step":2499999,"ext":false,"DI":-0.01927386934673365,"DI_lo":-0.067321608040201,"DI_hi":0.024500000000000056,"RI":0.0,"RI_lo":0.0,"RI_hi":0.0,"choice":0.994,"choice_lo":0.9819999999999999,"choice_hi":1.0},{"step":4999999,"ext":false,"DI":0.013500000000000022,"DI_lo":-0.003999999999999981,"DI_hi":0.030000000000000006,"RI":0.0,"RI_lo":0.0,"RI_hi":0.0,"choice":1.0,"choice_lo":1.0,"choice_hi":1.0},{"step":10000000,"ext":false,"DI":-0.024499999999999987,"DI_lo":-0.05150000000000001,"DI_hi":0.0035000000000000144,"RI":0.0,"RI_lo":0.0,"RI_hi":0.0,"choice":1.0,"choice_lo":1.0,"choice_hi":1.0}]},{"id":"ppo_free_blind","points":[{"step":78125,"ext":false,"DI":0.05466939660768161,"DI_lo":0.0014818700772048774,"DI_hi":0.11392648028955475,"RI":0.06622850087103913,"RI_lo":-0.0024596914169095043,"RI_hi":0.13170561053110075,"choice":0.33999999999999997,"choice_lo":0.3235,"choice_hi":0.35500000000000004},{"step":156249,"ext":false,"DI":-0.012925641498315477,"DI_lo":-0.05354137900005133,"DI_hi":0.03083113226084927,"RI":0.03261003343428707,"RI_lo":-0.03663993209483569,"RI_hi":0.09984168809518473,"choice":0.33175,"choice_lo":0.30524999999999997,"choice_hi":0.3615},{"step":312499,"ext":false,"DI":-0.01431853588359766,"DI_lo":-0.06644819438830792,"DI_hi":0.03598835251804503,"RI":0.019578466897522788,"RI_lo":-0.0470381677734838,"RI_hi":0.08467406382590895,"choice":0.33249999999999996,"choice_lo":0.31799999999999995,"choice_hi":0.34825},{"step":624999,"ext":false,"DI":0.011883376819764124,"DI_lo":-0.03675999135459608,"DI_hi":0.06292874116968035,"RI":0.003453096509382886,"RI_lo":-0.046988992878600824,"RI_hi":0.05236879097028822,"choice":0.34950000000000003,"choice_lo":0.33425,"choice_hi":0.36475},{"step":1249999,"ext":false,"DI":0.01720017690808362,"DI_lo":-0.03709748062230108,"DI_hi":0.06899819020121513,"RI":-0.009301827604318228,"RI_lo":-0.034333957841965135,"RI_hi":0.01365624674805867,"choice":0.33025000000000004,"choice_lo":0.31174999999999997,"choice_hi":0.35},{"step":2499999,"ext":false,"DI":0.0032872480978055063,"DI_lo":-0.03293476586073693,"DI_hi":0.0405709902476601,"RI":0.026261524207735622,"RI_lo":0.007190810800698924,"RI_hi":0.04670986964789919,"choice":0.36075,"choice_lo":0.34275,"choice_hi":0.37875000000000003},{"step":4999999,"ext":false,"DI":0.005110392146889175,"DI_lo":-0.0168415597938289,"DI_hi":0.026941122381485584,"RI":0.0021976345188425357,"RI_lo":-0.011847106930395352,"RI_hi":0.018243915221224927,"choice":0.35375,"choice_lo":0.33375000000000005,"choice_hi":0.37475},{"step":10000000,"ext":false,"DI":0.02475272458921801,"DI_lo":-0.010801321182638057,"DI_hi":0.06126533496682526,"RI":-0.0035662714007964717,"RI_lo":-0.018312013285030855,"RI_hi":0.009550228893585052,"choice":0.34950000000000003,"choice_lo":0.33575,"choice_hi":0.362}]}],"preds":{"P1":["oracle passes T1/T2; no-desire controls fail; need_novelty passes RI but fails the guard","supported"],"P2":["ppo_free_blind and ppo_clamped fail T1","not interpretable (ppo_free_blind below competence criterion) (T1 fail, fail)"],"P3":["ppo_free_intero passes T1 but fails T2","not interpretable (ppo_free_intero below competence criterion) (T1 pass, T2 fail)"],"P4":["rppo_free_intero passes T1 but fails T2","not interpretable (rppo_free_intero below competence criterion) (T1 pass, T2 fail)"],"P5":["homeo, aif, aif_no_novelty pass T1 and T2","supported"],"P6":["mb_reward passes T1; T2 partial or fail","supported (T2 fail, RI +0.15)"],"P7":["|RI_aif - RI_homeo| < 0.15 and |DI_aif - DI_homeo| < 0.15","supported (\u0394RI 0.00, \u0394DI 0.00)"],"P8":["novelty increases C exposures in training but not T2","not supported (C exposures 109 vs 107, Holm p = 1.00)"],"P9":["T3 exploratory (no directional prediction)","see T3 figure"]},"ext_preds":{"P3":"supported (T1 pass, T2 fail)","P4":"supported (T1 pass, T2 fail)"},"oracle_drive":0.10047065567364925,"hero":{"rppo":{"id":"rppo_free_intero","family":"model-free","budget":"30M","desc":"model-free, recurrent, senses needs \u00b7 30M","DI":{"mean":0.9964999999999999,"lo":0.992,"hi":1.0,"seeds":[1.0,1.0,1.0,1.0,1.0,0.98,0.9950000000000001,1.0,1.0,0.99]},"RI":{"mean":0.0,"lo":0.0,"hi":0.0,"seeds":[0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0]},"RI_spec":{"mean":-0.0005376344086021505,"lo":-0.0016129032258064516,"hi":0.0,"seeds":[0.0,0.0,0.0,0.0,0.0,-0.005376344086021506,0.0,0.0,0.0,0.0]},"choice":[0.998,0.9949999999999999],"drive":0.10302946169569627,"competent":true,"vT1":"pass","vT2":"fail","n":10},"oracle":{"id":"oracle","family":"control","budget":null,"desc":"ideal wanting agent (true item effects)","DI":{"mean":1.0,"lo":1.0,"hi":1.0,"seeds":[1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0]},"RI":{"mean":1.0,"lo":1.0,"hi":1.0,"seeds":[1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0]},"RI_spec":{"mean":1.0,"lo":1.0,"hi":1.0,"seeds":[1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0]},"choice":[1.0,1.0],"drive":0.10047065567364925,"competent":true,"vT1":"pass","vT2":"pass","n":10},"homeo":{"id":"homeo","family":"planner","budget":null,"desc":"learned item model \u00d7 innate need","DI":{"mean":1.0,"lo":1.0,"hi":1.0,"seeds":[1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0]},"RI":{"mean":1.0,"lo":1.0,"hi":1.0,"seeds":[1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0]},"RI_spec":{"mean":1.0,"lo":1.0,"hi":1.0,"seeds":[1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0]},"choice":[1.0,1.0],"drive":0.10047458243179466,"competent":true,"vT1":"pass","vT2":"pass","n":10}}};
+const NS = "http://www.w3.org/2000/svg";
+function S(tag, attrs, parent) {
+  const e = document.createElementNS(NS, tag);
+  for (const k in attrs) e.setAttribute(k, attrs[k]);
+  if (parent) parent.appendChild(e);
+  return e;
+}
+function H(tag, cls, html, parent) {
+  const e = document.createElement(tag);
+  if (cls) e.className = cls;
+  if (html != null) e.innerHTML = html;
+  if (parent) parent.appendChild(e);
+  return e;
+}
+function fmt(v, d = 2) {
+  if (v == null || Number.isNaN(v)) return "—";
+  const r = Number(v.toFixed(d));
+  if (r === 0) return (0).toFixed(d);
+  return (r > 0 ? "+" : "−") + Math.abs(r).toFixed(d);
+}
+const pct = v => v == null ? "—" : Math.round(v * 100) + "%";
+const FAM = { control: "var(--s1)", planner: "var(--s2)", "model-free": "var(--s3)" };
+
+/* Theme toggle (per-viewer convenience only) */
+(function () {
+  const btn = document.getElementById("themeBtn");
+  let saved = null;
+  try { saved = localStorage.getItem("wvh-theme"); } catch (e) {}
+  if (saved) document.documentElement.dataset.theme = saved;
+  btn.addEventListener("click", () => {
+    const cur = document.documentElement.dataset.theme ||
+      (matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light");
+    const next = cur === "dark" ? "light" : "dark";
+    document.documentElement.dataset.theme = next;
+    try { localStorage.setItem("wvh-theme", next); } catch (e) {}
+  });
+})();
+
+/* Tooltip */
+const tip = document.getElementById("tip");
+function showTip(evt, html) {
+  tip.innerHTML = html;
+  tip.hidden = false;
+  const pad = 14, r = tip.getBoundingClientRect();
+  let x = evt.clientX + pad, y = evt.clientY + pad;
+  if (x + r.width > innerWidth - 8) x = evt.clientX - r.width - pad;
+  if (y + r.height > innerHeight - 8) y = evt.clientY - r.height - pad;
+  tip.style.left = Math.max(8, x) + "px";
+  tip.style.top = Math.max(8, y) + "px";
+}
+function hideTip() { tip.hidden = true; }
+
+/* Hero comparison */
+(function () {
+  const o = D.hero.oracle, m = D.hero.rppo;
+  const sweep = Object.fromEntries(D.sweep.map(s => [s.id + (s.budget || ""), s]));
+  const rs = sweep["rppo_free_intero30M"], os = sweep["oracle"];
+  const curve = s => `${pct(s.A[0])} → ${pct(s.A[2])} → ${pct(s.A[s.A.length - 1])}`;
+  document.getElementById("versus").innerHTML = `
+    <thead><tr><th></th><th><i class="dotkey" style="background:var(--s1)"></i>Ideal agent</th>
+      <th><i class="dotkey" style="background:var(--s3)"></i>Recurrent model-free, 30M steps</th></tr></thead>
+    <tbody>
+      <tr><td>Devaluation (DI)</td><td class="big">${fmt(o.DI.mean)}</td><td class="big">${fmt(m.DI.mean)}</td></tr>
+      <tr><td>Picks familiar nutrient A as it runs low<br><span class="muted" style="font-size:12px">full → equal need → depleted</span></td>
+        <td>${curve(os)}</td><td>${curve(rs)}</td></tr>
+      <tr><td>Foraging: mean drive<br><span class="muted" style="font-size:12px">lower is better</span></td>
+        <td class="big">${o.drive.toFixed(3)}</td><td class="big">${m.drive.toFixed(3)}</td></tr>
+      <tr class="key"><td><b>Zero-shot revaluation (RI)</b><br><span class="muted" style="font-size:12px">chose C when deprived of it</span></td>
+        <td class="big">${fmt(o.RI.mean)}</td><td class="big">${fmt(m.RI.mean)}<div class="muted" style="font-size:12px;font-weight:400">0 of 1,985 choices</div></td></tr>
+    </tbody>`;
+})();
+
+/* Need gauges for the test cards */
+function gauges(id, rows) {
+  const root = document.getElementById(id);
+  for (const [name, level, state, need] of rows) {
+    const g = H("div", "gauge", null, root);
+    H("div", null, `Nutrient <b>${name}</b>`, g);
+    const bar = H("div", "bar", null, g);
+    const f = H("div", "fill" + (need ? " need" : ""), null, bar);
+    f.style.width = (level * 100) + "%";
+    H("div", "set", null, bar);
+    H("div", "state", state, g);
+  }
+}
+gauges("g1", [["A", 0.5, "full", false], ["B", 0.15, "low", true], ["C", 0.5, "full", false]]);
+gauges("g2", [["A", 0.3, "a bit low", false], ["B", 0.3, "a bit low", false], ["C", 0.05, "very low · new", true]]);
+
+/* Timeline */
+const TIMELINE = [
+  ["Oct 6", "Audited the original project", "caught", "finding",
+   "Ran the six original “desire” measures on agents whose answer is known. Three were passed by agents with no desire at all, two only worked because of scoring bugs, and one was never actually computed. Retired the active-inference-vs-RL question."],
+  ["Oct 6", "Reframed and pre-registered", "", "plan",
+   "New question: which ingredients make an agent want an outcome rather than act from habit? Wrote the design and nine predictions (P1–P9) before building anything, and reviewed about 90 sources. Amendment 1."],
+  ["Oct 7", "Pilots caught two design flaws", "caught", "caught",
+   "Eating C always hit the 1.0 ceiling, so no agent could learn what C does; the set point was lowered from 0.7 to 0.5. A pilot active-inference agent “passed” zero-shot revaluation while knowing nothing about C; a specificity guard and a control that must fail it were added. Amendment 2."],
+  ["Oct 7", "Tests validated", "result", "result",
+   "The ideal agent passes both tests and every no-desire control fails. The novelty-seeker passes the raw revaluation score and is caught by the guard."],
+  ["Oct 7", "Planners: 4 kinds × 10 copies", "result", "result",
+   "The homeostatic planner and active inference pass both tests in every copy and are indistinguishable. The learned-reward model-based agent passes devaluation but fails revaluation (RI +0.15). The novelty term made no difference."],
+  ["Oct 7", "Model-free settings fixed", "", "plan",
+   "Architecture and training settings were chosen on throwaway pilot runs using foraging competence only, never the test scores. A risk was noted in advance: the pilots hadn't reached the 0.9 choice-rate bar. Amendment 3."],
+  ["Oct 7–10", "40 model-free runs × 10M steps", "", "run",
+   "About 5 hours of compute; the laptop slept part of the way. Amendment 4 wrote down exactly how the competence bar is applied."],
+  ["Oct 10", "10M verdicts: not interpretable", "setback", "setback",
+   "The two need-sensing model-free agents chose on only 80% and 87% of revaluation probes, under the 0.9 bar. By the pre-registered rule their verdicts don't count, even though the numbers pointed the predicted way."],
+  ["Oct 10", "One disclosed extension", "", "plan",
+   "Continued just those two agents to 30M steps. The decision, what had already been seen, and a commitment to no further extensions were all written down before training started. Amendment 5."],
+  ["Oct 10", "30M: central hypothesis supported", "result", "result",
+   "Both agents now clear the bar, forage as well as the ideal agent, and pass devaluation (recurrent: DI +1.00). Zero-shot revaluation: 0.00. The recurrent agent chose C 0 times in 1,985 deprived choices; the feedforward agent chose it 4 times in 1,969, fewer than when not deprived."],
+];
+(function () {
+  const ol = document.getElementById("timeline");
+  for (const [when, what, cls, tag, text] of TIMELINE) {
+    H("li", cls, `<div class="when">${when}</div><div class="what">${what}<span class="tag">${tag}</span></div><p>${text}</p>`, ol);
+  }
+})();
+
+/* Dot plot */
+const METRICS = [
+  ["DI", "Devaluation (DI)", "switches away from the full nutrient"],
+  ["RI", "Zero-shot revaluation (RI)", "seeks C when deprived of C"],
+  ["RI_spec", "Specificity guard (RI_spec)", "…and only when C is the remedy"],
+];
+let dotMetric = "RI";
+const ROW = 46, GROUP = 32, AXIS = 24, HEAD = 46;
+function tipDot(r, key, title) {
+  const m = r[key];
+  const verdict = key === "DI" ? r.vT1 : key === "RI" ? r.vT2 : null;
+  return `<b class="mono">${r.id}</b>${r.budget ? " · " + r.budget : ""}<br>${title}: <b>${fmt(m.mean)}</b> <span class="muted">[${fmt(m.lo)}, ${fmt(m.hi)}]</span>` +
+    `<br><span class="muted">${r.n} copies · choice rate ${r.choice[0].toFixed(2)} / ${r.choice[1].toFixed(2)}${r.competent ? "" : " · below 0.9 bar, not interpretable"}</span>` +
+    (verdict ? `<br>Test verdict: ${verdict}` : "");
+}
+function renderDot() {
+  const root = document.getElementById("dotplot");
+  root.innerHTML = "";
+  const wide = root.clientWidth >= 820;
+  const seg = document.getElementById("metricSeg");
+  seg.style.display = wide ? "none" : "inline-flex";
+  const shown = wide ? METRICS : METRICS.filter(m => m[0] === dotMetric);
+  const labelW = wide ? 250 : Math.min(190, Math.max(130, root.clientWidth * 0.42));
+  root.style.gridTemplateColumns = `${labelW}px repeat(${shown.length}, minmax(0, 1fr))`;
+  const lab = H("div", "dot-labels", null, root);
+  H("div", "dot-head", "", lab).style.height = HEAD + "px";
+  for (const g of D.dot) {
+    const gh = H("div", "dot-group", g.group, lab);
+    gh.style.height = GROUP + "px";
+    gh.title = g.group;
+    for (const r of g.rows) {
+      const d = H("div", "dot-label",
+        `<div><span class="mono">${r.id}</span>${r.competent ? "" : ' <span class="warn-tag">· not interpretable</span>'}</div><small title="${r.desc}">${r.desc}</small>`, lab);
+      d.style.height = ROW + "px";
+    }
+  }
+  const totalH = D.dot.reduce((a, g) => a + GROUP + g.rows.length * ROW, 0);
+  for (const [key, title, sub] of shown) {
+    const col = H("div", "dot-col", null, root);
+    const head = H("div", "dot-head", `<b>${title}</b><small>${sub}</small>`, col);
+    head.style.height = HEAD + "px";
+    const W = Math.max(120, col.clientWidth);
+    const svg = S("svg", { width: W, height: totalH + AXIS, role: "img", "aria-label": title }, col);
+    const m = 10, x = v => m + (v + 1.08) / 2.16 * (W - 2 * m);
+    let y = 0;
+    for (const g of D.dot) {
+      S("rect", { x: 0, y, width: W, height: GROUP, style: "fill:var(--surface-2)" }, svg);
+      y += GROUP;
+      y += g.rows.length * ROW;
+    }
+    for (const t of [-1, -0.5, 0, 0.5, 1]) {
+      const style = t === 0 ? "stroke:var(--axis);stroke-width:1.2" :
+        t === 0.5 ? "stroke:var(--axis);stroke-width:1;stroke-dasharray:3 3" : "stroke:var(--grid);stroke-width:1";
+      S("line", { x1: x(t), x2: x(t), y1: 0, y2: totalH, style }, svg);
+      const tx = S("text", { x: x(t), y: totalH + 16, "text-anchor": "middle", class: "tick" }, svg);
+      tx.textContent = t === 0 ? "0" : (t > 0 ? "+" : "−") + Math.abs(t);
+    }
+    y = 0;
+    for (const g of D.dot) {
+      y += GROUP;
+      for (const r of g.rows) {
+        const cy = y + ROW / 2, c = FAM[r.family], mm = r[key];
+        const hl = S("rect", { x: 0, y, width: W, height: ROW, style: "fill:transparent" }, svg);
+        mm.seeds.forEach((v, i) => {
+          if (v == null) return;
+          S("circle", { cx: x(v), cy: cy + ((i * 7) % 11 - 5) * 1.1, r: 2.6, style: `fill:${c};opacity:.35` }, svg);
+        });
+        S("line", { x1: x(mm.lo), x2: x(mm.hi), y1: cy, y2: cy, style: `stroke:${c};stroke-width:2.5;stroke-linecap:round` }, svg);
+        S("circle", { cx: x(mm.mean), cy, r: 5.5,
+          style: r.competent ? `fill:${c};stroke:var(--surface);stroke-width:2` : `fill:var(--surface);stroke:${c};stroke-width:2.4` }, svg);
+        const hit = S("rect", { x: 0, y, width: W, height: ROW, style: "fill:transparent;cursor:default" }, svg);
+        hit.addEventListener("pointerenter", () => { hl.style.fill = "var(--hover)"; });
+        hit.addEventListener("pointermove", e => showTip(e, tipDot(r, key, title)));
+        hit.addEventListener("pointerleave", () => { hl.style.fill = "transparent"; hideTip(); });
+        y += ROW;
+      }
+    }
+  }
+}
+(function () {
+  const seg = document.getElementById("metricSeg");
+  for (const [key, title] of METRICS) {
+    const b = H("button", null, title.replace(/ \(.*\)/, ""), seg);
+    b.type = "button";
+    b.setAttribute("aria-pressed", key === dotMetric);
+    b.addEventListener("click", () => {
+      dotMetric = key;
+      seg.querySelectorAll("button").forEach(x => x.setAttribute("aria-pressed", x === b));
+      renderDot();
+    });
+  }
+  const t = document.getElementById("dotTable");
+  let html = "<thead><tr><th>Agent</th><th>Training</th><th>Choice T1 / T2</th><th>Mean drive</th><th>DI [95% CI]</th><th>RI [95% CI]</th><th>RI_spec [95% CI]</th><th>T1</th><th>T2</th></tr></thead><tbody>";
+  for (const g of D.dot) for (const r of g.rows) {
+    const ci = k => `${fmt(r[k].mean)} [${fmt(r[k].lo)}, ${fmt(r[k].hi)}]`;
+    html += `<tr><td class="mono">${r.id}</td><td>${r.budget || "—"}</td><td>${r.choice[0].toFixed(2)} / ${r.choice[1].toFixed(2)}${r.competent ? "" : " ⚠"}</td><td>${r.drive.toFixed(3)}</td><td>${ci("DI")}</td><td>${ci("RI")}</td><td>${ci("RI_spec")}</td><td>${r.vT1}</td><td>${r.vT2}</td></tr>`;
+  }
+  t.innerHTML = html + "</tbody>";
+})();
+
+/* Need sweep small multiples */
+function linePath(xs, ys) {
+  let d = "", pen = false;
+  ys.forEach((v, i) => {
+    if (v == null) { pen = false; return; }
+    d += (pen ? "L" : "M") + xs[i].toFixed(1) + "," + v.toFixed(1);
+    pen = true;
+  });
+  return d;
+}
+function renderSweep() {
+  const root = document.getElementById("sweep");
+  root.innerHTML = "";
+  const L = D.levels;
+  for (const a of D.sweep) {
+    const card = H("figure", "mini", null, root);
+    H("figcaption", null, `<span class="mono">${a.id}</span>${a.budget ? ` <span class="pill">${a.budget}</span>` : ""}<small>${a.desc}</small>`, card);
+    const W = Math.max(200, card.clientWidth - 24), Hh = 168, ml = 38, mr = 8, mt = 6, mb = 24;
+    const svg = S("svg", { width: W, height: Hh, role: "img", "aria-label": `Need sweep for ${a.id}` }, card);
+    const x = v => ml + (0.5 - v) / 0.45 * (W - ml - mr), y = v => mt + (1 - v) * (Hh - mt - mb);
+    for (const t of [0, 0.5, 1]) {
+      S("line", { x1: ml, x2: W - mr, y1: y(t), y2: y(t), style: t === 0.5 ? "stroke:var(--axis);stroke-dasharray:3 3" : "stroke:var(--grid)" }, svg);
+      const tt = S("text", { x: ml - 6, y: y(t) + 4, "text-anchor": "end", class: "tick" }, svg);
+      tt.textContent = t === 0.5 ? "50%" : (t * 100) + "%";
+    }
+    S("line", { x1: x(0.3), x2: x(0.3), y1: mt, y2: Hh - mb, style: "stroke:var(--axis)" }, svg);
+    for (const t of L) {
+      if (t === 0.05) continue;
+      const tt = S("text", { x: x(t), y: Hh - 6, "text-anchor": "middle", class: "tick" }, svg);
+      tt.textContent = t.toFixed(1);
+    }
+    const xs = L.map(x);
+    for (const [t, c] of [["A", "var(--s1)"], ["C", "var(--s2)"]]) {
+      for (const s of a[t + "_seeds"]) S("path", { d: linePath(xs, s.map(v => v == null ? null : y(v))), style: `fill:none;stroke:${c};stroke-width:1;opacity:.22` }, svg);
+    }
+    for (const [t, c] of [["A", "var(--s1)"], ["C", "var(--s2)"]]) {
+      S("path", { d: linePath(xs, a[t].map(v => v == null ? null : y(v))), style: `fill:none;stroke:${c};stroke-width:2.2;stroke-linejoin:round` }, svg);
+      a[t].forEach((v, i) => { if (v != null) S("circle", { cx: xs[i], cy: y(v), r: 4, style: `fill:${c};stroke:var(--surface);stroke-width:1.5` }, svg); });
+    }
+    const bounds = xs.map((v, i) => [i === 0 ? ml : (xs[i - 1] + v) / 2, i === xs.length - 1 ? W - mr : (v + xs[i + 1]) / 2]);
+    bounds.forEach(([x0, x1], i) => {
+      const guide = S("line", { x1: xs[i], x2: xs[i], y1: mt, y2: Hh - mb, style: "stroke:var(--text-3);stroke-width:1;opacity:0" }, svg);
+      const hit = S("rect", { x: x0, y: 0, width: x1 - x0, height: Hh, style: "fill:transparent" }, svg);
+      hit.addEventListener("pointerenter", () => { guide.style.opacity = .5; });
+      hit.addEventListener("pointermove", e => showTip(e,
+        `<b class="mono">${a.id}</b>${a.budget ? " · " + a.budget : ""}<br><span class="muted">target nutrient at ${L[i]} (alternative at 0.3)</span>` +
+        `<br><span style="color:var(--s1)">●</span> picks A: <b>${pct(a.A[i])}</b><br><span style="color:var(--s2)">●</span> picks C: <b>${pct(a.C[i])}</b>`));
+      hit.addEventListener("pointerleave", () => { guide.style.opacity = 0; hideTip(); });
+    });
+  }
+}
+
+/* Training amount */
+const T3_COLORS = { ppo_free_intero: "var(--s1)", rppo_free_intero: "var(--s2)", ppo_clamped: "var(--s3)", ppo_free_blind: "var(--s4)" };
+const T3_PANELS = [
+  ["DI", "Devaluation (DI)", [-0.15, 1.05], [0, 0.5, 1], null],
+  ["RI", "Zero-shot revaluation (RI)", [-0.15, 1.05], [0, 0.5, 1], null],
+  ["choice", "Choice rate on revaluation probes", [0.25, 1.03], [0.4, 0.6, 0.8, 1], 0.9],
+];
+(function () {
+  const lg = document.getElementById("t3legend");
+  for (const s of D.t3) H("span", null, `<i class="sw line" style="background:${T3_COLORS[s.id]}"></i><span class="mono">${s.id}</span>`, lg);
+  H("span", null, `<i class="sw dash"></i>continued to 30M (Amendment 5)`, lg);
+})();
+function renderT3() {
+  const root = document.getElementById("t3");
+  root.innerHTML = "";
+  const steps = [...new Set(D.t3.flatMap(s => s.points.map(p => p.step)))].sort((a, b) => a - b);
+  for (const [key, title, [y0, y1], ticks, bar] of T3_PANELS) {
+    const card = H("figure", "mini", null, root);
+    H("figcaption", null, `<b>${title}</b>`, card);
+    const W = Math.max(240, card.clientWidth - 24), Hh = 220, ml = 34, mr = 10, mt = 14, mb = 26;
+    const svg = S("svg", { width: W, height: Hh, role: "img", "aria-label": title }, card);
+    const lx0 = Math.log10(6e4), lx1 = Math.log10(3.6e7);
+    const x = v => ml + (Math.log10(v) - lx0) / (lx1 - lx0) * (W - ml - mr);
+    const y = v => mt + (y1 - v) / (y1 - y0) * (Hh - mt - mb);
+    for (const t of ticks) {
+      S("line", { x1: ml, x2: W - mr, y1: y(t), y2: y(t), style: t === 0 ? "stroke:var(--axis)" : "stroke:var(--grid)" }, svg);
+      const tt = S("text", { x: ml - 6, y: y(t) + 4, "text-anchor": "end", class: "tick" }, svg);
+      tt.textContent = key === "choice" ? (t * 100) + "%" : t;
+    }
+    for (const [v, s] of [[1e5, "100k"], [1e6, "1M"], [1e7, "10M"], [3e7, "30M"]]) {
+      const tt = S("text", { x: x(v), y: Hh - 6, "text-anchor": "middle", class: "tick" }, svg);
+      tt.textContent = s;
+    }
+    S("line", { x1: x(1e7), x2: x(1e7), y1: mt - 4, y2: Hh - mb, style: "stroke:var(--axis);stroke-dasharray:3 3" }, svg);
+    const nb = S("text", { x: x(1e7) - 4, y: mt + 4, "text-anchor": "end", class: "note" }, svg);
+    nb.textContent = "planned budget";
+    if (bar != null) {
+      S("line", { x1: ml, x2: W - mr, y1: y(bar), y2: y(bar), style: "stroke:var(--text-2);stroke-width:1.2;stroke-dasharray:5 3" }, svg);
+      const bt = S("text", { x: ml + 4, y: y(bar) - 5, class: "note" }, svg);
+      bt.textContent = "competence bar 90%";
+    }
+    for (const s of D.t3) {
+      const c = T3_COLORS[s.id];
+      const main = s.points.filter(p => !p.ext), ext = s.points.filter(p => p.ext);
+      const band = [...s.points.map(p => [x(p.step), y(p[key + "_hi"])]), ...s.points.slice().reverse().map(p => [x(p.step), y(p[key + "_lo"])])];
+      S("path", { d: "M" + band.map(p => p[0].toFixed(1) + "," + p[1].toFixed(1)).join("L") + "Z", style: `fill:${c};opacity:.10` }, svg);
+      S("path", { d: linePath(main.map(p => x(p.step)), main.map(p => y(p[key]))), style: `fill:none;stroke:${c};stroke-width:2.2;stroke-linejoin:round` }, svg);
+      if (ext.length) {
+        const seq = [main[main.length - 1], ...ext];
+        S("path", { d: linePath(seq.map(p => x(p.step)), seq.map(p => y(p[key]))), style: `fill:none;stroke:${c};stroke-width:2.2;stroke-dasharray:5 4` }, svg);
+      }
+      for (const p of s.points) S("circle", { cx: x(p.step), cy: y(p[key]), r: 3.6,
+        style: p.ext ? `fill:var(--surface);stroke:${c};stroke-width:2` : `fill:${c};stroke:var(--surface);stroke-width:1.2` }, svg);
+    }
+    const xs = steps.map(x);
+    xs.forEach((cx, i) => {
+      const x0 = i === 0 ? ml : (xs[i - 1] + cx) / 2, x1 = i === xs.length - 1 ? W - mr : (cx + xs[i + 1]) / 2;
+      const guide = S("line", { x1: cx, x2: cx, y1: mt, y2: Hh - mb, style: "stroke:var(--text-3);opacity:0" }, svg);
+      const hit = S("rect", { x: x0, y: 0, width: x1 - x0, height: Hh, style: "fill:transparent" }, svg);
+      hit.addEventListener("pointerenter", () => { guide.style.opacity = .5; });
+      hit.addEventListener("pointermove", e => {
+        const step = steps[i];
+        const label = step >= 1e6 ? (step / 1e6).toFixed(step % 1e6 ? 1 : 0) + "M" : Math.round(step / 1e3) + "k";
+        let html = `<b>${title}</b><br><span class="muted">after ${label} training steps</span>`;
+        for (const s of D.t3) {
+          const p = s.points.find(q => q.step === step);
+          if (!p) continue;
+          const v = key === "choice" ? pct(p[key]) : fmt(p[key]);
+          html += `<br><span style="color:${T3_COLORS[s.id]}">●</span> <span class="mono">${s.id}</span>: <b>${v}</b>`;
+        }
+        showTip(e, html);
+      });
+      hit.addEventListener("pointerleave", () => { guide.style.opacity = 0; hideTip(); });
+    });
+  }
+}
+
+/* Predictions */
+const PRED_TEXT = {
+  P1: "The tests sort the known-answer agents correctly: the ideal agent passes; no-desire agents fail; the novelty-seeker trips the guard",
+  P2: "Model-free agents that can't sense their needs, or never saw needs vary, fail devaluation",
+  P3: "<b>Central hypothesis:</b> a model-free agent that senses its needs passes devaluation but fails zero-shot revaluation",
+  P4: "The same holds for a recurrent (memory) model-free agent",
+  P5: "The homeostatic planner and active inference pass both tests",
+  P6: "The learned-reward model-based agent passes devaluation; revaluation partial or fail",
+  P7: "Active inference and the homeostatic planner are indistinguishable once their ingredients match",
+  P8: "The novelty term makes the agent try C more during training, without changing revaluation",
+  P9: "Training amount: exploratory, no directional prediction",
+};
+function badge(outcome) {
+  const o = outcome.toLowerCase();
+  if (o.startsWith("supported")) return '<span class="badge good"><i>✓</i>Supported</span>';
+  if (o.startsWith("not supported")) return '<span class="badge bad"><i>✕</i>Not supported</span>';
+  if (o.startsWith("not interpretable")) return '<span class="badge warn"><i>?</i>Not interpretable</span>';
+  return '<span class="badge info"><i>·</i>Exploratory</span>';
+}
+(function () {
+  const t = document.getElementById("preds");
+  let html = "<thead><tr><th>ID</th><th>Prediction</th><th>Outcome</th><th>Detail</th></tr></thead><tbody>";
+  for (const pid of Object.keys(PRED_TEXT)) {
+    const [, outcome] = D.preds[pid];
+    const detail = (outcome.match(/\((.*)\)\s*$/) || [, ""])[1];
+    let out = badge(outcome);
+    if (D.ext_preds[pid]) {
+      out = `<div class="stack"><div><span class="muted" style="font-size:12px">10M</span> ${badge(outcome)}</div>` +
+        `<div><span class="muted" style="font-size:12px">30M</span> ${badge(D.ext_preds[pid])}</div></div>`;
+    } else if (pid === "P9") {
+      out = badge("exploratory");
+    }
+    const extra = pid === "P9" ? "Need sensitivity in familiar states grew with training; revaluation stayed at zero throughout" :
+      D.ext_preds[pid] ? `10M: ${detail.replace(/^.*below competence criterion\) /, "")} · 30M: ${(D.ext_preds[pid].match(/\((.*)\)\s*$/) || [, ""])[1]}` : detail;
+    html += `<tr><td class="id">${pid}</td><td>${PRED_TEXT[pid]}</td><td>${out}</td><td class="detail">${extra}</td></tr>`;
+  }
+  t.innerHTML = html + "</tbody>";
+})();
+
+/* Render + keep charts sized to their containers */
+function renderAll() { renderDot(); renderSweep(); renderT3(); }
+renderAll();
+let rt;
+new ResizeObserver(() => { clearTimeout(rt); rt = setTimeout(renderAll, 120); }).observe(document.querySelector(".wrap"));
+</script>
+</body>
+</html>

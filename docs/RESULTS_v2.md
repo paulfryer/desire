@@ -162,3 +162,14 @@ All are recorded with dates in the design doc's amendments. Amendments 1–3 wer
 - **The scorecard initially marked P8 "supported"** on a raw difference of 109 vs 107. It now uses the planned permutation test, as §7 requires.
 - **The blind control was held to the competence criterion.** An agent that cannot sense its needs cannot know which item it needs, so its low choice rate was predictable. The rule made P2 uninterpretable even though the blind agent's DI ≈ 0 is guaranteed by construction. Competence gates should apply only to agents for which competence is achievable.
 - **The 10M training budget was too small for the model-free agents.** Pilot runs at 3M had already shown the risk (Amendment 3). In hindsight, the budget should have been set by a competence target, not by a fixed step count.
+
+---
+
+## Postscript, 2026-10-20: what the v3 experiment changed
+
+This document is the record of the pre-registered v2 results and is not rewritten. The project's current position is in `docs/CLAIMS.md`. In brief:
+
+- **Finding 3 ("learned value fails out of distribution, even with the right inputs and a good model") was too strong as a general claim.** The v2 learners had one input unit per nutrient, the never-needed nutrient's input never varied, and nothing linked item C to nutrient C. No learner could have passed. v3 (`docs/HELDOUT_DESIGN.md`, `docs/RESULTS_HELDOUT.md`) gave model-free learners object-based inputs, seven nutrients, and a built-in item↔need link. By the pre-registered per-seed criterion, 4 of 20 seeds then revalued a never-needed nutrient, and only when that specific need was low. The arm-level verdict was *inconclusive*; on average the learner still preferred a less-needed familiar item.
+- **Finding 2 (planners pass) and finding 5 (framework labels don't matter) stand**, with the caveat that the planners are the assays' positive controls and their passing is close to guaranteed by construction.
+- **Findings 1 and 4 (the tests need guards; devaluation alone cannot separate wanting from a satiety veto) were strengthened.** v3 added directional and seeking guards and three further impostor controls, all sorted correctly.
+- **The "not interpretable" competence gating used here was dropped in v3** in favor of one unconditional symmetric rule, after the project owner objected that gating lets a reader suspect selective interpretation. The v2 10M verdicts remain as reported above.

@@ -1,67 +1,65 @@
 # Wanting vs. Habit in Artificial Agents
 
-Which computational ingredients make an agent *want* an outcome — value it according to what it currently needs — rather than repeat a habit? And can we tell from behavior alone, using tests checked against agents whose answer we already know?
+Which computational ingredients make an agent *want* an outcome, valuing it by what it currently needs, rather than repeat a habit? And can we tell from behavior alone, using tests checked against agents whose answer we already know?
 
 This repository borrows two tests from animal-learning research:
 
 - **Outcome devaluation** (Dickinson & Balleine): satiate the agent on one outcome, then see whether it switches, without any chance to relearn.
 - **Zero-shot revaluation** (Robinson & Berridge 2013): put the agent in a need state it has never experienced, and see whether it immediately goes for the one item that fixes it.
 
-The tests are run on a set of agents built from controlled ingredients:
-- model-free RL, with and without the ability to sense its needs (interoception), and with need levels varied or fixed during training
-- recurrent model-free RL
-- model-based RL with a learned reward model
-- a homeostatic planner
-- active inference
-- ground-truth control agents that each test must correctly sort before it is trusted
+Both tests are validated on scripted agents with known answers, including agents built to *fake* wanting, before any learned agent is scored. They are then run on model-free RL (feedforward and recurrent, with and without interoception), model-based RL with a learned reward model, a homeostatic planner, active inference, and, in the latest experiment, model-free learners given a built-in link between items and the needs they fix.
 
-> **History.** This project began as "do active-inference agents show desire-like signatures that RL agents don't?" (v1, the paper draft in `paper/`). That question was retired in October 2026: its six behavioral predicates turned out to be passed by agents with no desire at all, or to depend on scoring bugs (`docs/LEGACY_VALIDITY.md`). The v1 code remains on `main`; this branch replaces it.
+**The current position, with confidence levels and what is left to test: [`docs/CLAIMS.md`](docs/CLAIMS.md).** The short version follows.
 
-## Main result
+## What we have learned
 
-Agents that compute an outcome's value at decision time, from a learned model of what each item does and an innate need function, pass both tests. That holds whether the agent is a homeostatic planner or active inference; the two are indistinguishable.
+**Solid (methodological).**
+- Behavioral tests for wanting have to be validated against impostors. The zero-shot test is passed by novelty-seeking, by a satiety veto, and by attraction to unusual states unless it carries three guards (specific, directional, seeking). With the guards, all seven scripted impostors are sorted correctly.
+- Competent, graded, in-distribution need sensitivity is not evidence of wanting. A recurrent model-free agent that forages like the oracle and passes devaluation at ceiling never once seeks the remedy for an unfamiliar need (0 of 1,985 choices).
 
-Agents whose valuations are learned fail zero-shot revaluation:
-- **Model-based agent with a learned reward model:** RI +0.15.
-- **Recurrent model-free agent, trained to 30M steps:** forages as well as the oracle, passes devaluation perfectly (DI +1.00) and shows graded sensitivity to familiar needs. It still never once seeks the remedy for an unfamiliar need (RI 0.00).
+**One pre-registered experiment, primary result inconclusive.**
+- Given a built-in item↔need link, model-free RL *sometimes* revalues a never-needed outcome: 4 of 20 seeds (6–44%) by the pre-set criterion, and only when that specific need was low. On average it does not: held-out revaluation +0.28 [+0.13, +0.44] against +0.96 on familiar needs, and the deprived agent still preferred a less-needed familiar item.
+- Without the built-in link, or with only two trained needs, nothing transferred. The generic MLP never learned the task, so that question is untested.
+- Our own pre-registered forecast (45% on clean transfer) scored worse than a uniform guess.
 
-In-distribution need sensitivity is not wanting. Details: `docs/RESULTS_v2.md`.
+**Hypothesis, untested.** The same agents revalue a never-*seen* item far more than the familiar-but-never-needed one. What may block transfer is a learned aversion that a new need fails to override, which is exactly what Berridge's sodium-depleted rats do override.
 
-**Follow-up (v3, held-out need).** That v2 failure was close to guaranteed by construction: nothing linked an item to its nutrient. So v3 gave model-free learners a fairer test. They had object-based inputs, seven nutrients, and a held-out nutrient they experienced but never needed. Everything was pre-registered with numeric priors and one scoring rule.
+**How significant.** Modest. The durable part is the methodology and the cautionary result. The positive result is real but small and in a toy world. See `docs/CLAIMS.md` §4–5 for what we are not claiming and what would change our minds.
 
-The primary, best-shot arm (a built-in item-need match, 20 seeds) came out **inconclusive** by the frozen rule:
-- Held-out revaluation was +0.28 [+0.13, +0.44], against +0.96 on trained needs.
-- On average the deprived agent still preferred a less-needed familiar item: SI_H −0.43 [−0.74, −0.12].
-- Seeds split: by the pre-registered per-seed criterion, 4 of 20 transferred (interval 6–44%), while 11 had held-out revaluation ≤ 0.13.
+## How our thinking evolved
 
-None of the other arms transferred:
-- With a learned match, or with only two trained needs, held-out revaluation was negligible.
-- With a code-dependent read-out, or with H held constant in training, the verdict was inconclusive.
-- The MLP never learned the task, so it tested nothing.
-
-My pre-registered prior scored worse than a uniform guess (Brier 1.01). Details: `docs/RESULTS_HELDOUT.md`.
+| | Question | Outcome |
+|---|---|---|
+| **v1** (Jan–Oct 2026) | Do active-inference agents show desire signatures that RL agents don't? Six predicates, five agents. | **Retracted.** The predicates were passed by agents with no desire, or depended on scoring bugs. Kept in [`paper/legacy_v1/`](paper/legacy_v1/RETRACTED.md) as a record; see `docs/LEGACY_VALIDITY.md`. |
+| **v2** (Oct 6–10) | Which ingredients produce wanting vs habit, measured by validated devaluation and revaluation assays? | Planners with an innate need function pass; learned valuation fails zero-shot revaluation. But the learners' failure was close to guaranteed by construction. `docs/RESULTS_v2.md`. |
+| **v3** (Oct 10–11) | Give learning its best shot: can a learner with a built-in item↔need link revalue a need it has never had? Pre-registered, numeric priors, one scoring rule. | **Inconclusive** by the frozen rule; sometimes yes, not on average. `docs/RESULTS_HELDOUT.md`. |
 
 ## Documents
 
 | File | Contents |
 |---|---|
-| `docs/RESEARCH_DESIGN_v2.md` | The question, environment, assays, agents and the **pre-registered predictions** (with dated amendments made before the relevant results) |
-| `docs/RESULTS_v2.md` | Results against those predictions |
-| `docs/HELDOUT_DESIGN.md` | v3 held-out-need experiment: frozen pre-registration, numeric priors, one scoring rule |
-| `docs/RESULTS_HELDOUT.md` | v3 results, the prior scorecard, and every deviation |
+| `docs/CLAIMS.md` | **Start here.** Current claims with confidence levels, what we are not claiming, significance, what is left to test |
+| `docs/HELDOUT_DESIGN.md` | v3 frozen pre-registration: numeric priors, the single scoring rule, outcome table, review log |
+| `docs/RESULTS_HELDOUT.md` | v3 results by that rule, prior scorecard, every deviation, independent review log |
+| `docs/RESEARCH_DESIGN_v2.md` | v2 design and pre-registered predictions, with dated amendments |
+| `docs/RESULTS_v2.md` | v2 results against those predictions (with a postscript on what v3 changed) |
+| `docs/report/` | Self-contained HTML reports of v2 and v3 (open locally; no network) |
 | `docs/LITERATURE.md` | Literature review and novelty assessment |
-| `docs/LEGACY_VALIDITY.md` | Why the v1 predicates were retired |
+| `docs/LEGACY_VALIDITY.md` | The audit that retired v1 |
+| `paper/legacy_v1/` | The retracted v1 paper draft, with retraction notice |
 
 ## Setup
 
 ```bash
 uv venv .venv --python 3.12
 uv pip install --python .venv/bin/python numpy scipy pandas matplotlib gymnasium torch \
-    stable-baselines3 sb3-contrib scikit-learn pytest ruff
+    stable-baselines3 sb3-contrib scikit-learn pytest ruff pypdf
 .venv/bin/python -m pytest tests
 ```
 
 ## Reproducing
+
+v2:
 
 ```bash
 # Planners and ground-truth controls: train (planners), then run every assay. ~15 min.
@@ -78,11 +76,10 @@ python experiments/launch_model_free.py --agents ppo_free_intero rppo_free_inter
     --n-steps 256 --batch-size 4096 --resume-from outputs/v2/model_free \
     --out outputs/v2/model_free_30M --assay-out outputs/v2/model_free_assays_30M
 
-# Tables, prediction scorecard and figures -> outputs/v2/
+# Tables, prediction scorecard and figures -> outputs/v2/; need-sweep curves; HTML report
 python experiments/analyze_v2.py
-
-# Exploratory need-sweep curves -> outputs/v2/need_sweep*/ and figures/need_sweep*.png
 python experiments/need_sweep.py --seeds 0-9 && python experiments/need_sweep.py --plot
+python experiments/build_report_v2.py
 ```
 
 v3, held-out need:
@@ -92,25 +89,29 @@ python experiments/run_heldout.py validity                     # scripted contro
 python experiments/launch_heldout.py main --steps 30000000 --parallel 9 \
     --learning-rate learned-level-K6=1e-4 mlp-K6=1e-4         # 70 runs, ~17 h on a 10-core laptop
 for k in 0 1 2 3 4 5 6 7; do python experiments/run_heldout.py learned --shard $k/8 & done; wait
-python experiments/analyze_v3.py && python experiments/plot_v3.py   # -> outputs/v3/
+python experiments/analyze_v3.py && python experiments/plot_v3.py && python experiments/build_report_v3.py
 ```
 
-Set `OMP_NUM_THREADS=1` when running training jobs in parallel. Each run records its exact settings in `outputs/v2/model_free*/<agent>/seed_<n>/run.json`.
+Set `OMP_NUM_THREADS=1` when running training jobs in parallel. Each run records its exact settings in its `run.json`. Every v3 training and evaluation command is logged in `outputs/v3/COMMANDS.log`.
 
 ## Layout
 
 ```
 src/
-  env.py              NutrientGrid: batched homeostatic gridworld (3 nutrients, drive-reduction reward)
-  assays.py           T0 competence, T1 devaluation, T2 zero-shot revaluation (+ specificity guard)
-  stats.py            seed-level bootstrap CIs, permutation tests, Holm, pre-registered verdicts
+  env.py              NutrientGrid (v2): batched homeostatic gridworld, 3 nutrients
+  env_n.py            MultiNutrientGrid (v3): 7 nutrients, object-based observations, held-out nutrient
+  assays.py           v2: T0 competence, T1 devaluation, T2 zero-shot revaluation (+ specificity guard)
+  assays_n.py         v3: trained and held-out revaluation with specificity, directional and seeking guards
+  stats.py            v2: bootstrap CIs, permutation tests, Holm, verdict rule
+  scoring_v3.py       v3: the single frozen scoring rule, t-intervals, sign-flip tests, Brier
   agents/
-    controls.py       random, nearest, fixed_habit, need_novelty
+    controls.py       v2 known-answer controls
     planners.py       homeostatic planner / oracle, learned-reward model-based, active inference
     model_free.py     stable-baselines3 PPO / recurrent PPO adapters
-experiments/          runners, analysis, diagnostics
-tests/                unit tests
-outputs/v2/           per-seed assay results (JSON), summary, tables, figures
-src/env_n.py, src/assays_n.py, src/scoring_v3.py, src/agents/multi.py   v3 world, assays, rule, agents
-outputs/v3/           v3 per-seed assays, training logs, validity, summary, tables, figures
+    multi.py          v3 scripted impostors and the relational / MLP policy networks
+experiments/          runners, launchers, frozen analyses, exploratory plots, report builders
+tests/                unit tests (assay validity on controls, scoring rule, analysis end to end)
+outputs/v2/, v3/      per-seed assay results (JSON), summaries, tables, figures; models and logs are git-ignored
+docs/                 claims, designs, results, literature, HTML reports
+paper/legacy_v1/      the retracted v1 paper
 ```

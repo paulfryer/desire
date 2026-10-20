@@ -28,6 +28,11 @@
 
 \maketitle
 
+\begin{center}
+\fbox{\parbox{0.92\textwidth}{\textbf{RETRACTED BY THE AUTHOR (2026-10-06).} This draft is kept only as a record of how the project's thinking evolved. Its six behavioral predicates were later run on agents that have no desire by construction: three predicates were passed by those agents, two separated agents only because of scoring bugs, and one was never measured. The active-inference agent did not perform inference. None of the findings below should be cited. See \texttt{RETRACTED.md} in this folder and \texttt{docs/LEGACY\_VALIDITY.md} for the audit, and \texttt{docs/CLAIMS.md} for what the project now claims.}}
+\end{center}
+\vspace{1em}
+
 \begin{abstract}
 We investigate whether Active Inference agents exhibit behavioral signatures distinguishing them from Reinforcement Learning agents. Using a grid-world foraging task, we compare five agent types---heuristic, PPO, DQN, A2C, and Active Inference---across six behavioral predicates drawn from the psychology of motivation. Contrary to initial hypotheses, we find no clean dissociation between frameworks. Instead, we discover that ``desire-likeness'' is multi-dimensional: Active Inference and value-based RL (DQN) both show \textit{true anticipatory activation} ($r \approx -0.6$), while actor-critic methods (A2C) show the strongest state-dependent valuation and frustration response. Notably, PPO shows \textit{inverse anticipation}---activation that increases with distance from goals ($r = +0.63$), encoding uncertainty rather than goal proximity. These results suggest that the architecture of learning systems, not merely the framework (RL vs.\ Active Inference), determines which aspects of goal-directed behavior emerge. We propose that future work should measure multiple ``desire signatures'' rather than seeking single dissociating predicates.
 \end{abstract}
